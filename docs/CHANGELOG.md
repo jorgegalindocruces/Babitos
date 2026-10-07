@@ -9,7 +9,7 @@ Este archivo relaciona las iteraciones entregadas con sus cambios observables, c
 
 ## Texto nítido y escala pixel-perfect — 2026-10-08
 
-Commit pendiente de cierre:
+Commit [`def542c`](https://github.com/jorgegalindocruces/Babitos/commit/def542c):
 
 - eliminó la ampliación CSS fraccionaria del canvas y conserva 960 × 540 exactos en escritorio;
 - dejó a `Phaser.Scale.FIT` reducir el juego únicamente cuando la pantalla es menor, sin overflow;
