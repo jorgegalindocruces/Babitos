@@ -16,6 +16,13 @@ export const UI_FONTS = Object.freeze({
   body: "'Nunito', system-ui, sans-serif",
 });
 
+export const BACKGROUND_ASSETS = Object.freeze({
+  babilandiaV2: Object.freeze({
+    key: 'background_babilandia_v2',
+    url: 'assets/backgrounds/babilandia-v2.webp',
+  }),
+});
+
 export const BACKGROUND_THEMES = Object.freeze({
   title: Object.freeze({
     sky: Object.freeze([0x061129, 0x081a35, 0x0b2745, 0x103653, 0x174560, 0x1d536a]),
@@ -65,6 +72,13 @@ export const BACKGROUND_THEMES = Object.freeze({
 });
 
 const BACKGROUND_TEXTURE_PREFIX = 'babitos-ui-bg-v1';
+const BACKGROUND_MUSIC_THEMES = Object.freeze({
+  title: 'title',
+  babilandia: 'babilandia',
+  jungle: 'ending',
+  city: 'ending',
+  shop: 'shop',
+});
 let announcementToken = 0;
 let clearAnnouncementTimer = null;
 
@@ -460,12 +474,123 @@ function drawSky(scene, x, y, width, height, config, depth, themeName) {
   return { sky, details };
 }
 
+function createImageBackground(scene, themeName, assetKey, options = {}) {
+  const camera = options.camera ?? scene.cameras.main;
+  const depth = Number.isFinite(options.depth) ? options.depth : -1000;
+  const overscan = Phaser.Math.Clamp(Number(options.assetOverscan) || 1.1, 1, 1.35);
+  const image = scene.add.image(0, 0, assetKey)
+    .setOrigin(0.5)
+    .setScrollFactor(0)
+    .setDepth(depth);
+  const objects = [image];
+  const cameraBounds = new Phaser.Geom.Rectangle();
+  let viewport = null;
+  let destroyed = false;
+  let lastScrollX = Number.NaN;
+  let lastScrollY = Number.NaN;
+
+  const layout = () => {
+    const width = Number(options.width) || camera.width || scene.scale.width;
+    const height = Number(options.height) || camera.height || scene.scale.height;
+    const x = Number(options.x) || 0;
+    const y = Number(options.y) || 0;
+    const sourceWidth = image.frame?.realWidth || image.width || width;
+    const sourceHeight = image.frame?.realHeight || image.height || height;
+    const coverScale = Math.max(width / sourceWidth, height / sourceHeight) * overscan;
+
+    image.setScale(coverScale);
+    viewport = {
+      width,
+      height,
+      x,
+      y,
+      marginX: Math.max(0, (sourceWidth * coverScale - width) / 2),
+      marginY: Math.max(0, (sourceHeight * coverScale - height) / 2),
+    };
+    camera.getBounds(cameraBounds);
+  };
+
+  const update = (force = false) => {
+    if (destroyed || !viewport) return;
+    const scrollX = camera.scrollX;
+    const scrollY = camera.scrollY;
+    if (!force && scrollX === lastScrollX && scrollY === lastScrollY) return;
+
+    const spanX = Math.max(0, cameraBounds.width - camera.width);
+    const spanY = Math.max(0, cameraBounds.height - camera.height);
+    const progressX = spanX > 0
+      ? Phaser.Math.Clamp((scrollX - cameraBounds.x) / spanX, 0, 1)
+      : 0.5;
+    const progressY = spanY > 0
+      ? Phaser.Math.Clamp((scrollY - cameraBounds.y) / spanY, 0, 1)
+      : 0.5;
+
+    image.setPosition(
+      viewport.x + viewport.width / 2
+        + Phaser.Math.Linear(viewport.marginX, -viewport.marginX, progressX),
+      viewport.y + viewport.height / 2
+        + Phaser.Math.Linear(viewport.marginY, -viewport.marginY, progressY),
+    );
+    lastScrollX = scrollX;
+    lastScrollY = scrollY;
+  };
+
+  const resize = () => {
+    layout();
+    update(true);
+  };
+
+  scene.events.on(Phaser.Scenes.Events.UPDATE, update);
+  scene.scale?.on(Phaser.Scale.Events.RESIZE, resize);
+
+  const controller = {
+    theme: themeName,
+    assetKey,
+    sky: image,
+    details: null,
+    far: image,
+    mid: null,
+    foreground: null,
+    objects,
+    setVisible(visible) {
+      image.setVisible(visible);
+      return this;
+    },
+    setDepth(nextDepth) {
+      image.setDepth(nextDepth);
+      return this;
+    },
+    destroy() {
+      if (destroyed) return;
+      destroyed = true;
+      scene.events.off(Phaser.Scenes.Events.UPDATE, update);
+      scene.events.off(Phaser.Scenes.Events.SHUTDOWN, shutdown);
+      scene.scale?.off(Phaser.Scale.Events.RESIZE, resize);
+      if (image.scene) image.destroy();
+    },
+  };
+
+  const shutdown = () => controller.destroy();
+  scene.events.once(Phaser.Scenes.Events.SHUTDOWN, shutdown);
+  layout();
+  update(true);
+  return controller;
+}
+
 /**
- * Add a self-contained pixel-art background. Layers stay camera-fixed while
- * their tile offsets follow the camera at different speeds, creating parallax.
+ * Add a self-contained pixel-art background. External art is used when an
+ * `assetKey` is available; otherwise the deterministic procedural layers are
+ * retained as a resilient fallback.
  */
 export function createPixelBackground(scene, theme = 'title', options = {}) {
   const themeName = BACKGROUND_THEMES[theme] ? theme : 'title';
+  const musicTheme = options.musicTheme ?? BACKGROUND_MUSIC_THEMES[themeName];
+  if (musicTheme) scene.registry?.get('audio')?.startMusic(musicTheme);
+
+  if (options.assetKey && scene.textures.exists(options.assetKey)) {
+    return createImageBackground(scene, themeName, options.assetKey, options);
+  }
+
   const config = BACKGROUND_THEMES[themeName];
   const camera = options.camera ?? scene.cameras.main;
   const width = Number(options.width) || camera.width || scene.scale.width;
@@ -602,4 +727,3 @@ export function announce(message, options = {}) {
 export const addPixelBackground = createPixelBackground;
 export const createText = createBodyText;
 export const addPanel = createPanel;
-

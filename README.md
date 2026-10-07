@@ -28,10 +28,18 @@ Los tamaños pequeño, normal y grande son puramente visuales: usan el mismo *hi
 | Saltar | `W`, `↑` o `Espacio` |
 | Atacar con el poder activo | `J` o `X` |
 | Pausa | `P` o `Esc` |
+| Activar o silenciar audio | `M` |
 | Navegar por botones | `Tab` / `Mayús + Tab` |
 | Activar el botón enfocado | `Enter` o `Espacio` |
 
-También se puede usar ratón o pantalla táctil en los menús y los controles virtuales durante la partida.
+También se puede usar ratón o pantalla táctil en los menús y los controles virtuales durante la partida. El botón `AUDIO` permanece disponible junto al lienzo y recuerda la preferencia local de mute.
+
+## Iteración 0.2 · Pulido audiovisual
+
+- Babilandia utiliza un nuevo fondo pixel art panorámico basado exclusivamente en la arquitectura, paleta y atmósfera de la lámina oficial. Si el asset no puede cargarse, el juego vuelve automáticamente al fondo procedural.
+- Música ambiental y efectos para interfaz, salto, ataque, daño, monedas, checkpoints, boss y compras se sintetizan en el navegador mediante Web Audio, sin archivos ni dependencias adicionales.
+- El Babito conserva poses legibles de ataque y daño, y reacciona al salto y al aterrizaje sin modificar su hitbox.
+- `Espacio` queda reservado para saltar durante el gameplay; los botones del HUD siguen disponibles con ratón, toque o navegación accesible mediante `Tab`.
 
 ## Ejecutar en local
 
@@ -127,14 +135,14 @@ Vite usa rutas relativas (`base: './'`), por lo que imágenes, módulos y demás
 
 ## Placeholders actuales
 
-Las láminas de `art/approved/` son dirección artística, no *spritesheets* finales. El vertical slice utiliza texturas pixel art generadas por código con claves definitivas para:
+Las láminas de `art/approved/` son dirección artística, no *spritesheets* finales. El fondo jugable de Babilandia ya dispone de una primera versión raster integrada en `public/assets/backgrounds/`, con fallback procedural. El resto del vertical slice utiliza texturas pixel art generadas por código con claves definitivas para:
 
 - capas del Babito y cosméticos;
 - COME, VUELA y DA VUELTAS;
 - Babito Corrupto, tenderos, moneda y Árbol de Poder;
 - proyectiles, plataformas, props y elementos del HUD.
 
-Estas texturas deben sustituirse gradualmente por sprites y animaciones finales sin cambiar sus IDs ni la lógica. También quedan pendientes música y efectos de sonido definitivos. La Jungla y Ciudad Bicharraca son adelantos navegables; sus niveles y bosses completos pertenecen a iteraciones posteriores.
+Estas texturas deben sustituirse gradualmente por sprites y animaciones finales sin cambiar sus IDs ni la lógica. El audio actual es procedural: funciona como primera dirección sonora, pero todavía debe sustituirse o ampliarse con música y efectos producidos. La Jungla y Ciudad Bicharraca son adelantos navegables; sus niveles y bosses completos pertenecen a iteraciones posteriores.
 
 `worlds_environment_reference_only.png` sirve únicamente para escenarios, paleta y atmósfera. Los enemigos canónicos son los de `enemies_canonical.png`.
 
@@ -154,4 +162,4 @@ Puedes proponer nuevos Babitos, cosméticos, niveles o enemigos para futuras exp
 
 El código fuente se distribuye bajo la [licencia MIT](LICENSE).
 
-El contenido de `art/` **no** se publica bajo MIT. Es material artístico del proyecto BABITOS y su copia, modificación, redistribución o reutilización requiere permiso previo de sus titulares.
+El contenido de `art/` y `public/assets/` **no** se publica bajo MIT. Es material artístico del proyecto BABITOS y su copia, modificación, redistribución o reutilización requiere permiso previo de sus titulares.

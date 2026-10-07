@@ -3,6 +3,15 @@ import gameData from '../data/game-data.json';
 import { BabitoAvatar } from './BabitoAvatar.js';
 import { getPower, launchPower } from './PowerSystem.js';
 
+function eventTargetsControl(event) {
+  const target = event?.target;
+  const tagName = target?.tagName;
+  return Boolean(
+    target?.isContentEditable
+    || ['BUTTON', 'INPUT', 'TEXTAREA', 'SELECT', 'A'].includes(tagName),
+  );
+}
+
 export class PlayerController {
   constructor(scene, { x, y, save, platforms, projectiles, onHealth, onGameOver }) {
     this.scene = scene;
@@ -19,10 +28,15 @@ export class PlayerController {
     this.lastGroundedAt = -Infinity;
     this.jumpBufferedUntil = -Infinity;
     this.nextAttackAt = 0;
+    this.attackUntil = -Infinity;
+    this.hurtUntil = -Infinity;
+    this.wasGrounded = false;
+    this.previousVerticalVelocity = 0;
     this.checkpoint = { x, y };
     this.virtual = { left: false, right: false, jump: false, attack: false };
     this.virtualPressed = { jump: false, attack: false };
     this.keyboardPressed = { jump: false, attack: false };
+    this.audio = scene.registry.get('audio');
 
     this.body = scene.physics.add.sprite(x, y, 'player_hitbox').setVisible(false);
     this.body.setDepth(10).setCollideWorldBounds(true);
@@ -46,10 +60,14 @@ export class PlayerController {
     });
     this.keyboardHandlers = {
       jump: (event) => {
-        if (this.enabled && !event?.repeat) this.keyboardPressed.jump = true;
+        if (this.enabled && !event?.repeat && !eventTargetsControl(event)) {
+          this.keyboardPressed.jump = true;
+        }
       },
       attack: (event) => {
-        if (this.enabled && !event?.repeat) this.keyboardPressed.attack = true;
+        if (this.enabled && !event?.repeat && !eventTargetsControl(event)) {
+          this.keyboardPressed.attack = true;
+        }
       },
     };
     for (const eventName of ['keydown-SPACE', 'keydown-UP', 'keydown-W']) {
@@ -73,6 +91,8 @@ export class PlayerController {
   update(time) {
     if (!this.body.active) return;
     const grounded = this.body.body.blocked.down || this.body.body.touching.down;
+    const landedHard = grounded && !this.wasGrounded && this.previousVerticalVelocity > 180;
+    let jumpedThisFrame = false;
     if (grounded) this.lastGroundedAt = time;
 
     const left = this.keys.left.isDown || this.keys.a.isDown || this.virtual.left;
@@ -102,10 +122,12 @@ export class PlayerController {
 
       const canUseCoyote = time - this.lastGroundedAt <= this.config.coyoteMs;
       if (this.jumpBufferedUntil >= time && canUseCoyote) {
+        jumpedThisFrame = true;
         this.body.setVelocityY(-this.config.jumpVelocity);
         this.lastGroundedAt = -Infinity;
         this.jumpBufferedUntil = -Infinity;
-        this.scene.tweens.add({ targets: this.avatar.container, scaleY: 1.08, scaleX: 0.92, duration: 80, yoyo: true });
+        this.avatar.pulseJump?.();
+        this.audio?.play('jump');
       }
 
       const jumpHeld = this.keys.space.isDown || this.keys.up.isDown || this.keys.w.isDown || this.virtual.jump;
@@ -116,15 +138,25 @@ export class PlayerController {
       this.body.setAccelerationX(0);
     }
 
-    const motion = !grounded
-      ? (this.body.body.velocity.y < 0 ? 'jump' : 'fall')
-      : (Math.abs(this.body.body.velocity.x) > 20 ? 'run' : 'idle');
+    if (landedHard && !jumpedThisFrame && time >= this.hurtUntil) {
+      this.avatar.pulseLanding?.(this.previousVerticalVelocity);
+    }
+
+    const motion = time < this.hurtUntil
+      ? 'hurt'
+      : (time < this.attackUntil
+        ? 'attack'
+        : (jumpedThisFrame || !grounded
+          ? (this.body.body.velocity.y < 0 ? 'jump' : 'fall')
+          : (Math.abs(this.body.body.velocity.x) > 20 ? 'run' : 'idle')));
     this.avatar.setPosition(this.body.x, this.body.y + 2);
     this.avatar.setFacing(this.facing);
     this.avatar.setMotion?.(motion, this.body.body.velocity);
 
     const blinking = time < this.invulnerableUntil && Math.floor(time / 75) % 2 === 0;
     this.avatar.setAlpha(blinking ? 0.25 : 1);
+    this.wasGrounded = grounded;
+    this.previousVerticalVelocity = this.body.body.velocity.y;
   }
 
   consumeVirtualPress(control) {
@@ -149,6 +181,10 @@ export class PlayerController {
       facing: this.facing,
       powerId: power.id,
     });
+    this.attackUntil = time + Math.min(190, power.cooldownMs * 0.48);
+    const detune = power.id === 'lightning' ? 160 : (power.id === 'rock' ? -170 : 0);
+    this.audio?.play('attack', { detune });
+    this.avatar.setFacing(this.facing);
     this.avatar.pulseAttack?.();
     return projectile;
   }
@@ -157,9 +193,12 @@ export class PlayerController {
     if (!this.enabled || this.scene.time.now < this.invulnerableUntil) return false;
     this.health = Math.max(0, this.health - amount);
     this.invulnerableUntil = this.scene.time.now + this.config.invulnerabilityMs;
+    this.hurtUntil = this.scene.time.now + 360;
+    this.avatar.cancelMotionPulses?.();
     const knockback = this.body.x < sourceX ? -220 : 220;
     this.body.setVelocity(knockback, -265);
     this.scene.cameras.main.shake(110, 0.006);
+    this.audio?.play('hit');
     this.onHealth?.(this.health, this.config.maxHealth);
     if (this.health <= 0) this.die();
     return true;
@@ -167,6 +206,8 @@ export class PlayerController {
 
   die() {
     this.enabled = false;
+    this.hurtUntil = this.scene.time.now + 700;
+    this.avatar.cancelMotionPulses?.();
     this.body.setVelocity(0, -260);
     this.avatar.setMotion?.('hurt', this.body.body.velocity);
     this.scene.time.delayedCall(650, () => this.onGameOver?.());
@@ -180,6 +221,11 @@ export class PlayerController {
     if (restoreHealth) this.health = this.config.maxHealth;
     this.enabled = true;
     this.invulnerableUntil = this.scene.time.now + 1500;
+    this.attackUntil = -Infinity;
+    this.hurtUntil = -Infinity;
+    this.wasGrounded = false;
+    this.previousVerticalVelocity = 0;
+    this.avatar.cancelMotionPulses?.();
     this.body.enableBody(true, this.checkpoint.x, this.checkpoint.y, true, true);
     this.body.setVelocity(0);
     this.onHealth?.(this.health, this.config.maxHealth);

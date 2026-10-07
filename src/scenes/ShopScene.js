@@ -361,6 +361,7 @@ export class ShopScene extends Phaser.Scene {
     }
 
     const snapshot = this.store.getState();
+    if (purchased) this.registry.get('audio')?.play('purchase');
     this.avatar.setAppearance(snapshot.appearance, snapshot.size);
     this.refreshCoinHud();
     this.renderCatalogPage();

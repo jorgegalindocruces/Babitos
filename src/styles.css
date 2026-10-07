@@ -34,12 +34,50 @@ body {
 }
 
 .game-shell {
-  width: min(100%, 1280px);
+  position: relative;
+  width: min(100%, 1280px, calc((100svh - 88px) * 16 / 9));
   border: 3px solid #173e62;
   border-radius: 18px;
   overflow: hidden;
   background: #071326;
   box-shadow: 0 28px 90px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(96, 214, 255, 0.15) inset;
+}
+
+.audio-toggle {
+  position: absolute;
+  z-index: 12;
+  left: 50%;
+  top: 4px;
+  transform: translateX(-50%);
+  min-width: 88px;
+  padding: 6px 10px;
+  border: 2px solid rgba(113, 229, 255, 0.72);
+  border-radius: 999px;
+  background: rgba(7, 19, 38, 0.82);
+  color: #f7fbff;
+  font: 700 9px 'Silkscreen', monospace;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  opacity: 0.82;
+  box-shadow: 0 3px 0 rgba(2, 8, 20, 0.72);
+}
+
+.audio-toggle:hover,
+.audio-toggle:focus-visible {
+  border-color: #ffcf3c;
+  opacity: 1;
+  outline: 3px solid rgba(255, 207, 60, 0.28);
+  outline-offset: 2px;
+}
+
+.audio-toggle[aria-pressed='true'] {
+  border-color: rgba(255, 137, 166, 0.78);
+  color: #ffd8e2;
+}
+
+.audio-toggle:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
 }
 
 .game-topline {
@@ -131,6 +169,13 @@ body {
     border-radius: 0;
   }
   .game-topline { display: none; }
+  .audio-toggle {
+    top: auto;
+    bottom: 5px;
+    min-width: 74px;
+    padding: 5px 8px;
+    font-size: 8px;
+  }
   #game {
     width: 100%;
     height: auto;

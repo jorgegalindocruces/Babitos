@@ -117,6 +117,7 @@ export class BabitoAvatar extends Phaser.GameObjects.Container {
 
     /** Inner visual root; controllers can tween it without losing body-size scale. */
     this.container = null;
+    this.motionRoot = null;
     this.layers = {};
     this.appearance = { ...DEFAULT_BABITO_APPEARANCE };
     this.bodyColorId = 'cyan';
@@ -125,6 +126,8 @@ export class BabitoAvatar extends Phaser.GameObjects.Container {
     this.motionState = 'idle';
     this.motionVelocity = { x: 0, y: 0 };
     this._motionArmsKey = null;
+    this._scaleTween = null;
+    this._actionTween = null;
     this._followTarget = null;
     this._followOptions = null;
     this._followTargetWasVisible = null;
@@ -148,13 +151,16 @@ export class BabitoAvatar extends Phaser.GameObjects.Container {
     this.visualRoot.name = 'babito-visual-root';
     this.container = this.visualRoot;
     this.add(this.visualRoot);
+    this.motionRoot = new Phaser.GameObjects.Container(this.scene, 0, 0);
+    this.motionRoot.name = 'babito-motion-root';
+    this.visualRoot.add(this.motionRoot);
 
     const makeLayer = (name, initialKey) => {
       const image = new Phaser.GameObjects.Image(this.scene, 0, 0, initialKey);
       image.setOrigin(0.5, 0.5);
       image.name = `babito-${name}`;
       this.layers[name] = image;
-      this.visualRoot.add(image);
+      this.motionRoot.add(image);
       return image;
     };
 
@@ -295,7 +301,9 @@ export class BabitoAvatar extends Phaser.GameObjects.Container {
    * @returns {this}
    */
   setFacing(direction) {
-    this.facing = normalizeFacing(direction);
+    const nextFacing = normalizeFacing(direction);
+    if (this.facing === nextFacing) return this;
+    this.facing = nextFacing;
     for (const layer of Object.values(this.layers)) {
       layer.setFlipX(this.facing < 0);
     }
@@ -317,53 +325,145 @@ export class BabitoAvatar extends Phaser.GameObjects.Container {
     this.motionVelocity.x = Number.isFinite(Number(velocity?.x)) ? Number(velocity.x) : 0;
     this.motionVelocity.y = Number.isFinite(Number(velocity?.y)) ? Number(velocity.y) : 0;
 
-    if (Math.abs(this.motionVelocity.x) > 0.01) {
+    if (
+      this.motionState !== 'attack'
+      && this.motionState !== 'hurt'
+      && Math.abs(this.motionVelocity.x) > 0.01
+    ) {
       this.setFacing(this.motionVelocity.x);
     }
 
+    let motionArmsKey = null;
     if (this.motionState === 'attack') {
-      this._motionArmsKey = TEXTURE_KEYS.arms.attack;
+      motionArmsKey = TEXTURE_KEYS.arms.attack;
     } else if (this.motionState === 'jump' || this.motionState === 'hurt') {
-      this._motionArmsKey = TEXTURE_KEYS.arms.raised;
-    } else {
-      this._motionArmsKey = null;
+      motionArmsKey = TEXTURE_KEYS.arms.raised;
     }
-    this._refreshArmLayer();
+    if (motionArmsKey !== this._motionArmsKey) {
+      this._motionArmsKey = motionArmsKey;
+      this._refreshArmLayer();
+    }
+    return this;
+  }
+
+  pulseJump(duration = 90) {
+    if (!this.scene?.tweens || !this.visualRoot) return this;
+    this.cancelScalePulse();
+    let tween;
+    tween = this.scene.tweens.add({
+      targets: this.visualRoot,
+      scaleX: 0.92,
+      scaleY: 1.08,
+      duration: Math.max(50, Number(duration) || 90),
+      yoyo: true,
+      ease: 'Quad.Out',
+      onComplete: () => {
+        if (this._scaleTween !== tween) return;
+        this._scaleTween = null;
+        this.visualRoot?.setScale(1);
+      },
+    });
+    this._scaleTween = tween;
+    return this;
+  }
+
+  pulseLanding(velocity = 260) {
+    if (!this.scene?.tweens || !this.visualRoot) return this;
+    this.cancelScalePulse();
+    const strength = Phaser.Math.Clamp(Math.abs(Number(velocity) || 260) / 620, 0.35, 0.82);
+    let tween;
+    tween = this.scene.tweens.add({
+      targets: this.visualRoot,
+      scaleX: 1 + strength * 0.1,
+      scaleY: 1 - strength * 0.12,
+      duration: 65,
+      yoyo: true,
+      ease: 'Quad.Out',
+      onComplete: () => {
+        if (this._scaleTween !== tween) return;
+        this._scaleTween = null;
+        this.visualRoot?.setScale(1);
+      },
+    });
+    this._scaleTween = tween;
     return this;
   }
 
   /** Brief attack accent used by PlayerController without disturbing size. */
   pulseAttack(duration = 110) {
     if (!this.scene?.tweens || !this.visualRoot) return this;
-    this.scene.tweens.add({
+    this.cancelActionPulse();
+    let tween;
+    tween = this.scene.tweens.add({
       targets: this.visualRoot,
       angle: this.facing * 7,
       duration: Math.max(40, Number(duration) || 110) / 2,
       yoyo: true,
       ease: 'Quad.Out',
-      onComplete: () => this.visualRoot?.setAngle(0),
+      onComplete: () => {
+        if (this._actionTween !== tween) return;
+        this._actionTween = null;
+        this.visualRoot?.setAngle(0);
+      },
     });
+    this._actionTween = tween;
+    return this;
+  }
+
+  cancelScalePulse() {
+    const tween = this._scaleTween;
+    this._scaleTween = null;
+    if (tween && !tween.isDestroyed?.()) {
+      tween.remove?.();
+      tween.destroy?.();
+    }
+    this.visualRoot?.setScale(1);
+    return this;
+  }
+
+  cancelActionPulse() {
+    const tween = this._actionTween;
+    this._actionTween = null;
+    if (tween && !tween.isDestroyed?.()) {
+      tween.remove?.();
+      tween.destroy?.();
+    }
+    this.visualRoot?.setAngle(0);
+    return this;
+  }
+
+  cancelMotionPulses() {
+    this.cancelScalePulse();
+    this.cancelActionPulse();
     return this;
   }
 
   _applyMotion(time = 0) {
     let offsetX = 0;
     let offsetY = 0;
+    let angle = 0;
 
     if (this.motionState === 'idle') {
       offsetY = Math.round(Math.sin(time * 0.006));
     } else if (this.motionState === 'walk') {
       const speedFactor = Phaser.Math.Clamp(Math.abs(this.motionVelocity.x) / 180, 0.7, 2);
       offsetY = Math.round(Math.abs(Math.sin(time * 0.018 * speedFactor)) * -2);
+      angle = Math.round(Math.sin(time * 0.018 * speedFactor) * 2);
     } else if (this.motionState === 'jump') {
-      offsetY = -1;
+      offsetY = -2;
+      angle = -this.facing * 2;
     } else if (this.motionState === 'fall') {
       offsetY = 1;
+      angle = this.facing * 2;
+    } else if (this.motionState === 'attack') {
+      offsetX = this.facing * 2;
+      angle = -this.facing * 4;
     } else if (this.motionState === 'hurt') {
       offsetX = Math.round(Math.sin(time * 0.08) * 2);
+      angle = Math.round(Math.sin(time * 0.05) * 3);
     }
 
-    this.visualRoot.setPosition(offsetX, offsetY);
+    this.motionRoot?.setPosition(offsetX, offsetY).setAngle(angle);
   }
 
   /**
@@ -477,6 +577,7 @@ export class BabitoAvatar extends Phaser.GameObjects.Container {
   destroy(fromScene) {
     if (this._destroying) return;
     this._destroying = true;
+    this.cancelMotionPulses();
     const sceneEvents = this.scene?.events;
     if (sceneEvents && this._onSceneUpdate) {
       sceneEvents.off(Phaser.Scenes.Events.UPDATE, this._onSceneUpdate);

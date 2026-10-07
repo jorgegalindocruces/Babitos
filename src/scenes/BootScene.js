@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { createTextures } from '../game/createTextures.js';
 import { SaveStore } from '../state/SaveStore.js';
+import { BACKGROUND_ASSETS } from '../ui/sceneHelpers.js';
 
 const DEV_QA_SCENES = new Set([
   'TitleScene',
@@ -35,6 +36,14 @@ export class BootScene extends Phaser.Scene {
     super('BootScene');
   }
 
+  preload() {
+    for (const asset of Object.values(BACKGROUND_ASSETS)) {
+      if (!this.textures.exists(asset.key)) {
+        this.load.image(asset.key, `${import.meta.env.BASE_URL}${asset.url}`);
+      }
+    }
+  }
+
   create() {
     createTextures(this);
 
@@ -43,7 +52,7 @@ export class BootScene extends Phaser.Scene {
 
     // Tiny read-only-ish hook for automated smoke tests and community mods.
     globalThis.__BABITOS__ = {
-      version: '0.1.0',
+      version: '0.2.0',
       get scene() {
         return this.game?.scene?.getScenes(true)?.at(-1)?.scene?.key ?? null;
       },
@@ -54,7 +63,6 @@ export class BootScene extends Phaser.Scene {
     };
 
     this.input.keyboard?.addCapture([
-      Phaser.Input.Keyboard.KeyCodes.SPACE,
       Phaser.Input.Keyboard.KeyCodes.UP,
       Phaser.Input.Keyboard.KeyCodes.DOWN,
       Phaser.Input.Keyboard.KeyCodes.LEFT,

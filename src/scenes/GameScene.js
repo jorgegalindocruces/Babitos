@@ -8,6 +8,7 @@ import { createButton } from '../ui/Button.js';
 import {
   addPixelBackground,
   announce,
+  BACKGROUND_ASSETS,
   createBodyText,
   createLabel,
   createPanel,
@@ -42,8 +43,12 @@ export class GameScene extends Phaser.Scene {
     this.physics.world.setBounds(0, 0, this.level.worldWidth, 620);
     this.cameras.main.setBounds(0, 0, this.level.worldWidth, 540);
     this.cameras.main.setBackgroundColor('#7cccf1');
-    addPixelBackground(this, 'babilandia', { depth: -50 });
-    this.createWorldDecoration();
+    this.background = addPixelBackground(this, 'babilandia', {
+      depth: -50,
+      assetKey: BACKGROUND_ASSETS.babilandiaV2.key,
+      assetOverscan: 1.1,
+    });
+    this.createWorldDecoration({ showSkyline: !this.background.assetKey });
     this.createPlatforms();
     this.createCheckpoints();
 
@@ -100,20 +105,22 @@ export class GameScene extends Phaser.Scene {
     }
   }
 
-  createWorldDecoration() {
-    const skyline = this.add.graphics().setDepth(-5);
-    for (let x = 180; x < this.level.worldWidth; x += 520) {
-      const height = 85 + (x % 130);
-      skyline.fillStyle(0xf5f0dc, 0.92);
-      skyline.fillRect(x, 420 - height, 105, height);
-      skyline.fillStyle(0xe7ddd0, 1);
-      skyline.fillRect(x + 72, 420 - height - 28, 35, height + 28);
-      skyline.fillStyle(0xf46855, 1);
-      skyline.fillCircle(x + 52, 420 - height, 52);
-      skyline.fillCircle(x + 90, 420 - height - 28, 20);
-      skyline.fillStyle(0x2979bd, 1);
-      skyline.fillRect(x + 20, 380 - height, 12, 24);
-      skyline.fillRect(x + 76, 365 - height, 10, 20);
+  createWorldDecoration({ showSkyline = true } = {}) {
+    if (showSkyline) {
+      const skyline = this.add.graphics().setDepth(-5);
+      for (let x = 180; x < this.level.worldWidth; x += 520) {
+        const height = 85 + (x % 130);
+        skyline.fillStyle(0xf5f0dc, 0.92);
+        skyline.fillRect(x, 420 - height, 105, height);
+        skyline.fillStyle(0xe7ddd0, 1);
+        skyline.fillRect(x + 72, 420 - height - 28, 35, height + 28);
+        skyline.fillStyle(0xf46855, 1);
+        skyline.fillCircle(x + 52, 420 - height, 52);
+        skyline.fillCircle(x + 90, 420 - height - 28, 20);
+        skyline.fillStyle(0x2979bd, 1);
+        skyline.fillRect(x + 20, 380 - height, 12, 24);
+        skyline.fillRect(x + 76, 365 - height, 10, 20);
+      }
     }
     const labels = [
       [325, 352, 'MUÉVETE Y SALTA'],
@@ -232,6 +239,7 @@ export class GameScene extends Phaser.Scene {
     const y = coin.y;
     coin.disableBody(true, true);
     this.store.addCoins(1);
+    this.registry.get('audio')?.play('coin');
     this.save = this.store.getState();
     this.updateCoinHud();
     flashScreen(this, { color: 0xffcf3c, duration: 55 });
@@ -246,6 +254,7 @@ export class GameScene extends Phaser.Scene {
     this.activeCheckpointId = checkpoint.id;
     this.player.setCheckpoint(checkpoint.x, checkpoint.y - 20);
     this.player.restoreHealth();
+    this.registry.get('audio')?.play('checkpoint');
     this.store.setProgress({ checkpoint: checkpoint.id, scene: 'babilandia' });
     this.checkpointSprites.children.iterate((entry) => entry?.clearTint());
     flag.setTint(0xffe36e);
@@ -279,6 +288,7 @@ export class GameScene extends Phaser.Scene {
       variant: 'ghost',
       depth: 1002,
       accessibleLabel: 'Pausar el juego',
+      keyboardShortcuts: false,
       onPress: () => this.togglePause(),
     });
   }

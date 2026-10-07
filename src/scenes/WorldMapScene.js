@@ -36,7 +36,9 @@ export class WorldMapScene extends Phaser.Scene {
     this.snapshot = snapshot;
     this.phaseComplete = snapshot.progress.phase1Complete;
 
-    addPixelBackground(this, 'babilandia');
+    addPixelBackground(this, 'babilandia', {
+      musicTheme: this.phaseComplete ? 'ending' : 'babilandia',
+    });
     createAmbientMotes(this, {
       count: 20,
       color: 0xffcf3c,

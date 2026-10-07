@@ -100,7 +100,12 @@ export class BossScene extends Phaser.Scene {
     this.cameras.main.setBounds(0, 0, ARENA_WIDTH, ARENA_HEIGHT);
     this.cameras.main.setBackgroundColor('#26143f');
 
-    addPixelBackground(this, 'babilandia', { depth: -100, showGround: false });
+    addPixelBackground(this, 'babilandia', {
+      depth: -100,
+      showGround: false,
+      musicTheme: 'boss',
+    });
+    this.registry.get('audio')?.play('boss');
     this.createCorruptedBackdrop();
     this.createArena();
 
@@ -310,6 +315,7 @@ export class BossScene extends Phaser.Scene {
       variant: 'ghost',
       depth: 1004,
       accessibleLabel: 'Pausar el combate',
+      keyboardShortcuts: false,
       onPress: () => this.togglePause(),
     });
 
@@ -710,6 +716,7 @@ export class BossScene extends Phaser.Scene {
   purifyBoss() {
     if (this.bossDefeated) return;
     this.bossDefeated = true;
+    this.registry.get('audio')?.play('checkpoint');
     this.encounterSuspended = true;
     this.bossVulnerable = false;
     this.stateNonce += 1;

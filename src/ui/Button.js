@@ -112,6 +112,10 @@ function syncAccessibleButtonStates(game) {
   }
 }
 
+function shortcutButtons(registry) {
+  return focusableButtons(registry).filter((button) => button.keyboardShortcuts);
+}
+
 function createButtonRegistry(scene) {
   const registry = {
     buttons: [],
@@ -121,7 +125,11 @@ function createButtonRegistry(scene) {
       if (this.disposed || this.buttons.includes(button)) return;
       this.buttons.push(button);
 
-      if (!this.focused && button.autoFocus && button.isFocusable()) {
+      if (
+        button.autoFocus
+        && button.isFocusable()
+        && (!this.focused || (!this.focused.keyboardShortcuts && button.keyboardShortcuts))
+      ) {
         button.focus();
       }
       syncAccessibleButtonStates(scene.game);
@@ -149,8 +157,8 @@ function createButtonRegistry(scene) {
       button.setFocusedState(true);
       return true;
     },
-    moveFocus(direction = 1) {
-      const buttons = focusableButtons(this);
+    moveFocus(direction = 1, shortcutsOnly = false) {
+      const buttons = shortcutsOnly ? shortcutButtons(this) : focusableButtons(this);
       if (buttons.length === 0) return false;
 
       const currentIndex = buttons.indexOf(this.focused);
@@ -161,8 +169,8 @@ function createButtonRegistry(scene) {
       return this.setFocus(buttons[nextIndex]);
     },
     activateFocused() {
-      if (!this.focused?.isFocusable()) {
-        this.moveFocus(1);
+      if (!this.focused?.isFocusable() || !this.focused.keyboardShortcuts) {
+        this.moveFocus(1, true);
         return false;
       }
 
@@ -181,7 +189,7 @@ function createButtonRegistry(scene) {
 
       event?.preventDefault?.();
       event?.stopPropagation?.();
-      registry.moveFocus(event?.shiftKey ? -1 : 1);
+      registry.moveFocus(event?.shiftKey ? -1 : 1, true);
     },
     activate(event) {
       if (
@@ -291,6 +299,7 @@ export class Button extends Phaser.GameObjects.Container {
       : (typeof options.callback === 'function' ? options.callback : null);
     this.enabled = options.enabled !== false;
     this.autoFocus = options.autoFocus !== false;
+    this.keyboardShortcuts = options.keyboardShortcuts !== false;
     this.accessibleLabel = String(options.accessibleLabel ?? options.label ?? 'Botón');
 
     this.hovered = false;
@@ -427,6 +436,7 @@ export class Button extends Phaser.GameObjects.Container {
     if (!this.isFocusable() || this.activating) return false;
 
     this.activating = true;
+    this.scene.registry?.get('audio')?.play('ui');
     this.emit('activate', this, source);
 
     try {
