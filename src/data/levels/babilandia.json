@@ -1,0 +1,37 @@
+{
+  "id": "babilandia",
+  "name": "Babilandia atacada",
+  "worldWidth": 5600,
+  "spawn": { "x": 130, "y": 400 },
+  "platforms": [
+    { "x": 600, "y": 510, "width": 1200, "height": 60, "kind": "ground" },
+    { "x": 1840, "y": 510, "width": 1120, "height": 60, "kind": "ground" },
+    { "x": 3040, "y": 510, "width": 1120, "height": 60, "kind": "ground" },
+    { "x": 4185, "y": 510, "width": 1050, "height": 60, "kind": "ground" },
+    { "x": 5180, "y": 510, "width": 840, "height": 60, "kind": "ground" },
+    { "x": 520, "y": 410, "width": 180, "height": 26, "kind": "platform" },
+    { "x": 1080, "y": 390, "width": 210, "height": 26, "kind": "platform" },
+    { "x": 1450, "y": 430, "width": 150, "height": 26, "kind": "platform" },
+    { "x": 1900, "y": 385, "width": 220, "height": 26, "kind": "platform" },
+    { "x": 2330, "y": 350, "width": 180, "height": 26, "kind": "platform" },
+    { "x": 2780, "y": 420, "width": 170, "height": 26, "kind": "platform" },
+    { "x": 3450, "y": 390, "width": 240, "height": 26, "kind": "platform" },
+    { "x": 4010, "y": 410, "width": 180, "height": 26, "kind": "platform" },
+    { "x": 4550, "y": 365, "width": 210, "height": 26, "kind": "platform" }
+  ],
+  "checkpoints": [
+    { "id": "start", "x": 130, "y": 438 },
+    { "id": "market_gate", "x": 1550, "y": 438 },
+    { "id": "fountain", "x": 3150, "y": 438 },
+    { "id": "boss_gate", "x": 4550, "y": 438 }
+  ],
+  "enemies": [
+    { "id": "come_1", "type": "come", "x": 920, "y": 420 },
+    { "id": "vuela_solo", "type": "vuela", "x": 1840, "y": 285 },
+    { "id": "vuela_pair_a", "type": "vuela", "x": 2280, "y": 270 },
+    { "id": "vuela_pair_b", "type": "vuela", "x": 2410, "y": 325 },
+    { "id": "da_vueltas_1", "type": "da_vueltas", "x": 3260, "y": 420 },
+    { "id": "come_2", "type": "come", "x": 4140, "y": 420 }
+  ],
+  "bossPortal": { "x": 5260, "y": 423 }
+}

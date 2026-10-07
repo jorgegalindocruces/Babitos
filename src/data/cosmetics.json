@@ -1,0 +1,40 @@
+{
+  "body": [
+    { "id": "body_cyan", "label": "Cian clásico", "assetKey": "body_cyan", "color": "#35d6ee", "unlocked": true, "price": 0 },
+    { "id": "body_pink", "label": "Rosa chicle", "assetKey": "body_pink", "color": "#ff7aa8", "unlocked": true, "price": 0 },
+    { "id": "body_lime", "label": "Lima eléctrica", "assetKey": "body_lime", "color": "#7ee35a", "unlocked": false, "price": 25 },
+    { "id": "body_midnight", "label": "Noche Babita", "assetKey": "body_midnight", "color": "#33445b", "unlocked": false, "price": 40 }
+  ],
+  "eyes": [
+    { "id": "eyes_normal", "label": "Normales", "assetKey": "eyes_normal", "unlocked": true, "price": 0 },
+    { "id": "eyes_big", "label": "Grandes", "assetKey": "eyes_big", "unlocked": true, "price": 0 },
+    { "id": "eyes_cute", "label": "Cuquis", "assetKey": "eyes_cute", "unlocked": false, "price": 20 },
+    { "id": "eyes_crazy", "label": "Estrella loca", "assetKey": "eyes_crazy", "unlocked": false, "price": 35 }
+  ],
+  "mouth": [
+    { "id": "mouth_smile", "label": "Sonrisa", "assetKey": "mouth_smile", "unlocked": true, "price": 0 },
+    { "id": "mouth_open", "label": "Abierta", "assetKey": "mouth_open", "unlocked": true, "price": 0 },
+    { "id": "mouth_cute", "label": "Lengüita", "assetKey": "mouth_cute", "unlocked": false, "price": 20 },
+    { "id": "mouth_epic", "label": "Épica", "assetKey": "mouth_epic", "unlocked": false, "price": 35 }
+  ],
+  "arms": [
+    { "id": "arms_round", "label": "Aletitas", "assetKey": "arms_round", "unlocked": true, "price": 0 },
+    { "id": "arms_hero", "label": "Pose heroica", "assetKey": "arms_hero", "unlocked": false, "price": 20 },
+    { "id": "arms_spring", "label": "Muelles locos", "assetKey": "arms_spring", "unlocked": false, "price": 35 }
+  ],
+  "headAccessory": [
+    { "id": "none", "label": "Sin sombrero", "assetKey": "head_none", "unlocked": true, "price": 0 },
+    { "id": "straw_hat", "label": "Sombrero de paja", "assetKey": "straw_hat", "unlocked": true, "price": 0 },
+    { "id": "cowboy_hat", "label": "Vaquero", "assetKey": "cowboy_hat", "unlocked": false, "price": 25 },
+    { "id": "crown", "label": "Corona", "assetKey": "crown", "unlocked": false, "price": 40 }
+  ],
+  "glasses": [
+    { "id": "none", "label": "Sin gafas", "assetKey": "glasses_none", "unlocked": true, "price": 0 },
+    { "id": "sunglasses", "label": "Gafas de sol", "assetKey": "sunglasses", "unlocked": false, "price": 20 }
+  ],
+  "neckAccessory": [
+    { "id": "none", "label": "Sin accesorio", "assetKey": "neck_none", "unlocked": true, "price": 0 },
+    { "id": "bowtie", "label": "Pajarita", "assetKey": "bowtie", "unlocked": false, "price": 15 },
+    { "id": "hero_cape", "label": "Capa heroica", "assetKey": "hero_cape", "unlocked": false, "price": 30 }
+  ]
+}

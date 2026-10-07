@@ -1,0 +1,31 @@
+{
+  "powers": [
+    { "id": "fire", "name": "Fuego", "tagline": "Fiable y equilibrado", "kind": "linear", "speed": 520, "damage": 1, "cooldownMs": 420, "lifetimeMs": 1250, "gravityY": 0, "color": "#ff5a36" },
+    { "id": "lightning", "name": "Rayo", "tagline": "Veloz, de alcance moderado", "kind": "linear", "speed": 720, "damage": 1, "cooldownMs": 320, "lifetimeMs": 720, "gravityY": 0, "color": "#56dcff" },
+    { "id": "rock", "name": "Roca", "tagline": "Lenta, parabólica y potente", "kind": "arc", "speed": 390, "damage": 2, "cooldownMs": 650, "lifetimeMs": 1800, "gravityY": 680, "color": "#a59bb0" }
+  ],
+  "player": {
+    "maxHealth": 3,
+    "moveSpeed": 245,
+    "jumpVelocity": 490,
+    "coyoteMs": 110,
+    "jumpBufferMs": 120,
+    "invulnerabilityMs": 1050,
+    "hitbox": { "width": 28, "height": 40 }
+  },
+  "enemies": {
+    "come": { "name": "COME", "relativeSize": "larger", "health": 3, "speed": 76, "damage": 1, "states": ["PATROL", "CHASE", "WINDUP", "BITE", "RECOVER"], "coinDrop": [0, 1, 2] },
+    "vuela": { "name": "VUELA", "relativeSize": "smaller", "health": 2, "speed": 105, "damage": 1, "groupSize": [1, 2], "states": ["AIR_PATROL", "TARGET", "WINDUP", "DIVE", "RETURN"], "coinDrop": [0, 1, 2] },
+    "da_vueltas": { "name": "DA VUELTAS", "relativeSize": "medium", "health": 3, "speed": 82, "spinSpeed": 285, "damage": 1, "states": ["PATROL", "WINDUP", "SPIN", "DIZZY"], "coinDrop": [0, 1, 2] }
+  },
+  "bosses": ["babito_corrupto", "la_oscuridad", "boss_total"],
+  "bossData": {
+    "babito_corrupto": { "name": "BABITO CORRUPTO", "health": 16, "patterns": ["FIREBALL", "FROM_ABOVE", "FURY_CHARGE"], "rewardCoins": 30, "vulnerableMs": 1900 }
+  },
+  "bodySizes": {
+    "small": { "label": "Pequeño", "renderScale": 0.82, "hitbox": "standard" },
+    "normal": { "label": "Normal", "renderScale": 1.0, "hitbox": "standard" },
+    "large": { "label": "Grande", "renderScale": 1.18, "hitbox": "standard" }
+  },
+  "creatorCategories": ["body", "eyes", "mouth", "arms", "headAccessory", "glasses", "neckAccessory"]
+}

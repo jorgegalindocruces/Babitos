@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#071a33" />
+    <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
+    <meta
+      name="description"
+      content="Crea tu Babito, elige un poder y salva Babilandia en este plataformas 2D open source."
+    />
+    <title>BABITOS — Pequeños Babitos, grandes aventuras</title>
+  </head>
+  <body>
+    <a class="skip-link" href="#game">Ir al juego</a>
+    <main id="app">
+      <div class="game-shell">
+        <div class="game-topline" aria-hidden="true">
+          <span>BABITOS</span>
+          <span>PEQUEÑOS HÉROES · GRANDES AVENTURAS</span>
+        </div>
+        <div id="game" role="application" aria-label="Videojuego BABITOS"></div>
+        <p id="game-status" class="sr-only" aria-live="polite">BABITOS está cargando.</p>
+      </div>
+      <noscript>Necesitas activar JavaScript para jugar a BABITOS.</noscript>
+    </main>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
