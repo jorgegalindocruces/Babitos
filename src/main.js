@@ -11,6 +11,7 @@ import { BossScene } from './scenes/BossScene.js';
 import { ShopScene } from './scenes/ShopScene.js';
 import { WorldMapScene } from './scenes/WorldMapScene.js';
 import { ComingSoonScene } from './scenes/ComingSoonScene.js';
+import { refreshUiText, requestUiFonts, waitForUiFonts } from './ui/fontLoading.js';
 
 const AUDIO_PREFERENCE_KEY = 'babitos.audio.v1';
 
@@ -126,6 +127,7 @@ const config = {
   scale: {
     mode: Phaser.Scale.FIT,
     autoCenter: Phaser.Scale.CENTER_BOTH,
+    autoRound: true,
   },
   physics: {
     default: 'arcade',
@@ -154,7 +156,15 @@ const config = {
   ],
 };
 
+const uiFontPromise = requestUiFonts();
+const fontsReadyAtBoot = await waitForUiFonts(uiFontPromise);
 const game = new Phaser.Game(config);
+
+if (!fontsReadyAtBoot) {
+  void uiFontPromise.then((loaded) => {
+    if (loaded) refreshUiText(game);
+  });
+}
 
 window.addEventListener('beforeunload', () => {
   document.removeEventListener('keydown', muteShortcut);

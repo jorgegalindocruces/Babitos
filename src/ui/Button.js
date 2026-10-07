@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { getButtonHitArea } from './buttonGeometry.js';
+import { configureTextQuality } from './textQuality.js';
 
 const REGISTRY_KEY = Symbol('babitos.ui.buttonRegistry');
 
@@ -345,6 +346,7 @@ export class Button extends Phaser.GameObjects.Container {
         : 2,
       wordWrap: { width: this.buttonWidth - 28, useAdvancedWrap: true },
     }).setOrigin(0.5);
+    configureTextQuality(this.labelText, { resolution: options.textResolution });
 
     this.add([this.background, this.labelText]);
     this.setSize(this.buttonWidth, this.buttonHeight + this.shadowOffset);

@@ -49,6 +49,13 @@ Todos los botones de Phaser comparten el comportamiento de [Button.js](../src/ui
 - los modales de Título y las capas de pausa/Game Over deshabilitan los controles que quedan debajo y mueven el foco a una acción superior;
 - al cerrar un modal, reanudar o reintentar se limpia la entrada retenida para evitar acciones involuntarias.
 
+## Legibilidad y escalado
+
+- El juego conserva una resolución lógica de 960 × 540. En un escritorio con espacio suficiente se muestra a 960 × 540 CSS px exactos, sin ampliación fraccionaria; en pantallas menores se reduce en 16:9 sin desbordar la ventana.
+- Silkscreen y Nunito se solicitan antes de dibujar la primera escena. Si la red retrasa una fuente, la interfaz usa un fallback temporal y vuelve a rasterizar el texto cuando termina la carga.
+- Títulos, cuerpo, etiquetas, botones y avisos comparten la misma política de resolución para evitar que unos controles se vean más borrosos que otros.
+- Limitar un nombre o título a una anchura reduce su tamaño tipográfico a un entero; no estira ni encoge la textura ya dibujada.
+
 ## Pantalla por pantalla
 
 ### Título

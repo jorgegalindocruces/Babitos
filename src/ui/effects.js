@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { announce, UI_COLORS, UI_FONTS } from './sceneHelpers.js';
+import { configureTextQuality } from './textQuality.js';
 
 const activeToasts = new WeakMap();
 const transitioningScenes = new WeakSet();
@@ -86,6 +87,7 @@ export function showToast(scene, message, options = {}) {
       useAdvancedWrap: true,
     },
   }).setOrigin(0.5);
+  configureTextQuality(text, { resolution: options.textResolution });
 
   const panelWidth = Math.max(minWidth, Math.min(maxWidth, text.width + paddingX * 2));
   const panelHeight = Math.max(46, text.height + paddingY * 2);

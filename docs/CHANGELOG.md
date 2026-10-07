@@ -7,6 +7,19 @@ Este archivo relaciona las iteraciones entregadas con sus cambios observables, c
 - Mantener sincronizados `README.md`, `INTERACTIONS.md`, `GAME_DESIGN.md`, `IMPLEMENTATION_SPEC.md` y `ACCEPTANCE_CRITERIA.md` cuando cambien flujo, controles, estados, persistencia o contenido jugable.
 - Añadir una entrada aquí por cada cambio observable, con el commit final y las pruebas realizadas.
 
+## Texto nítido y escala pixel-perfect — 2026-10-08
+
+Commit pendiente de cierre:
+
+- eliminó la ampliación CSS fraccionaria del canvas y conserva 960 × 540 exactos en escritorio;
+- dejó a `Phaser.Scale.FIT` reducir el juego únicamente cuando la pantalla es menor, sin overflow;
+- adelantó y sincronizó la carga de Silkscreen y Nunito antes de rasterizar las escenas;
+- unificó la resolución interna de títulos, cuerpo, etiquetas, botones, avisos y texto de depuración;
+- sustituyó la escala fraccionaria de nombres largos por un nuevo tamaño tipográfico entero;
+- añadió `test/text-quality.test.js` y smoke visual en 1280 × 720 con DPR 2 y en 390 × 844.
+
+Comprobación visual de escritorio: canvas interno 960 × 540, rectángulo CSS 960 × 540, escala física 2× en ambos ejes y ambas familias cargadas. Pruebas: 55 casos, build de producción y consola del navegador sin errores.
+
 ## Contexto documental sincronizado — 2026-10-08
 
 Commit [`6935710`](https://github.com/jorgegalindocruces/Babitos/commit/6935710):

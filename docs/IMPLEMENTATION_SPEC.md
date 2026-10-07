@@ -5,7 +5,8 @@ Especificación vigente del vertical slice 0.2. El comportamiento observable com
 ## Runtime
 
 - JavaScript con módulos ES, Phaser 3, Vite y `localStorage`; sin backend.
-- Resolución lógica efectiva: 960 × 540, `Phaser.Scale.FIT`, centrado, `pixelArt: true` y `roundPixels: true`.
+- Resolución lógica efectiva: 960 × 540, `Phaser.Scale.FIT`, centrado, `autoRound: true`, `pixelArt: true` y `roundPixels: true`.
+- En escritorio, el área jugable no se amplía por encima de 960 × 540 CSS px: así cada píxel lógico conserva una escala entera. Por debajo de ese tamaño, `FIT` reduce el lienzo manteniendo 16:9 y sin overflow.
 - Física Arcade con gravedad global de 1350 y cuatro punteros activos para multitouch.
 - Build estático con `base: './'` y despliegue en GitHub Pages.
 - Node.js 24 en CI; `npm ci`, `npm test` y `npm run build` son la puerta de entrega.
@@ -36,6 +37,8 @@ El guardado versionado `babitos.save.v1` contiene nombre, tamaño, apariencia, p
 ## Input e interfaz
 
 [Button.js](../src/ui/Button.js) centraliza hit area, estados visuales, registro por escena, foco y espejo HTML. El contrato admite puntero/toque y, cuando `keyboardShortcuts` no se desactiva, `Tab`, `Mayús + Tab`, `Enter` y `Espacio`. Los botones de pausa del HUD usan `keyboardShortcuts: false` para no competir con el salto.
+
+[fontLoading.js](../src/ui/fontLoading.js) solicita Silkscreen y Nunito antes de crear `Phaser.Game`; si exceden el tiempo de espera, el juego arranca con fallback y vuelve a rasterizar los textos cuando terminan. [textQuality.js](../src/ui/textQuality.js) aplica la misma resolución interna, limitada a 2×, a títulos, cuerpo, etiquetas, botones, avisos y texto de depuración. Los textos que deben caber en un ancho se regeneran con un tamaño de fuente entero en vez de escalar su textura de forma fraccionaria.
 
 `PlayerController` acepta teclado y cuatro controles virtuales booleanos. Salto y ataque filtran eventos nacidos en `button`, `input`, `textarea`, `select`, enlace o elemento editable; `M` aplica un filtro equivalente. El movimiento y los handlers `P`/`Esc` son globales mientras la escena jugable está activa. Al pausar, reanudar, morir o reintentar se borran edges y teclas retenidas.
 

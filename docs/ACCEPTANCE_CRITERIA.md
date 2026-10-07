@@ -6,6 +6,8 @@ Estos criterios validan el vertical slice 0.2 descrito en [INTERACTIONS.md](INTE
 
 - `npm ci`, `npm test` y `npm run build` terminan sin errores.
 - La compilación abre desde una ruta relativa de GitHub Pages y carga sin backend.
+- Con espacio suficiente, el canvas interno y su rectángulo CSS miden exactamente 960 × 540; no existe ampliación fraccionaria de escritorio. En una pantalla menor conserva 16:9 sin overflow horizontal o vertical.
+- Silkscreen y Nunito se solicitan antes de crear Phaser. Títulos, cuerpo, etiquetas, botones y avisos usan la política común de resolución de texto.
 - Si un fondo raster no carga, su escena conserva un fallback visible y jugable.
 - Una partida ausente, antigua o parcialmente inválida se normaliza sin impedir el arranque.
 

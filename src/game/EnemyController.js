@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import gameData from '../data/game-data.json';
+import { configureTextQuality } from '../ui/textQuality.js';
 import {
   ENEMY_SHEET_ASSETS,
   getEnemyAnimationKey,
@@ -91,12 +92,14 @@ export class EnemyController {
     const showDebugState = import.meta.env.DEV
       && typeof location !== 'undefined'
       && new URLSearchParams(location.search).get('debugAI') === '1';
-    this.stateBadge = showDebugState
-      ? scene.add.text(definition.x, definition.y - 48, this.state, {
+    this.stateBadge = null;
+    if (showDebugState) {
+      this.stateBadge = scene.add.text(definition.x, definition.y - 48, this.state, {
         fontFamily: 'Silkscreen, monospace', fontSize: '8px', color: '#dff8ff',
         backgroundColor: '#071326bb', padding: { x: 4, y: 2 },
-      }).setOrigin(0.5).setDepth(20).setAlpha(0.78)
-      : null;
+      }).setOrigin(0.5).setDepth(20).setAlpha(0.78);
+      configureTextQuality(this.stateBadge);
+    }
   }
 
   setState(next) {

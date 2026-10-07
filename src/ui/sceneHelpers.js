@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { configureTextQuality, fitTextToWidth } from './textQuality.js';
 
 export const UI_COLORS = Object.freeze({
   ink: 0x071326,
@@ -165,14 +166,8 @@ function applyCommonTextOptions(textObject, options) {
     .setDepth(Number.isFinite(options.depth) ? options.depth : 100)
     .setScrollFactor(options.scrollFactor ?? 0);
 
-  if (options.maxWidth && textObject.width > options.maxWidth) {
-    textObject.setScale(options.maxWidth / textObject.width);
-  }
-
-  if (options.resolution !== false && typeof textObject.setResolution === 'function') {
-    const pixelRatio = typeof window === 'undefined' ? 1 : window.devicePixelRatio || 1;
-    textObject.setResolution(Number(options.resolution) || Math.min(2, pixelRatio));
-  }
+  fitTextToWidth(textObject, options.maxWidth, { minFontSize: options.minFontSize });
+  configureTextQuality(textObject, { resolution: options.resolution });
 
   return textObject;
 }

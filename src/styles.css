@@ -1,5 +1,3 @@
-@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&family=Silkscreen:wght@400;700&display=swap');
-
 :root {
   color-scheme: dark;
   font-family: 'Nunito', system-ui, sans-serif;
@@ -35,7 +33,8 @@ body {
 
 .game-shell {
   position: relative;
-  width: min(100%, 1280px, calc((100svh - 88px) * 16 / 9));
+  /* Keep the 960px playfield at a true 1:1 logical-pixel scale on desktop. */
+  width: min(100%, 966px, calc((100svh - 88px) * 16 / 9));
   border: 3px solid #173e62;
   border-radius: 18px;
   overflow: hidden;
@@ -106,8 +105,9 @@ body {
 
 #game canvas {
   display: block;
-  width: 100% !important;
-  height: 100% !important;
+  max-width: 100%;
+  max-height: 100%;
+  margin-inline: auto;
   touch-action: none;
 }
 
@@ -166,7 +166,7 @@ body {
     padding: 0;
   }
   .game-shell {
-    width: min(100vw, calc(100svh * 16 / 9));
+    width: min(100vw, 960px, calc(100svh * 16 / 9));
     border: 0;
     border-radius: 0;
   }
