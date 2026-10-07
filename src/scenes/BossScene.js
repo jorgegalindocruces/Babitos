@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import gameData from '../data/game-data.json';
 import { BabitoAvatar } from '../game/BabitoAvatar.js';
+import { BossAnimator } from '../game/BossAnimator.js';
 import { PlayerController } from '../game/PlayerController.js';
 import { createTextures, TEXTURE_KEYS } from '../game/createTextures.js';
 import {
@@ -9,7 +10,7 @@ import {
   launchPower,
   makeImpact,
 } from '../game/PowerSystem.js';
-import { createButton } from '../ui/Button.js';
+import { createButton, focusGameCanvas } from '../ui/Button.js';
 import {
   addPixelBackground,
   announce,
@@ -109,6 +110,7 @@ export class BossScene extends Phaser.Scene {
     this.gameOverShown = false;
     this.transitioning = false;
     this.bossDefeated = false;
+    this.gameplayTime = 0;
     this.aboveDropping = false;
     this.furyCharging = false;
 
@@ -231,12 +233,19 @@ export class BossScene extends Phaser.Scene {
     this.boss = this.physics.add.sprite(790, FLOOR_TOP - 48, TEXTURE_KEYS.bossCorrupt)
       .setDepth(14)
       .setDisplaySize(132, 132)
-      .setCollideWorldBounds(true);
+      .setCollideWorldBounds(true)
+      .setVisible(false);
     setWorldBodySize(this.boss, 76, 84);
-    this.bossBaseScale = { x: this.boss.scaleX, y: this.boss.scaleY };
     this.boss.body.setMaxVelocity(650, 1000);
     this.boss.setDataEnabled();
     this.boss.setData({ boss: true, health: this.bossHealth });
+    this.bossAnimator = new BossAnimator(
+      this,
+      this.boss,
+      TEXTURE_KEYS.bossCorrupt,
+      132,
+      132,
+    );
 
     this.bossAura = this.add.circle(this.boss.x, this.boss.y, 53, 0xc84fff, 0.12)
       .setStrokeStyle(3, 0xf19aff, 0.38)
@@ -411,6 +420,7 @@ export class BossScene extends Phaser.Scene {
     this.stateText?.setText(STATE_COPY[state] ?? state);
     this.boss?.clearTint();
     if (ATTACK_TINT[state]) this.boss?.setTint(ATTACK_TINT[state]);
+    this.bossAnimator?.setState(state, ATTACK_TINT[state] ?? null);
     this.drawBossBar();
     return this.stateNonce;
   }
@@ -441,10 +451,7 @@ export class BossScene extends Phaser.Scene {
     if (this.encounterSuspended || this.bossDefeated || !this.boss?.active) return;
     this.bossVulnerable = false;
     this.clearAttackObjects();
-    this.boss
-      .setAngle(0)
-      .setAlpha(1)
-      .setScale(this.bossBaseScale.x, this.bossBaseScale.y);
+    this.boss.setAlpha(1);
     this.boss.body.checkCollision.none = false;
     this.boss.body.allowGravity = true;
     this.boss.setVelocity(0);
@@ -462,15 +469,6 @@ export class BossScene extends Phaser.Scene {
     this.faceBossTowardPlayer();
     this.boss.setVelocityX(0);
     this.showPatternCue('BOLA DE FUEGO', 'Salta sobre las bolas horizontales', 0xff7254);
-
-    this.tweens.add({
-      targets: this.boss,
-      scaleX: this.bossBaseScale.x * 1.12,
-      scaleY: this.bossBaseScale.y * 0.9,
-      duration: 180,
-      yoyo: true,
-      repeat: 2,
-    });
 
     const extraShot = this.bossHealth <= Math.ceil(this.bossConfig.health / 2);
     this.scheduleForState(nonce, 620, () => this.spawnBossFireball(-7));
@@ -602,17 +600,8 @@ export class BossScene extends Phaser.Scene {
     this.showPatternCue('EMBESTIDA FURIOSA', 'Salta o corre al otro lado', 0xff4f86);
     this.boss.setVelocityX(0);
 
-    this.tweens.add({
-      targets: this.boss,
-      angle: { from: -7 * direction, to: 7 * direction },
-      duration: 75,
-      yoyo: true,
-      repeat: 5,
-    });
-
     this.scheduleForState(nonce, 610, () => {
       this.furyCharging = true;
-      this.boss.setAngle(0);
       this.boss.setVelocityX(direction * (this.bossHealth <= 8 ? 610 : 535));
       this.boss.setVelocityY(-55);
       this.cameras.main.shake(100, 0.005);
@@ -661,7 +650,6 @@ export class BossScene extends Phaser.Scene {
     this.boss.setVelocityX(0);
     this.boss.body.allowGravity = true;
     this.boss.body.checkCollision.none = false;
-    this.boss.setAngle(-7);
     this.drawBossBar();
     showToast(this, `¡RECOVER! Ataca durante ${this.bossConfig.vulnerableMs / 1000} s`, {
       type: 'success',
@@ -672,7 +660,6 @@ export class BossScene extends Phaser.Scene {
 
     this.scheduleForState(nonce, this.bossConfig.vulnerableMs, () => {
       this.bossVulnerable = false;
-      this.boss.setAngle(0);
       this.startNextPattern();
     });
   }
@@ -686,8 +673,8 @@ export class BossScene extends Phaser.Scene {
       makeImpact(this, impactX, impactY, 0x8cdfff);
       projectile.destroy();
       this.tweens.add({ targets: this.boss, alpha: 0.55, duration: 65, yoyo: true });
-      if (this.time.now >= this.nextBlockedFeedbackAt) {
-        this.nextBlockedFeedbackAt = this.time.now + 950;
+      if (this.gameplayTime >= this.nextBlockedFeedbackAt) {
+        this.nextBlockedFeedbackAt = this.gameplayTime + 950;
         showToast(this, 'La corrupción bloquea el golpe. Espera a RECOVER.', {
           type: 'warning', duration: 900, y: 102,
         });
@@ -720,10 +707,10 @@ export class BossScene extends Phaser.Scene {
       this.encounterSuspended
       || this.bossDefeated
       || (!this.aboveDropping && !this.furyCharging)
-      || this.time.now < this.nextContactDamageAt
+      || this.gameplayTime < this.nextContactDamageAt
     ) return;
     if (this.player.takeDamage(this.boss.x, 1)) {
-      this.nextContactDamageAt = this.time.now + 600;
+      this.nextContactDamageAt = this.gameplayTime + 600;
       makeImpact(this, this.player.body.x, this.player.body.y, 0xff4f86);
     }
   }
@@ -731,7 +718,7 @@ export class BossScene extends Phaser.Scene {
   faceBossTowardPlayer() {
     if (!this.player?.body || !this.boss) return;
     this.bossFacing = this.player.body.x < this.boss.x ? -1 : 1;
-    this.boss.setFlipX(this.bossFacing > 0);
+    this.bossAnimator?.setFacing(this.bossFacing);
   }
 
   purifyBoss() {
@@ -753,6 +740,7 @@ export class BossScene extends Phaser.Scene {
     this.boss.setTexture(TEXTURE_KEYS.bossCured);
     this.boss.setDisplaySize(72, 72);
     setWorldBodySize(this.boss, 44, 48);
+    this.bossAnimator?.setPurified(TEXTURE_KEYS.bossCured, 72, 72);
     this.bossState = BOSS_STATE.PURIFIED;
     this.stateText.setText(STATE_COPY[BOSS_STATE.PURIFIED]).setColor('#91ffc2');
     this.bossAura.setFillStyle(0x79ffd0, 0.16).setStrokeStyle(3, 0xb5ffe5, 0.62);
@@ -834,6 +822,7 @@ export class BossScene extends Phaser.Scene {
     });
     container.add([shade, panel, title, dialogue, reward, continueButton]);
     this.purificationPanel = container;
+    continueButton.focusAccessible();
   }
 
   goToShop() {
@@ -888,6 +877,7 @@ export class BossScene extends Phaser.Scene {
     overlay.add([shade, panel, title, controls, resume, titleButton]);
     this.pauseOverlay = overlay;
     this.time.paused = true;
+    resume.focusAccessible();
     announce('Combate en pausa.');
   }
 
@@ -901,6 +891,7 @@ export class BossScene extends Phaser.Scene {
     this.paused = false;
     this.player.setEnabled(true);
     this.pauseButton?.setEnabled(true);
+    focusGameCanvas(this);
     announce('Combate reanudado.');
   }
 
@@ -938,6 +929,7 @@ export class BossScene extends Phaser.Scene {
     overlay.add([shade, panel, title, copy, retry, titleButton]);
     this.gameOverContainer = overlay;
     this.time.paused = true;
+    retry.focusAccessible();
     announce('Sin corazones. Puedes reintentar el combate.', { politeness: 'assertive' });
   }
 
@@ -977,7 +969,15 @@ export class BossScene extends Phaser.Scene {
     this.encounterTimers.clear();
   }
 
-  update(time) {
+  update(_time, delta) {
+    // The cured body keeps settling under gravity after combat ends. Keep the
+    // visible sprite and aura attached even while encounter logic is suspended.
+    if (this.bossAnimator?.purified) this.bossAnimator.update(this.gameplayTime);
+    if (this.bossAura?.active && this.boss?.active) {
+      this.bossAura.setPosition(this.boss.x, this.boss.y);
+    }
+    if (this.bossDefeated) this.player?.syncBodyVisual();
+
     if (
       this.paused
       || this.gameOverShown
@@ -986,10 +986,9 @@ export class BossScene extends Phaser.Scene {
       || this.encounterSuspended
     ) return;
 
-    this.player?.update(time);
-    if (this.bossAura?.active && this.boss?.active) {
-      this.bossAura.setPosition(this.boss.x, this.boss.y);
-    }
+    this.gameplayTime += Math.max(0, Number(delta) || 0);
+    this.player?.update(this.gameplayTime);
+    this.bossAnimator?.update(this.gameplayTime);
     if (
       this.bossState !== BOSS_STATE.FURY_CHARGE
       && this.bossState !== BOSS_STATE.FROM_ABOVE
@@ -1000,6 +999,10 @@ export class BossScene extends Phaser.Scene {
     if (this.furyCharging && (this.boss.body.blocked.left || this.boss.body.blocked.right)) {
       this.boss.setVelocityX(0);
     }
+  }
+
+  getGameplayTime() {
+    return this.gameplayTime ?? 0;
   }
 
   cleanup() {
@@ -1017,5 +1020,7 @@ export class BossScene extends Phaser.Scene {
     }
     this.player?.destroy();
     this.player = null;
+    this.bossAnimator?.destroy();
+    this.bossAnimator = null;
   }
 }

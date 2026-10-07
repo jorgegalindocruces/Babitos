@@ -1,5 +1,10 @@
 import Phaser from 'phaser';
 import { createTextures } from '../game/createTextures.js';
+import {
+  ENEMY_SHEET_ASSETS,
+  registerEnemyAnimations,
+} from '../game/EnemyAnimations.js';
+import { createProceduralEnemySheets } from '../game/ProceduralEnemySheets.js';
 import { SaveStore } from '../state/SaveStore.js';
 import { BACKGROUND_ASSETS, CHARACTER_ASSETS } from '../ui/sceneHelpers.js';
 
@@ -40,7 +45,9 @@ export class BootScene extends Phaser.Scene {
     for (const asset of [
       ...Object.values(BACKGROUND_ASSETS),
       ...Object.values(CHARACTER_ASSETS),
+      ...Object.values(ENEMY_SHEET_ASSETS),
     ]) {
+      if (!asset.url) continue;
       if (!this.textures.exists(asset.key)) {
         this.load.image(asset.key, `${import.meta.env.BASE_URL}${asset.url}`);
       }
@@ -49,6 +56,8 @@ export class BootScene extends Phaser.Scene {
 
   create() {
     createTextures(this);
+    createProceduralEnemySheets(this);
+    registerEnemyAnimations(this);
 
     const saveStore = new SaveStore();
     this.registry.set('saveStore', saveStore);

@@ -1,11 +1,26 @@
 import Phaser from 'phaser';
 import gameData from '../data/game-data.json';
+import {
+  ENEMY_SHEET_ASSETS,
+  getEnemyAnimationKey,
+  getEnemyClipForState,
+  getEnemyFrameName,
+  getEnemyTintForState,
+  resetEnemyVisualForDefeat,
+  shouldIgnoreEnemyClipIfPlaying,
+} from './EnemyAnimations.js';
 
 const TEXTURES = {
   come: 'enemy_come',
   vuela: 'enemy_vuela',
   da_vueltas: 'enemy_da_vueltas',
 };
+
+const VISUAL_SIZES = Object.freeze({
+  come: Object.freeze({ width: 118, height: 118 }),
+  vuela: Object.freeze({ width: 82, height: 78 }),
+  da_vueltas: Object.freeze({ width: 82, height: 82 }),
+});
 
 function setWorldBodySize(sprite, width, height) {
   const scaleX = Math.max(0.001, Math.abs(sprite.scaleX));
@@ -37,11 +52,11 @@ export class EnemyController {
     this.health = this.config.health;
     this.dead = false;
     this.state = this.config.states[0];
-    this.stateStartedAt = scene.time.now;
-    this.nextDecisionAt = scene.time.now + Phaser.Math.Between(800, 1400);
+    this.stateStartedAt = this.now;
+    this.nextDecisionAt = this.now + Phaser.Math.Between(800, 1400);
 
     this.sprite = scene.physics.add.sprite(definition.x, definition.y, TEXTURES[this.type]);
-    this.sprite.setDepth(10).setData('controller', this);
+    this.sprite.setDepth(9).setData('controller', this).setVisible(false);
     this.sprite.setCollideWorldBounds(true);
     this.sprite.setBounce(this.type === 'da_vueltas' ? 0.45 : 0);
     if (this.type === 'come') {
@@ -59,7 +74,19 @@ export class EnemyController {
       this.sprite.setDisplaySize(78, 78);
       setWorldBodyCircle(this.sprite, 29);
     }
-    this.baseScale = { x: this.sprite.scaleX, y: this.sprite.scaleY };
+    const visualSize = VISUAL_SIZES[this.type];
+    const sheet = ENEMY_SHEET_ASSETS[this.type];
+    this.visual = scene.add.sprite(
+      definition.x,
+      definition.y,
+      sheet.key,
+      getEnemyFrameName(this.type, 0, 0),
+    ).setDepth(10).setDisplaySize(visualSize.width, visualSize.height);
+    this.visualBaseScale = { x: this.visual.scaleX, y: this.visual.scaleY };
+    this.activeClip = null;
+    this.hurtUntil = 0;
+    this.playVisualClip(getEnemyClipForState(this.type, this.state));
+    this.syncVisual();
 
     const showDebugState = import.meta.env.DEV
       && typeof location !== 'undefined'
@@ -75,18 +102,55 @@ export class EnemyController {
   setState(next) {
     if (this.state === next || this.dead) return;
     this.state = next;
-    this.stateStartedAt = this.scene.time.now;
+    this.stateStartedAt = this.now;
     this.stateBadge?.setText(next);
-    this.sprite.clearTint();
-    if (next === 'WINDUP') this.sprite.setTint(0xffcf4a);
-    if (next === 'DIZZY' || next === 'RECOVER') this.sprite.setTint(0x9df0ff);
+    this.setVisualScale();
+    this.applyStateTint();
+    this.updateVisualAnimation(true);
   }
 
-  get elapsed() { return this.scene.time.now - this.stateStartedAt; }
+  get now() {
+    const value = this.scene?.getGameplayTime?.();
+    return Number.isFinite(value) ? value : (this.scene?.time?.now ?? 0);
+  }
+
+  get elapsed() { return this.now - this.stateStartedAt; }
 
   setVisualScale(x = 1, y = x) {
-    this.sprite.setScale(this.baseScale.x * x, this.baseScale.y * y);
+    this.visual?.setScale(this.visualBaseScale.x * x, this.visualBaseScale.y * y);
     return this;
+  }
+
+  applyStateTint() {
+    if (!this.visual?.active) return;
+    this.visual.clearTint();
+    const tint = getEnemyTintForState(this.type, this.state);
+    if (tint != null) this.visual.setTint(tint);
+  }
+
+  playVisualClip(clip, restart = false) {
+    if (!this.visual?.active) return;
+    if (!restart && this.activeClip === clip) return;
+    this.activeClip = clip;
+    this.visual.play(
+      getEnemyAnimationKey(this.type, clip),
+      shouldIgnoreEnemyClipIfPlaying(restart),
+    );
+  }
+
+  updateVisualAnimation(restart = false) {
+    const clip = this.now < this.hurtUntil
+      ? 'hurt'
+      : getEnemyClipForState(this.type, this.state);
+    this.playVisualClip(clip, restart);
+  }
+
+  syncVisual() {
+    if (!this.visual?.active || !this.sprite?.active) return;
+    this.visual
+      .setPosition(this.sprite.x, this.sprite.y)
+      .setRotation(this.sprite.rotation)
+      .setFlipX(this.direction < 0);
   }
 
   update() {
@@ -96,6 +160,8 @@ export class EnemyController {
     if (this.type === 'come') this.updateCome();
     else if (this.type === 'vuela') this.updateVuela();
     else this.updateDaVueltas();
+    this.updateVisualAnimation();
+    this.syncVisual();
   }
 
   updateCome() {
@@ -123,7 +189,6 @@ export class EnemyController {
       this.setVisualScale();
       if (this.elapsed > 720) this.setState('PATROL');
     }
-    this.sprite.setFlipX(this.direction < 0);
   }
 
   updateVuela() {
@@ -131,15 +196,15 @@ export class EnemyController {
     const absolute = Math.abs(distance);
     if (this.state === 'AIR_PATROL') {
       this.sprite.setVelocity(
-        Math.cos(this.scene.time.now / 650 + this.home.x) * this.config.speed * 0.55,
-        Math.sin(this.scene.time.now / 420 + this.home.x) * 34,
+        Math.cos(this.now / 650 + this.home.x) * this.config.speed * 0.55,
+        Math.sin(this.now / 420 + this.home.x) * 34,
       );
-      if (absolute < 390 && this.scene.time.now > this.nextDecisionAt) this.setState('TARGET');
+      if (absolute < 390 && this.now > this.nextDecisionAt) this.setState('TARGET');
     } else if (this.state === 'TARGET') {
       this.sprite.setVelocity(0, -20);
       if (this.elapsed > 360) this.setState('WINDUP');
     } else if (this.state === 'WINDUP') {
-      this.sprite.setTint(0xff78da).setVelocity(0, -35);
+      this.sprite.setVelocity(0, -35);
       if (this.elapsed > 420) this.setState('DIVE');
     } else if (this.state === 'DIVE') {
       const angle = Phaser.Math.Angle.Between(this.sprite.x, this.sprite.y, this.player.x, this.player.y);
@@ -148,11 +213,13 @@ export class EnemyController {
     } else if (this.state === 'RETURN') {
       this.scene.physics.moveTo(this.sprite, this.home.x, this.home.y, this.config.speed * 1.1);
       if (Phaser.Math.Distance.Between(this.sprite.x, this.sprite.y, this.home.x, this.home.y) < 24) {
-        this.nextDecisionAt = this.scene.time.now + Phaser.Math.Between(900, 1600);
+        this.nextDecisionAt = this.now + Phaser.Math.Between(900, 1600);
         this.setState('AIR_PATROL');
       }
     }
-    this.sprite.setFlipX(this.sprite.body.velocity.x < 0);
+    if (Math.abs(this.sprite.body.velocity.x) > 1) {
+      this.direction = this.sprite.body.velocity.x < 0 ? -1 : 1;
+    }
   }
 
   updateDaVueltas() {
@@ -171,7 +238,7 @@ export class EnemyController {
       if (this.sprite.body.blocked.left || this.sprite.body.blocked.right) this.direction *= -1;
       if (this.elapsed > 2100) this.setState('DIZZY');
     } else if (this.state === 'DIZZY') {
-      this.sprite.setAngularVelocity(0).setVelocityX(0).setAngle(Math.sin(this.scene.time.now / 75) * 9);
+      this.sprite.setAngularVelocity(0).setVelocityX(0).setAngle(Math.sin(this.now / 75) * 9);
       if (this.elapsed > 1900) {
         this.sprite.setAngle(0);
         this.setState('PATROL');
@@ -191,12 +258,17 @@ export class EnemyController {
 
   takeDamage(amount, hitX) {
     if (this.dead || !this.canTakeDamage()) {
-      this.scene.tweens.add({ targets: this.sprite, x: this.sprite.x + (this.sprite.x < hitX ? -6 : 6), yoyo: true, duration: 55 });
+      if (this.visual?.active) {
+        this.visual.setTint(0x85dfff);
+        this.scene.time.delayedCall(90, () => this.visual?.active && this.applyStateTint());
+      }
       return false;
     }
     this.health -= amount;
-    this.sprite.setTintFill(0xffffff);
-    this.scene.time.delayedCall(90, () => this.sprite?.active && this.sprite.clearTint());
+    this.hurtUntil = this.now + 360;
+    this.playVisualClip('hurt', true);
+    this.visual?.setTintFill(0xffffff);
+    this.scene.time.delayedCall(90, () => this.visual?.active && !this.dead && this.applyStateTint());
     if (this.health <= 0) this.defeat();
     return true;
   }
@@ -206,22 +278,28 @@ export class EnemyController {
     this.dead = true;
     this.sprite.body.enable = false;
     this.stateBadge?.destroy();
+    // A fatal hit can land during COME's squash/stretch poses. Reset the
+    // presentation before the defeat row so its silhouette is never warped.
+    resetEnemyVisualForDefeat(this.visual, this.visualBaseScale);
+    this.playVisualClip('defeat', true);
     this.scene.tweens.add({
-      targets: this.sprite,
-      y: this.sprite.y - 28,
-      angle: this.type === 'da_vueltas' ? 120 : 0,
-      scaleX: this.baseScale.x * 0.12,
-      scaleY: this.baseScale.y * 0.12,
+      targets: this.visual,
+      y: this.visual.y + 8,
       alpha: 0,
-      duration: 330,
-      ease: 'Back.In',
-      onComplete: () => this.sprite.destroy(),
+      delay: 470,
+      duration: 220,
+      ease: 'Quad.easeIn',
+      onComplete: () => {
+        this.visual?.destroy();
+        this.sprite?.destroy();
+      },
     });
     this.onDefeat?.(this, Phaser.Math.Between(0, 2));
   }
 
   destroy() {
     this.stateBadge?.destroy();
+    this.visual?.destroy();
     this.sprite?.destroy();
   }
 }

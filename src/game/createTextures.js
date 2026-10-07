@@ -1,7 +1,90 @@
-import Phaser from 'phaser';
+// Phaser.Textures.FilterMode.NEAREST. Keeping this tiny module free of a
+// runtime Phaser import also makes the frame contract unit-testable in Node.
+const PHASER_NEAREST_FILTER = 1;
 
 /** Native size shared by every composable Babito layer. */
 export const BABITO_TEXTURE_SIZE = 48;
+
+/**
+ * Every customizable Babito layer uses this exact 4 x 7 frame contract.
+ * Keeping one shared grid is what lets bodies, faces and accessories animate
+ * without baking (and therefore losing) the player's chosen appearance.
+ */
+export const BABITO_ANIMATION_CLIPS = Object.freeze({
+  idle: Object.freeze({ start: 0, frameCount: 4, fps: 4, loop: true }),
+  walk: Object.freeze({ start: 4, frameCount: 4, fps: 10, loop: true }),
+  jump: Object.freeze({ start: 8, frameCount: 4, fps: 10, loop: false }),
+  fall: Object.freeze({ start: 12, frameCount: 4, fps: 8, loop: false }),
+  attack: Object.freeze({ start: 16, frameCount: 4, fps: 14, loop: false }),
+  hurt: Object.freeze({ start: 20, frameCount: 4, fps: 11, loop: false }),
+  dead: Object.freeze({ start: 24, frameCount: 4, fps: 6, loop: false }),
+});
+
+export const BABITO_ANIMATION_COLUMNS = 4;
+export const BABITO_ANIMATION_FRAME_COUNT = 28;
+export const BABITO_SPRING_HAND_RADIUS = 3;
+
+export function getBabitoSpringHandCenterX(state = 'idle', phase = 0) {
+  const extendsForAttack = state === 'attack' && phase >= 1 && phase <= 2;
+  // The center may reach x=44 at most: the three-pixel hand then ends at the
+  // final pixel (47) of the shared 48px frame instead of being clipped.
+  return extendsForAttack ? 44 : 43;
+}
+
+export function sampleBabitoAnimationFrame(state, elapsedMs = 0, speedMultiplier = 1) {
+  const clip = Object.hasOwn(BABITO_ANIMATION_CLIPS, state)
+    ? BABITO_ANIMATION_CLIPS[state]
+    : BABITO_ANIMATION_CLIPS.idle;
+  const numericElapsed = Number(elapsedMs);
+  const numericSpeed = Number(speedMultiplier);
+  const safeElapsed = Number.isFinite(numericElapsed) ? Math.max(0, numericElapsed) : 0;
+  const safeSpeed = Number.isFinite(numericSpeed) && numericSpeed > 0
+    ? Math.max(0.01, numericSpeed)
+    : 1;
+  const elapsedFrame = Math.floor(safeElapsed / (1000 / (clip.fps * safeSpeed)));
+  const localFrame = clip.loop
+    ? elapsedFrame % clip.frameCount
+    : Math.min(elapsedFrame, clip.frameCount - 1);
+  return clip.start + localFrame;
+}
+
+const BABITO_FRAME_POSES = Object.freeze([
+  // IDLE: a four-frame breath with a deliberate blink on frame 2.
+  { state: 'idle', phase: 0, x: 0, y: 0 },
+  { state: 'idle', phase: 1, x: 0, y: -1 },
+  { state: 'idle', phase: 2, x: 0, y: -1, expression: 'blink' },
+  { state: 'idle', phase: 3, x: 0, y: 0 },
+  // WALK: alternating feet plus a two-pixel up beat makes the gait readable.
+  { state: 'walk', phase: 0, x: -1, y: 0, leftFootX: -2, rightFootX: 1 },
+  { state: 'walk', phase: 1, x: 0, y: -2, leftFootX: -1, rightFootX: 0 },
+  { state: 'walk', phase: 2, x: 1, y: 0, leftFootX: 1, rightFootX: -2 },
+  { state: 'walk', phase: 3, x: 0, y: -2, leftFootX: 0, rightFootX: -1 },
+  // JUMP: anticipation, take-off, rise and apex. Feet tuck into the body.
+  { state: 'jump', phase: 0, x: 0, y: 0, feetY: 1 },
+  { state: 'jump', phase: 1, x: 0, y: 0, feetY: -1 },
+  { state: 'jump', phase: 2, x: 0, y: 0, feetY: -2 },
+  { state: 'jump', phase: 3, x: 0, y: 0, feetY: -2 },
+  // FALL: a separate silhouette which lengthens towards landing.
+  { state: 'fall', phase: 0, x: 0, y: 0, feetY: -2 },
+  { state: 'fall', phase: 1, x: 0, y: 0, feetY: -1 },
+  { state: 'fall', phase: 2, x: 0, y: 0, feetY: 0 },
+  { state: 'fall', phase: 3, x: 0, y: 0, feetY: 1 },
+  // ATTACK: anticipation followed by a clear forward lunge and recovery.
+  { state: 'attack', phase: 0, x: 0, y: 0, expression: 'attack' },
+  { state: 'attack', phase: 1, x: 0, y: 0, expression: 'attack' },
+  { state: 'attack', phase: 2, x: 0, y: 0, expression: 'attack' },
+  { state: 'attack', phase: 3, x: 0, y: 0 },
+  // HURT: three sharp recoil positions followed by a guarded pose.
+  { state: 'hurt', phase: 0, x: 0, y: 0, expression: 'hurt' },
+  { state: 'hurt', phase: 1, x: 0, y: 0, expression: 'hurt' },
+  { state: 'hurt', phase: 2, x: 0, y: 0, expression: 'hurt' },
+  { state: 'hurt', phase: 3, x: 0, y: 0, expression: 'hurt' },
+  // DEAD means knocked-out in this friendly world: sink, close eyes, hold.
+  { state: 'dead', phase: 0, x: 0, y: 0, expression: 'hurt' },
+  { state: 'dead', phase: 1, x: 0, y: 0, expression: 'dazed', feetY: 1 },
+  { state: 'dead', phase: 2, x: 0, y: 0, expression: 'dazed', feetY: 2 },
+  { state: 'dead', phase: 3, x: 0, y: 0, expression: 'dazed', feetY: 2 },
+]);
 
 /**
  * Color sets used by the generated bodies and by {@link BabitoAvatar} to tint
@@ -203,14 +286,17 @@ function sparkle(ctx, x, y, color = COLORS.yellowLight) {
   rect(ctx, x - 1, y - 1, 3, 3, COLORS.white);
 }
 
-function drawBabitoBody(ctx, palette) {
+function drawBabitoBody(ctx, palette, pose = {}) {
+  const leftFootX = Number(pose.leftFootX) || 0;
+  const rightFootX = Number(pose.rightFootX) || 0;
+  const feetY = Number(pose.feetY) || 0;
   // Feet are behind the body so the layer still reads as one compact silhouette.
-  rect(ctx, 13, 35, 11, 7, COLORS.ink);
-  rect(ctx, 27, 35, 9, 7, COLORS.ink);
-  rect(ctx, 15, 35, 8, 4, palette.shade);
-  rect(ctx, 28, 35, 7, 4, palette.shade);
-  rect(ctx, 14, 39, 10, 2, palette.main);
-  rect(ctx, 27, 39, 9, 2, palette.main);
+  rect(ctx, 13 + leftFootX, 35 + feetY, 11, 7, COLORS.ink);
+  rect(ctx, 27 + rightFootX, 35 + feetY, 9, 7, COLORS.ink);
+  rect(ctx, 15 + leftFootX, 35 + feetY, 8, 4, palette.shade);
+  rect(ctx, 28 + rightFootX, 35 + feetY, 7, 4, palette.shade);
+  rect(ctx, 14 + leftFootX, 39 + feetY, 10, 2, palette.main);
+  rect(ctx, 27 + rightFootX, 39 + feetY, 9, 2, palette.main);
 
   outlinedEllipse(ctx, 24, 25, 17, 15, COLORS.ink, palette.main, 2);
   rect(ctx, 13, 15, 7, 2, palette.light);
@@ -221,7 +307,29 @@ function drawBabitoBody(ctx, palette) {
   rect(ctx, 32, 27, 4, 3, COLORS.blush);
 }
 
-function drawBabitoEyes(ctx, style) {
+function drawBabitoEyes(ctx, style, pose = {}) {
+  if (pose.expression === 'blink') {
+    rect(ctx, 16, 24, 7, 2, COLORS.ink);
+    rect(ctx, 27, 24, 7, 2, COLORS.ink);
+    return;
+  }
+
+  if (pose.expression === 'hurt') {
+    pixelLine(ctx, 16, 21, 22, 27, COLORS.ink, 2);
+    pixelLine(ctx, 22, 21, 16, 27, COLORS.ink, 2);
+    pixelLine(ctx, 28, 21, 34, 27, COLORS.ink, 2);
+    pixelLine(ctx, 34, 21, 28, 27, COLORS.ink, 2);
+    return;
+  }
+
+  if (pose.expression === 'dazed') {
+    rect(ctx, 16, 24, 7, 2, COLORS.ink);
+    rect(ctx, 27, 24, 7, 2, COLORS.ink);
+    rect(ctx, 18, 22, 3, 1, COLORS.ink);
+    rect(ctx, 29, 22, 3, 1, COLORS.ink);
+    return;
+  }
+
   if (style === 'big') {
     rect(ctx, 16, 20, 7, 9, COLORS.ink);
     rect(ctx, 27, 20, 7, 9, COLORS.ink);
@@ -253,7 +361,24 @@ function drawBabitoEyes(ctx, style) {
   rect(ctx, 28, 20, 4, 8, COLORS.ink);
 }
 
-function drawBabitoMouth(ctx, style) {
+function drawBabitoMouth(ctx, style, pose = {}) {
+  if (pose.expression === 'attack') {
+    outlinedEllipse(ctx, 25, 31, 5, 4, COLORS.ink, '#691b3b', 1);
+    rect(ctx, 22, 29, 6, 1, COLORS.white);
+    return;
+  }
+
+  if (pose.expression === 'hurt') {
+    pixelLine(ctx, 20, 34, 24, 31, COLORS.ink, 2);
+    pixelLine(ctx, 24, 31, 30, 34, COLORS.ink, 2);
+    return;
+  }
+
+  if (pose.expression === 'dazed') {
+    rect(ctx, 21, 32, 9, 2, COLORS.ink);
+    return;
+  }
+
   if (style === 'open') {
     outlinedEllipse(ctx, 25, 31, 6, 5, COLORS.ink, '#691b3b', 1);
     rect(ctx, 22, 33, 6, 2, COLORS.blush);
@@ -307,36 +432,69 @@ function drawBabitoFin(ctx, side, pose = 'rest') {
   polygon(ctx, insetByPose[pose].map(([x, y]) => [mirror(x), y]), '#ffffff');
 }
 
-function drawBabitoArms(ctx, pose) {
-  if (pose === 'raised' || pose === 'hero') {
-    drawBabitoFin(ctx, -1, 'raised');
-    drawBabitoFin(ctx, 1, 'raised');
-    return;
-  }
-  if (pose === 'spring') {
+function drawBabitoArms(ctx, style, framePose = {}) {
+  const motion = framePose.state ?? 'idle';
+  const phase = framePose.phase ?? 0;
+
+  if (style === 'spring') {
+    // Keep the unmistakable zig-zag silhouette while the shared frame offsets
+    // still give it the same timing as every other cosmetic arm choice.
+    const handX = getBabitoSpringHandCenterX(motion, phase);
     pixelLine(ctx, 12, 27, 8, 24, COLORS.ink, 6);
     pixelLine(ctx, 8, 24, 12, 20, COLORS.ink, 6);
     pixelLine(ctx, 12, 20, 6, 16, COLORS.ink, 6);
     pixelLine(ctx, 37, 27, 41, 24, COLORS.ink, 6);
     pixelLine(ctx, 41, 24, 37, 20, COLORS.ink, 6);
-    pixelLine(ctx, 37, 20, 43, 16, COLORS.ink, 6);
+    pixelLine(ctx, 37, 20, handX, 16, COLORS.ink, 6);
     pixelLine(ctx, 12, 27, 8, 24, '#ffffff', 2);
     pixelLine(ctx, 8, 24, 12, 20, '#ffffff', 2);
     pixelLine(ctx, 12, 20, 6, 16, '#ffffff', 2);
     pixelLine(ctx, 37, 27, 41, 24, '#ffffff', 2);
     pixelLine(ctx, 41, 24, 37, 20, '#ffffff', 2);
-    pixelLine(ctx, 37, 20, 43, 16, '#ffffff', 2);
-    ellipse(ctx, 6, 16, 3, 3, COLORS.ink);
-    ellipse(ctx, 43, 16, 3, 3, COLORS.ink);
+    pixelLine(ctx, 37, 20, handX, 16, '#ffffff', 2);
+    ellipse(ctx, 6, 16, BABITO_SPRING_HAND_RADIUS, BABITO_SPRING_HAND_RADIUS, COLORS.ink);
+    ellipse(ctx, handX, 16, BABITO_SPRING_HAND_RADIUS, BABITO_SPRING_HAND_RADIUS, COLORS.ink);
     ellipse(ctx, 6, 16, 2, 2, '#ffffff');
-    ellipse(ctx, 43, 16, 2, 2, '#ffffff');
+    ellipse(ctx, handX, 16, 2, 2, '#ffffff');
     return;
   }
-  if (pose === 'attack') {
+
+  if (motion === 'attack') {
+    const heroic = style === 'hero' || style === 'raised';
+    if (phase === 0 || phase === 3) {
+      drawBabitoFin(ctx, -1, heroic ? 'raised' : 'rest');
+      drawBabitoFin(ctx, 1, heroic ? 'raised' : 'rest');
+    } else {
+      drawBabitoFin(ctx, -1, phase === 2 || heroic ? 'raised' : 'rest');
+      drawBabitoFin(ctx, 1, 'attack');
+    }
+    return;
+  }
+
+  if (motion === 'jump' || motion === 'fall' || motion === 'hurt') {
+    drawBabitoFin(ctx, -1, 'raised');
+    drawBabitoFin(ctx, 1, 'raised');
+    return;
+  }
+
+  if (motion === 'dead') {
     drawBabitoFin(ctx, -1, 'rest');
-    drawBabitoFin(ctx, 1, 'attack');
+    drawBabitoFin(ctx, 1, 'rest');
     return;
   }
+
+  if (style === 'raised' || style === 'hero') {
+    drawBabitoFin(ctx, -1, 'raised');
+    drawBabitoFin(ctx, 1, 'raised');
+    return;
+  }
+
+  if (motion === 'walk' && phase % 2 === 0) {
+    drawBabitoFin(ctx, -1, phase === 0 ? 'attack' : 'rest');
+    drawBabitoFin(ctx, 1, phase === 2 ? 'attack' : 'rest');
+    return;
+  }
+
   drawBabitoFin(ctx, -1, 'rest');
   drawBabitoFin(ctx, 1, 'rest');
 }
@@ -778,36 +936,71 @@ function drawPortal(ctx) {
   sparkle(ctx, 47, 61, COLORS.magenta);
 }
 
+function makeBabitoLayerSpec(key, drawFrame) {
+  const width = BABITO_TEXTURE_SIZE * BABITO_ANIMATION_COLUMNS;
+  const rows = Math.ceil(BABITO_ANIMATION_FRAME_COUNT / BABITO_ANIMATION_COLUMNS);
+  const height = BABITO_TEXTURE_SIZE * rows;
+  return [
+    key,
+    width,
+    height,
+    (ctx) => {
+      BABITO_FRAME_POSES.forEach((pose, frameIndex) => {
+        const column = frameIndex % BABITO_ANIMATION_COLUMNS;
+        const row = Math.floor(frameIndex / BABITO_ANIMATION_COLUMNS);
+        const originX = column * BABITO_TEXTURE_SIZE;
+        const originY = row * BABITO_TEXTURE_SIZE;
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(originX, originY, BABITO_TEXTURE_SIZE, BABITO_TEXTURE_SIZE);
+        ctx.clip();
+        ctx.translate(originX + pose.x, originY + pose.y);
+        drawFrame(ctx, pose, frameIndex);
+        ctx.restore();
+      });
+    },
+    Object.freeze({
+      frameWidth: BABITO_TEXTURE_SIZE,
+      frameHeight: BABITO_TEXTURE_SIZE,
+      columns: BABITO_ANIMATION_COLUMNS,
+      frameCount: BABITO_ANIMATION_FRAME_COUNT,
+    }),
+  ];
+}
+
 function getTextureSpecs() {
   const specs = [];
   for (const [id, palette] of Object.entries(BABITO_PALETTES)) {
-    specs.push([TEXTURE_KEYS.body[id], BABITO_TEXTURE_SIZE, BABITO_TEXTURE_SIZE, (ctx) => drawBabitoBody(ctx, palette)]);
+    specs.push(makeBabitoLayerSpec(
+      TEXTURE_KEYS.body[id],
+      (ctx, pose) => drawBabitoBody(ctx, palette, pose),
+    ));
   }
 
   specs.push(
-    [TEXTURE_KEYS.eyes.normal, 48, 48, (ctx) => drawBabitoEyes(ctx, 'normal')],
-    [TEXTURE_KEYS.eyes.big, 48, 48, (ctx) => drawBabitoEyes(ctx, 'big')],
-    [TEXTURE_KEYS.eyes.cute, 48, 48, (ctx) => drawBabitoEyes(ctx, 'cute')],
-    [TEXTURE_KEYS.eyes.crazy, 48, 48, (ctx) => drawBabitoEyes(ctx, 'crazy')],
-    [TEXTURE_KEYS.mouth.smile, 48, 48, (ctx) => drawBabitoMouth(ctx, 'smile')],
-    [TEXTURE_KEYS.mouth.open, 48, 48, (ctx) => drawBabitoMouth(ctx, 'open')],
-    [TEXTURE_KEYS.mouth.cute, 48, 48, (ctx) => drawBabitoMouth(ctx, 'cute')],
-    [TEXTURE_KEYS.mouth.epic, 48, 48, (ctx) => drawBabitoMouth(ctx, 'epic')],
-    [TEXTURE_KEYS.arms.default, 48, 48, (ctx) => drawBabitoArms(ctx, 'default')],
-    [TEXTURE_KEYS.arms.round, 48, 48, (ctx) => drawBabitoArms(ctx, 'default')],
-    [TEXTURE_KEYS.arms.hero, 48, 48, (ctx) => drawBabitoArms(ctx, 'hero')],
-    [TEXTURE_KEYS.arms.spring, 48, 48, (ctx) => drawBabitoArms(ctx, 'spring')],
-    [TEXTURE_KEYS.arms.raised, 48, 48, (ctx) => drawBabitoArms(ctx, 'raised')],
-    [TEXTURE_KEYS.arms.attack, 48, 48, (ctx) => drawBabitoArms(ctx, 'attack')],
-    [TEXTURE_KEYS.head.none, 48, 48, () => {}],
-    [TEXTURE_KEYS.head.strawHat, 48, 48, drawStrawHat],
-    [TEXTURE_KEYS.head.cowboyHat, 48, 48, drawCowboyHat],
-    [TEXTURE_KEYS.head.crown, 48, 48, drawCrown],
-    [TEXTURE_KEYS.glasses.none, 48, 48, () => {}],
-    [TEXTURE_KEYS.glasses.sunglasses, 48, 48, drawSunglasses],
-    [TEXTURE_KEYS.neck.none, 48, 48, () => {}],
-    [TEXTURE_KEYS.neck.bowtie, 48, 48, drawBowtie],
-    [TEXTURE_KEYS.neck.heroCape, 48, 48, drawHeroCape],
+    makeBabitoLayerSpec(TEXTURE_KEYS.eyes.normal, (ctx, pose) => drawBabitoEyes(ctx, 'normal', pose)),
+    makeBabitoLayerSpec(TEXTURE_KEYS.eyes.big, (ctx, pose) => drawBabitoEyes(ctx, 'big', pose)),
+    makeBabitoLayerSpec(TEXTURE_KEYS.eyes.cute, (ctx, pose) => drawBabitoEyes(ctx, 'cute', pose)),
+    makeBabitoLayerSpec(TEXTURE_KEYS.eyes.crazy, (ctx, pose) => drawBabitoEyes(ctx, 'crazy', pose)),
+    makeBabitoLayerSpec(TEXTURE_KEYS.mouth.smile, (ctx, pose) => drawBabitoMouth(ctx, 'smile', pose)),
+    makeBabitoLayerSpec(TEXTURE_KEYS.mouth.open, (ctx, pose) => drawBabitoMouth(ctx, 'open', pose)),
+    makeBabitoLayerSpec(TEXTURE_KEYS.mouth.cute, (ctx, pose) => drawBabitoMouth(ctx, 'cute', pose)),
+    makeBabitoLayerSpec(TEXTURE_KEYS.mouth.epic, (ctx, pose) => drawBabitoMouth(ctx, 'epic', pose)),
+    makeBabitoLayerSpec(TEXTURE_KEYS.arms.default, (ctx, pose) => drawBabitoArms(ctx, 'default', pose)),
+    makeBabitoLayerSpec(TEXTURE_KEYS.arms.round, (ctx, pose) => drawBabitoArms(ctx, 'default', pose)),
+    makeBabitoLayerSpec(TEXTURE_KEYS.arms.hero, (ctx, pose) => drawBabitoArms(ctx, 'hero', pose)),
+    makeBabitoLayerSpec(TEXTURE_KEYS.arms.spring, (ctx, pose) => drawBabitoArms(ctx, 'spring', pose)),
+    makeBabitoLayerSpec(TEXTURE_KEYS.arms.raised, (ctx, pose) => drawBabitoArms(ctx, 'raised', pose)),
+    makeBabitoLayerSpec(TEXTURE_KEYS.arms.attack, (ctx, pose) => drawBabitoArms(ctx, 'attack', pose)),
+    makeBabitoLayerSpec(TEXTURE_KEYS.head.none, () => {}),
+    makeBabitoLayerSpec(TEXTURE_KEYS.head.strawHat, drawStrawHat),
+    makeBabitoLayerSpec(TEXTURE_KEYS.head.cowboyHat, drawCowboyHat),
+    makeBabitoLayerSpec(TEXTURE_KEYS.head.crown, drawCrown),
+    makeBabitoLayerSpec(TEXTURE_KEYS.glasses.none, () => {}),
+    makeBabitoLayerSpec(TEXTURE_KEYS.glasses.sunglasses, drawSunglasses),
+    makeBabitoLayerSpec(TEXTURE_KEYS.neck.none, () => {}),
+    makeBabitoLayerSpec(TEXTURE_KEYS.neck.bowtie, drawBowtie),
+    makeBabitoLayerSpec(TEXTURE_KEYS.neck.heroCape, drawHeroCape),
     [TEXTURE_KEYS.enemyCome, 80, 72, (ctx) => {
       ctx.save();
       ctx.translate(8, 4);
@@ -845,7 +1038,7 @@ function getTextureSpecs() {
   return specs;
 }
 
-function generateCanvasTexture(scene, key, width, height, draw, overwrite) {
+function generateCanvasTexture(scene, key, width, height, draw, overwrite, frameConfig = null) {
   if (scene.textures.exists(key)) {
     if (!overwrite) return false;
     scene.textures.remove(key);
@@ -861,9 +1054,22 @@ function generateCanvasTexture(scene, key, width, height, draw, overwrite) {
   context.imageSmoothingEnabled = false;
   context.globalCompositeOperation = 'source-over';
   draw(context);
+  if (frameConfig) {
+    for (let frameIndex = 0; frameIndex < frameConfig.frameCount; frameIndex += 1) {
+      const column = frameIndex % frameConfig.columns;
+      const row = Math.floor(frameIndex / frameConfig.columns);
+      texture.add(
+        frameIndex,
+        0,
+        column * frameConfig.frameWidth,
+        row * frameConfig.frameHeight,
+        frameConfig.frameWidth,
+        frameConfig.frameHeight,
+      );
+    }
+  }
   texture.refresh();
-  const nearestFilter = Phaser.Textures?.FilterMode?.NEAREST;
-  if (nearestFilter !== undefined) texture.setFilter?.(nearestFilter);
+  texture.setFilter?.(PHASER_NEAREST_FILTER);
   return true;
 }
 
@@ -885,8 +1091,16 @@ export function createTextures(scene, { overwrite = false } = {}) {
 
   const created = [];
   const skipped = [];
-  for (const [key, width, height, draw] of getTextureSpecs()) {
-    const wasCreated = generateCanvasTexture(scene, key, width, height, draw, overwrite);
+  for (const [key, width, height, draw, frameConfig] of getTextureSpecs()) {
+    const wasCreated = generateCanvasTexture(
+      scene,
+      key,
+      width,
+      height,
+      draw,
+      overwrite,
+      frameConfig,
+    );
     (wasCreated ? created : skipped).push(key);
   }
 

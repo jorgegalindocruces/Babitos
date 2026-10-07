@@ -324,7 +324,10 @@ export class PowerScene extends Phaser.Scene {
           : Math.sin(progress * Math.PI * 2) * 2);
         projectile.setAlpha(1 - Math.max(0, progress - 0.82) / 0.18);
       },
-      onRepeat: () => projectile.setAlpha(1),
+      onRepeat: () => {
+        projectile.setAlpha(1);
+        avatar.setMotion('attack', { x: 1, y: 0 }, { restart: true });
+      },
     });
   }
 

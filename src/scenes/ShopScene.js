@@ -294,8 +294,15 @@ export class ShopScene extends Phaser.Scene {
         fontSize: '10px',
         autoFocus: index === 0,
         accessibleLabel: `${item.label}, ${categoryName}, ${status}`,
-        onPress: () => this.selectCatalogItem(item),
+        onPress: (_button, source) => this.selectCatalogItem(item, source),
       });
+      if (
+        this.catalogFocusRequest
+        && this.catalogFocusRequest.category === item.category
+        && this.catalogFocusRequest.id === item.id
+      ) {
+        this.catalogFocusTarget = button;
+      }
       button.labelText.setX(28);
       this.catalogObjects.push(button);
 
@@ -319,9 +326,18 @@ export class ShopScene extends Phaser.Scene {
     this.pageText.setText(`PÁGINA ${this.page + 1} / ${this.pageCount}`);
     this.previousButton.setEnabled(this.pageCount > 1);
     this.nextButton.setEnabled(this.pageCount > 1);
+
+    if (this.catalogFocusTarget) {
+      const target = this.catalogFocusTarget;
+      const request = this.catalogFocusRequest;
+      this.catalogFocusTarget = null;
+      this.catalogFocusRequest = null;
+      if (request.source === 'pointer') target.focus();
+      else target.focusAccessible();
+    }
   }
 
-  selectCatalogItem(item) {
+  selectCatalogItem(item, source = 'programmatic') {
     const wasUnlocked = this.store.isUnlocked(item.category, item.id);
     let purchased = false;
 
@@ -357,6 +373,7 @@ export class ShopScene extends Phaser.Scene {
     if (purchased) this.registry.get('audio')?.play('purchase');
     this.avatar.setAppearance(snapshot.appearance, snapshot.size);
     this.refreshCoinHud();
+    this.catalogFocusRequest = { category: item.category, id: item.id, source };
     this.renderCatalogPage();
     flashScreen(this, { color: purchased ? 0xffcf3c : 0x71e5ff, duration: 100 });
     showToast(

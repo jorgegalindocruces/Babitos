@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { getButtonHitArea } from './buttonGeometry.js';
 
 const REGISTRY_KEY = Symbol('babitos.ui.buttonRegistry');
 
@@ -63,7 +64,7 @@ function keyboardEventBelongsToGame(scene, event) {
   return event?.target === canvas || activeElement === canvas || activeElement === document.body;
 }
 
-function focusGameCanvas(scene) {
+export function focusGameCanvas(scene) {
   const canvas = scene.game?.canvas;
   if (!canvas?.focus) return;
 
@@ -114,6 +115,14 @@ function syncAccessibleButtonStates(game) {
 
 function shortcutButtons(registry) {
   return focusableButtons(registry).filter((button) => button.keyboardShortcuts);
+}
+
+function accessibleButtonForEvent(registry, event) {
+  if (typeof document === 'undefined') return null;
+  const target = event?.target ?? document.activeElement;
+  return registry.buttons.find(
+    (button) => button.accessibleElement === target && button.isFocusable(),
+  ) ?? null;
 }
 
 function createButtonRegistry(scene) {
@@ -191,6 +200,17 @@ function createButtonRegistry(scene) {
       registry.moveFocus(event?.shiftKey ? -1 : 1, true);
     },
     activate(event) {
+      const accessibleButton = accessibleButtonForEvent(registry, event);
+      if (accessibleButton) {
+        if (event?.repeat || !isTopmostButtonScene(scene)) return;
+        // Phaser captures Space to keep the page from scrolling. Activate the
+        // focused native mirror explicitly so Space still behaves like a real
+        // HTML button instead of being swallowed before its synthetic click.
+        event?.preventDefault?.();
+        event?.stopPropagation?.();
+        accessibleButton.activate('accessibility');
+        return;
+      }
       if (
         eventTargetsEditableElement(event)
         || !keyboardEventBelongsToGame(scene, event)
@@ -292,6 +312,8 @@ export class Button extends Phaser.GameObjects.Container {
     this.buttonHeight = Math.max(32, Number(options.height) || 58);
     this.radius = Math.max(0, Number(options.radius) || 10);
     this.shadowOffset = Math.max(0, Number(options.shadowOffset) || 5);
+    const requestedHitSlop = Number(options.hitSlop);
+    this.hitSlop = Math.max(0, Number.isFinite(requestedHitSlop) ? requestedHitSlop : 4);
     this.borderWidth = Math.max(1, Number(options.borderWidth) || 3);
     this.focusWidth = Math.max(this.borderWidth, Number(options.focusWidth) || 4);
     this.variant = options.variant ?? 'primary';
@@ -341,13 +363,25 @@ export class Button extends Phaser.GameObjects.Container {
   }
 
   bindPointerEvents() {
+    const hitArea = getButtonHitArea(
+      this.buttonWidth,
+      this.buttonHeight,
+      this.shadowOffset,
+      this.hitSlop,
+    );
+    const resetPointerState = () => {
+      this.hovered = false;
+      this.pressed = false;
+      this.redraw();
+    };
+
     this
       .setInteractive(
         new Phaser.Geom.Rectangle(
-          -this.buttonWidth / 2,
-          -this.buttonHeight / 2,
-          this.buttonWidth,
-          this.buttonHeight + this.shadowOffset,
+          hitArea.x,
+          hitArea.y,
+          hitArea.width,
+          hitArea.height,
         ),
         Phaser.Geom.Rectangle.Contains,
       )
@@ -357,28 +391,22 @@ export class Button extends Phaser.GameObjects.Container {
         this.focus();
         this.redraw();
       })
-      .on('pointerout', () => {
-        this.hovered = false;
-        this.pressed = false;
-        this.setScale(1);
-        this.redraw();
-      })
+      .on('pointerout', resetPointerState)
       .on('pointerdown', (pointer) => {
         if (!this.enabled || pointer?.button > 0) return;
         focusGameCanvas(this.scene);
         this.pressed = true;
         this.focus();
-        this.setScale(0.985);
         this.redraw();
       })
       .on('pointerup', (pointer) => {
         if (!this.enabled || pointer?.button > 0) return;
         const shouldActivate = this.pressed;
         this.pressed = false;
-        this.setScale(1);
         this.redraw();
         if (shouldActivate) this.activate('pointer');
-      });
+      })
+      .on('pointerupoutside', resetPointerState);
 
     if (this.input) {
       this.input.cursor = this.enabled ? 'pointer' : 'default';
@@ -482,7 +510,6 @@ export class Button extends Phaser.GameObjects.Container {
     if (!this.enabled) {
       this.hovered = false;
       this.pressed = false;
-      this.setScale(1);
       if (this.registry?.focused === this) {
         this.registry.focused = null;
         this.setFocusedState(false);

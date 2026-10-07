@@ -1,9 +1,11 @@
 import Phaser from 'phaser';
 import {
+  BABITO_ANIMATION_CLIPS,
   BABITO_PALETTES,
   BABITO_TEXTURE_SIZE,
   TEXTURE_KEYS,
   createTextures,
+  sampleBabitoAnimationFrame,
 } from './createTextures.js';
 
 export const BABITO_SIZE_SCALES = Object.freeze({
@@ -31,6 +33,9 @@ const MOTION_ALIASES = Object.freeze({
   shooting: 'attack',
   shoot: 'attack',
   hit: 'hurt',
+  death: 'dead',
+  defeated: 'dead',
+  knocked_out: 'dead',
 });
 
 function asId(value) {
@@ -125,7 +130,8 @@ export class BabitoAvatar extends Phaser.GameObjects.Container {
     this.facing = 1;
     this.motionState = 'idle';
     this.motionVelocity = { x: 0, y: 0 };
-    this._motionArmsKey = null;
+    this.motionElapsedMs = 0;
+    this.motionFrame = BABITO_ANIMATION_CLIPS.idle.start;
     this._scaleTween = null;
     this._actionTween = null;
     this._followTarget = null;
@@ -139,9 +145,9 @@ export class BabitoAvatar extends Phaser.GameObjects.Container {
 
     this.setAppearance(appearance, size);
 
-    this._onSceneUpdate = (time) => {
+    this._onSceneUpdate = (time, delta) => {
       this.syncToTarget();
-      this._applyMotion(time);
+      this._applyMotion(time, delta);
     };
     scene.events.on(Phaser.Scenes.Events.UPDATE, this._onSceneUpdate);
   }
@@ -156,7 +162,7 @@ export class BabitoAvatar extends Phaser.GameObjects.Container {
     this.visualRoot.add(this.motionRoot);
 
     const makeLayer = (name, initialKey) => {
-      const image = new Phaser.GameObjects.Image(this.scene, 0, 0, initialKey);
+      const image = new Phaser.GameObjects.Image(this.scene, 0, 0, initialKey, 0);
       image.setOrigin(0.5, 0.5);
       image.name = `babito-${name}`;
       this.layers[name] = image;
@@ -191,7 +197,11 @@ export class BabitoAvatar extends Phaser.GameObjects.Container {
       layer.setVisible(false);
       return;
     }
-    layer.setTexture(key).setVisible(true);
+    const texture = this.scene.textures.get(key);
+    const frame = texture?.has?.(this.motionFrame)
+      ? this.motionFrame
+      : (texture?.has?.(0) ? 0 : undefined);
+    layer.setTexture(key, frame).setVisible(true);
   }
 
   _refreshArmLayer() {
@@ -202,15 +212,9 @@ export class BabitoAvatar extends Phaser.GameObjects.Container {
       TEXTURE_KEYS.arms.round,
     );
     this.appearance.arms = appearanceKey ?? TEXTURE_KEYS.arms.round;
-    // Round fins use temporary action poses. Distinct cosmetic silhouettes
-    // remain visible while moving so the creator never promises an option
-    // that silently disappears during gameplay.
-    const canUseMotionPose = appearanceKey === TEXTURE_KEYS.arms.round
-      || appearanceKey === TEXTURE_KEYS.arms.default;
-    this._setLayerTexture(
-      'arms',
-      canUseMotionPose ? (this._motionArmsKey ?? appearanceKey) : appearanceKey,
-    );
+    // Every cosmetic arm texture follows the same frame grid, so an equipped
+    // silhouette remains equipped while walking, jumping and attacking.
+    this._setLayerTexture('arms', appearanceKey);
     this.layers.arms.clearTint();
     this.layers.arms.setTint(BABITO_PALETTES[this.bodyColorId].tint);
   }
@@ -325,14 +329,22 @@ export class BabitoAvatar extends Phaser.GameObjects.Container {
    * Selects a lightweight procedural pose. This does not replace the stored
    * cosmetic arm choice; leaving the temporary state restores it.
    *
-   * Supported states: idle, walk, jump, fall, attack, hurt.
+   * Supported states: idle, walk, jump, fall, attack, hurt, dead.
    * @param {string} state
    * @param {{x?: number, y?: number}|Phaser.Math.Vector2} [velocity]
+   * @param {{restart?: boolean}} [options]
    * @returns {this}
    */
-  setMotion(state = 'idle', velocity = {}) {
+  setMotion(state = 'idle', velocity = {}, options = {}) {
     const requested = asId(state) || 'idle';
-    this.motionState = MOTION_ALIASES[requested] ?? requested;
+    const normalized = MOTION_ALIASES[requested] ?? requested;
+    const nextState = Object.hasOwn(BABITO_ANIMATION_CLIPS, normalized) ? normalized : 'idle';
+    if (this.motionState !== nextState || options.restart === true) {
+      this.motionState = nextState;
+      this.motionElapsedMs = 0;
+      this.motionRoot?.setPosition(0, 0).setAngle(0);
+      this._setMotionFrame(BABITO_ANIMATION_CLIPS[nextState].start);
+    }
     this.motionVelocity.x = Number.isFinite(Number(velocity?.x)) ? Number(velocity.x) : 0;
     this.motionVelocity.y = Number.isFinite(Number(velocity?.y)) ? Number(velocity.y) : 0;
 
@@ -344,16 +356,6 @@ export class BabitoAvatar extends Phaser.GameObjects.Container {
       this.setFacing(this.motionVelocity.x);
     }
 
-    let motionArmsKey = null;
-    if (this.motionState === 'attack') {
-      motionArmsKey = TEXTURE_KEYS.arms.attack;
-    } else if (this.motionState === 'jump' || this.motionState === 'hurt') {
-      motionArmsKey = TEXTURE_KEYS.arms.raised;
-    }
-    if (motionArmsKey !== this._motionArmsKey) {
-      this._motionArmsKey = motionArmsKey;
-      this._refreshArmLayer();
-    }
     return this;
   }
 
@@ -449,31 +451,54 @@ export class BabitoAvatar extends Phaser.GameObjects.Container {
     return this;
   }
 
-  _applyMotion(time = 0) {
+  _setMotionFrame(frame) {
+    const nextFrame = Number.isFinite(Number(frame)) ? Number(frame) : 0;
+    if (this.motionFrame === nextFrame && this.layers.body?.frame?.name === nextFrame) return this;
+    this.motionFrame = nextFrame;
+    for (const layer of Object.values(this.layers)) {
+      const texture = layer.texture;
+      if (texture?.has?.(nextFrame)) layer.setFrame(nextFrame);
+      else if (texture?.has?.(0)) layer.setFrame(0);
+    }
+    return this;
+  }
+
+  _applyMotion(_time = 0, delta = 16.67) {
+    if (!this.scene?.time?.paused) {
+      this.motionElapsedMs += Math.max(0, Number(delta) || 0);
+    }
+
+    const clip = BABITO_ANIMATION_CLIPS[this.motionState] ?? BABITO_ANIMATION_CLIPS.idle;
+    const speedMultiplier = this.motionState === 'walk'
+      ? Phaser.Math.Clamp(Math.abs(this.motionVelocity.x) / 180, 0.72, 1.45)
+      : 1;
+    const frame = sampleBabitoAnimationFrame(
+      this.motionState,
+      this.motionElapsedMs,
+      speedMultiplier,
+    );
+    const localFrame = frame - clip.start;
+    this._setMotionFrame(frame);
+
+    // Rotation is deliberately stepped with the raster frames. It gives the
+    // knocked-out state a readable finish without introducing a second,
+    // continuously-running animation clock that could desynchronise layers.
     let offsetX = 0;
     let offsetY = 0;
     let angle = 0;
-
-    if (this.motionState === 'idle') {
-      offsetY = Math.round(Math.sin(time * 0.006));
-    } else if (this.motionState === 'walk') {
-      const speedFactor = Phaser.Math.Clamp(Math.abs(this.motionVelocity.x) / 180, 0.7, 2);
-      offsetY = Math.round(Math.abs(Math.sin(time * 0.018 * speedFactor)) * -2);
-      angle = Math.round(Math.sin(time * 0.018 * speedFactor) * 2);
-    } else if (this.motionState === 'jump') {
-      offsetY = -2;
-      angle = -this.facing * 2;
-    } else if (this.motionState === 'fall') {
-      offsetY = 1;
-      angle = this.facing * 2;
-    } else if (this.motionState === 'attack') {
-      offsetX = this.facing * 2;
-      angle = -this.facing * 4;
+    if (this.motionState === 'jump') offsetY = [1, -1, -3, -4][localFrame];
+    else if (this.motionState === 'fall') offsetY = [-3, -2, -1, 0][localFrame];
+    else if (this.motionState === 'attack') {
+      offsetX = this.facing * [-1, 1, 3, 1][localFrame];
+      offsetY = [0, -1, 0, 0][localFrame];
     } else if (this.motionState === 'hurt') {
-      offsetX = Math.round(Math.sin(time * 0.08) * 2);
-      angle = Math.round(Math.sin(time * 0.05) * 3);
+      offsetX = this.facing * [2, -2, 1, 0][localFrame];
+      offsetY = [-1, 0, 1, 2][localFrame];
+      angle = this.facing * [4, -4, 3, 0][localFrame];
+    } else if (this.motionState === 'dead') {
+      offsetY = [1, 3, 5, 6][localFrame];
+      angle = this.facing * [0, 6, 14, 20][localFrame];
     }
-
     this.motionRoot?.setPosition(offsetX, offsetY).setAngle(angle);
   }
 

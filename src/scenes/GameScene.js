@@ -4,7 +4,7 @@ import gameData from '../data/game-data.json';
 import { EnemyController } from '../game/EnemyController.js';
 import { PlayerController } from '../game/PlayerController.js';
 import { isPowerProjectile, makeImpact } from '../game/PowerSystem.js';
-import { createButton } from '../ui/Button.js';
+import { createButton, focusGameCanvas } from '../ui/Button.js';
 import {
   addPixelBackground,
   announce,
@@ -40,6 +40,7 @@ export class GameScene extends Phaser.Scene {
       this.qaCombat = new URLSearchParams(location.search).get('qaCombat') === '1';
     }
     this.enemyControllers = [];
+    this.gameplayTime = 0;
     this.defeatedEnemies = 0;
     this.paused = false;
     this.transitioning = false;
@@ -71,7 +72,10 @@ export class GameScene extends Phaser.Scene {
       save: this.save,
       platforms: this.platforms,
       projectiles: this.projectiles,
-      onHealth: (health, maxHealth) => this.updateHealthHud(health, maxHealth),
+      onHealth: (health, maxHealth) => {
+        this.updateHealthHud(health, maxHealth);
+        if (health <= 0) this.pauseButton?.setEnabled(false);
+      },
       onGameOver: () => this.showGameOver(),
     });
     this.player.setCheckpoint(savedCheckpoint.x, savedCheckpoint.y - 20);
@@ -363,16 +367,36 @@ export class GameScene extends Phaser.Scene {
   }
 
   togglePause() {
-    if (this.gameOverContainer || this.transitioning) return;
+    if (
+      this.gameOverContainer
+      || this.transitioning
+      || this.fallRecoveryPending
+      || this.player?.isDead
+    ) return;
     this.paused = !this.paused;
     if (this.paused) this.showPauseOverlay();
     else this.closePauseOverlay();
   }
 
+  setGameplaySystemsPaused(paused) {
+    if (paused) {
+      this.physics.world.pause();
+      this.tweens.pauseAll();
+      this.time.paused = true;
+      this.enemyControllers.forEach((enemy) => enemy.visual?.anims?.pause());
+      return;
+    }
+
+    this.time.paused = false;
+    this.tweens.resumeAll();
+    this.physics.world.resume();
+    this.enemyControllers.forEach((enemy) => enemy.visual?.anims?.resume());
+  }
+
   showPauseOverlay() {
-    this.physics.world.pause();
     this.player.setEnabled(false);
     this.pauseButton?.setEnabled(false);
+    this.setGameplaySystemsPaused(true);
     this.pauseOverlay = this.add.container(0, 0).setDepth(3000).setScrollFactor(0);
     const shade = this.add.rectangle(480, 270, 960, 540, 0x020814, 0.76).setInteractive();
     const panel = createPanel(this, 480, 270, 520, 360, { depth: 3001 });
@@ -390,11 +414,12 @@ export class GameScene extends Phaser.Scene {
     const titleButton = createButton(this, {
       x: 480, y: 405, width: 280, height: 44, label: 'VOLVER AL TÍTULO', fontSize: '12px', variant: 'ghost', depth: 3003,
       onPress: () => {
-        this.physics.world.resume();
+        this.setGameplaySystemsPaused(false);
         transitionToScene(this, 'TitleScene');
       },
     });
     this.pauseOverlay.add([shade, panel, title, controls, resume, titleButton]);
+    resume.focusAccessible();
     announce('Juego en pausa.');
   }
 
@@ -402,17 +427,19 @@ export class GameScene extends Phaser.Scene {
     this.paused = false;
     this.pauseOverlay?.destroy(true);
     this.pauseOverlay = null;
-    this.physics.world.resume();
-    this.player.setEnabled(true);
-    this.pauseButton?.setEnabled(true);
+    this.setGameplaySystemsPaused(false);
+    const canResumePlayer = !this.fallRecoveryPending && !this.player?.isDead;
+    this.player.setEnabled(canResumePlayer);
+    this.pauseButton?.setEnabled(canResumePlayer);
+    focusGameCanvas(this);
     announce('Juego reanudado.');
   }
 
   showGameOver() {
     if (this.gameOverContainer) return;
     this.fallRecoveryPending = false;
-    this.physics.world.pause();
     this.pauseButton?.setEnabled(false);
+    this.setGameplaySystemsPaused(true);
     this.gameOverContainer = this.add.container(0, 0).setDepth(4000).setScrollFactor(0);
     const shade = this.add.rectangle(480, 270, 960, 540, 0x020814, 0.82).setInteractive();
     const panel = createPanel(this, 480, 270, 500, 300, { depth: 4001, strokeColor: 0xff557b });
@@ -426,25 +453,29 @@ export class GameScene extends Phaser.Scene {
         this.gameOverContainer.destroy(true);
         this.gameOverContainer = null;
         this.fallRecoveryPending = false;
-        this.physics.world.resume();
+        this.setGameplaySystemsPaused(false);
         this.player.respawn();
         this.pauseButton?.setEnabled(true);
+        focusGameCanvas(this);
+        announce('Reintento desde el último checkpoint.');
       },
     });
     const titleButton = createButton(this, {
       x: 480, y: 386, width: 240, height: 42, label: 'TÍTULO', variant: 'ghost', depth: 4003,
       onPress: () => {
-        this.physics.world.resume();
+        this.setGameplaySystemsPaused(false);
         transitionToScene(this, 'TitleScene');
       },
     });
     this.gameOverContainer.add([shade, panel, title, copy, retry, titleButton]);
+    retry.focusAccessible();
     announce('Sin corazones. Reintenta desde el último checkpoint.');
   }
 
   handleFall() {
     if (this.fallRecoveryPending || this.gameOverContainer) return;
     this.fallRecoveryPending = true;
+    this.pauseButton?.setEnabled(false);
     this.player.takeDamage(this.player.body.x, 1);
     if (this.player.health > 0) {
       this.player.setEnabled(false);
@@ -456,16 +487,23 @@ export class GameScene extends Phaser.Scene {
         }
         this.player.respawn({ restoreHealth: false });
         this.fallRecoveryPending = false;
+        this.pauseButton?.setEnabled(true);
       });
     }
   }
 
-  update(time) {
+  update(_time, delta) {
     if (this.paused || this.gameOverContainer || this.transitioning) return;
 
-    this.player?.update(time);
+    this.gameplayTime += Math.max(0, Number(delta) || 0);
+
+    this.player?.update(this.gameplayTime);
     this.enemyControllers.forEach((enemy) => enemy.update());
     if (this.player?.body.y > 575) this.handleFall();
     this.progressText?.setText(`ENCUENTROS  ${this.defeatedEnemies}/${this.level.enemies.length}`);
+  }
+
+  getGameplayTime() {
+    return this.gameplayTime ?? 0;
   }
 }
