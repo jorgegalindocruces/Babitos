@@ -21,6 +21,14 @@ export const BACKGROUND_ASSETS = Object.freeze({
     key: 'background_babilandia_v2',
     url: 'assets/backgrounds/babilandia-v2.webp',
   }),
+  bossArenaV1: Object.freeze({
+    key: 'background_boss_arena_v1',
+    url: 'assets/backgrounds/boss-arena-v1.webp',
+  }),
+  cityV1: Object.freeze({
+    key: 'background_city_v1',
+    url: 'assets/backgrounds/ciudad-bicharraca-v1.webp',
+  }),
 });
 
 /** Approved character art that is loaded once by BootScene and reused by scenes. */

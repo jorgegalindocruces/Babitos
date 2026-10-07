@@ -37,6 +37,8 @@ También se puede usar ratón o pantalla táctil en los menús y los controles v
 ## Iteración 0.2 · Pulido audiovisual
 
 - Babilandia utiliza un nuevo fondo pixel art panorámico basado exclusivamente en la arquitectura, paleta y atmósfera de la lámina oficial. Si el asset no puede cargarse, el juego vuelve automáticamente al fondo procedural.
+- La arena de Babito Corrupto tiene un fondo 16:9 propio: Babilandia en ruinas al atardecer, basado en el ejemplo canónico del boss y con una zona de juego limpia para conservar la lectura de ataques y plataformas.
+- Ciudad Bicharraca, el último mundo del mapa, muestra ya su paisaje industrial 16:9 tanto en el fondo de la pantalla como en su avance jugable.
 - Música ambiental y efectos para interfaz, salto, ataque, daño, monedas, checkpoints, boss y compras se sintetizan en el navegador mediante Web Audio, sin archivos ni dependencias adicionales.
 - El Babito conserva poses legibles de ataque y daño, y reacciona al salto y al aterrizaje sin modificar su hitbox.
 - `Espacio` queda reservado para saltar durante el gameplay; los botones del HUD siguen disponibles con ratón, toque o navegación accesible mediante `Tab`.
@@ -135,7 +137,7 @@ Vite usa rutas relativas (`base: './'`), por lo que imágenes, módulos y demás
 
 ## Placeholders actuales
 
-Las láminas de `art/approved/` son dirección artística, no *spritesheets* finales. El fondo jugable de Babilandia ya dispone de una primera versión raster integrada en `public/assets/backgrounds/`, con fallback procedural. El resto del vertical slice utiliza texturas pixel art generadas por código con claves definitivas para:
+Las láminas de `art/approved/` son dirección artística, no *spritesheets* finales. Babilandia, la arena de Babito Corrupto y Ciudad Bicharraca ya disponen de fondos raster integrados en `public/assets/backgrounds/`, con fallback procedural. El resto del vertical slice utiliza texturas pixel art generadas por código con claves definitivas para:
 
 - capas del Babito y cosméticos;
 - COME, VUELA y DA VUELTAS;

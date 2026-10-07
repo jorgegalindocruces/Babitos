@@ -3,6 +3,7 @@ import { BabitoAvatar } from '../game/BabitoAvatar.js';
 import { TEXTURE_KEYS, createTextures } from '../game/createTextures.js';
 import { createButton } from '../ui/Button.js';
 import {
+  BACKGROUND_ASSETS,
   addPixelBackground,
   announce,
   createBodyText,
@@ -56,7 +57,10 @@ export class ComingSoonScene extends Phaser.Scene {
     if (!this.worldId) this.worldId = snapshot.progress.scene === 'city' ? 'city' : 'jungle';
     const world = WORLDS[this.worldId];
 
-    addPixelBackground(this, world.theme);
+    addPixelBackground(this, world.theme, {
+      assetKey: this.worldId === 'city' ? BACKGROUND_ASSETS.cityV1.key : undefined,
+      assetOverscan: 1,
+    });
     createAmbientMotes(this, {
       count: this.worldId === 'city' ? 24 : 19,
       color: world.mote,
@@ -197,30 +201,45 @@ export class ComingSoonScene extends Phaser.Scene {
   }
 
   createCityPreview(snapshot) {
-    const city = this.add.graphics().setDepth(20);
-    city.fillStyle(0x111525, 1);
-    city.fillRect(128, 156, 316, 254);
-    city.fillStyle(0x252a41, 1);
-    city.fillRect(139, 222, 67, 142);
-    city.fillRect(213, 183, 77, 181);
-    city.fillRect(300, 207, 54, 157);
-    city.fillRect(361, 169, 72, 195);
-    city.fillStyle(0xff4f6f, 0.9);
-    for (let x = 151; x <= 412; x += 29) {
-      city.fillRect(x, 246, 8, 14);
-      city.fillRect(x, 277, 8, 14);
+    const cityAsset = BACKGROUND_ASSETS.cityV1.key;
+    if (this.textures.exists(cityAsset)) {
+      const targetWidth = 316;
+      const targetHeight = 254;
+      const image = this.add.image(286, 283, cityAsset).setDepth(20);
+      const sourceWidth = image.frame.realWidth;
+      const sourceHeight = image.frame.realHeight;
+      const cropWidth = Math.round(sourceHeight * (targetWidth / targetHeight));
+      image
+        .setDisplaySize(targetHeight * (sourceWidth / sourceHeight), targetHeight)
+        .setCrop(Math.round((sourceWidth - cropWidth) / 2), 0, cropWidth, sourceHeight);
+      this.add.rectangle(286, 283, targetWidth, targetHeight, 0x111525, 0.2)
+        .setDepth(21);
+    } else {
+      const city = this.add.graphics().setDepth(20);
+      city.fillStyle(0x111525, 1);
+      city.fillRect(128, 156, 316, 254);
+      city.fillStyle(0x252a41, 1);
+      city.fillRect(139, 222, 67, 142);
+      city.fillRect(213, 183, 77, 181);
+      city.fillRect(300, 207, 54, 157);
+      city.fillRect(361, 169, 72, 195);
+      city.fillStyle(0xff4f6f, 0.9);
+      for (let x = 151; x <= 412; x += 29) {
+        city.fillRect(x, 246, 8, 14);
+        city.fillRect(x, 277, 8, 14);
+      }
+      city.lineStyle(5, 0x42e8ec, 0.85);
+      city.beginPath();
+      city.moveTo(138, 314);
+      city.lineTo(432, 314);
+      city.strokePath();
+      city.lineStyle(6, 0x6a314f, 1);
+      city.beginPath();
+      city.moveTo(157, 198);
+      city.lineTo(157, 166);
+      city.lineTo(239, 166);
+      city.strokePath();
     }
-    city.lineStyle(5, 0x42e8ec, 0.85);
-    city.beginPath();
-    city.moveTo(138, 314);
-    city.lineTo(432, 314);
-    city.strokePath();
-    city.lineStyle(6, 0x6a314f, 1);
-    city.beginPath();
-    city.moveTo(157, 198);
-    city.lineTo(157, 166);
-    city.lineTo(239, 166);
-    city.strokePath();
 
     this.add.tileSprite(286, 365, 316, 32, TEXTURE_KEYS.tileStone).setDepth(24);
     this.add.image(362, 306, TEXTURE_KEYS.portal).setScale(0.72).setDepth(28);

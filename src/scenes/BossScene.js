@@ -12,6 +12,7 @@ import {
 } from '../game/PowerSystem.js';
 import { createButton, focusGameCanvas } from '../ui/Button.js';
 import {
+  BACKGROUND_ASSETS,
   addPixelBackground,
   announce,
   createBodyText,
@@ -118,7 +119,9 @@ export class BossScene extends Phaser.Scene {
     this.cameras.main.setBounds(0, 0, ARENA_WIDTH, ARENA_HEIGHT);
     this.cameras.main.setBackgroundColor('#26143f');
 
-    addPixelBackground(this, 'babilandia', {
+    this.background = addPixelBackground(this, 'babilandia', {
+      assetKey: BACKGROUND_ASSETS.bossArenaV1.key,
+      assetOverscan: 1,
       depth: -100,
       showGround: false,
       musicTheme: 'boss',
@@ -166,22 +169,26 @@ export class BossScene extends Phaser.Scene {
   }
 
   createCorruptedBackdrop() {
-    const veil = this.add.graphics().setDepth(-20);
-    veil.fillStyle(0x2f124d, 0.34);
-    veil.fillRect(0, 0, ARENA_WIDTH, ARENA_HEIGHT);
-    veil.fillStyle(0x5f226f, 0.32);
-    for (let x = 55; x < ARENA_WIDTH; x += 125) {
-      const height = 55 + ((x * 7) % 100);
-      veil.fillTriangle(x - 32, FLOOR_TOP, x, FLOOR_TOP - height, x + 34, FLOOR_TOP);
-    }
+    // Keep the old procedural treatment only as a resilient fallback when the
+    // dedicated arena image cannot be loaded.
+    if (!this.background?.assetKey) {
+      const veil = this.add.graphics().setDepth(-20);
+      veil.fillStyle(0x2f124d, 0.34);
+      veil.fillRect(0, 0, ARENA_WIDTH, ARENA_HEIGHT);
+      veil.fillStyle(0x5f226f, 0.32);
+      for (let x = 55; x < ARENA_WIDTH; x += 125) {
+        const height = 55 + ((x * 7) % 100);
+        veil.fillTriangle(x - 32, FLOOR_TOP, x, FLOOR_TOP - height, x + 34, FLOOR_TOP);
+      }
 
-    const portal = this.add.graphics().setDepth(-8);
-    portal.fillStyle(0x150d2e, 0.9);
-    portal.fillEllipse(790, 305, 184, 246);
-    portal.lineStyle(7, 0xc74dff, 0.42);
-    portal.strokeEllipse(790, 305, 184, 246);
-    portal.lineStyle(3, 0x7ce7ff, 0.2);
-    portal.strokeEllipse(790, 305, 145, 205);
+      const portal = this.add.graphics().setDepth(-8);
+      portal.fillStyle(0x150d2e, 0.9);
+      portal.fillEllipse(790, 305, 184, 246);
+      portal.lineStyle(7, 0xc74dff, 0.42);
+      portal.strokeEllipse(790, 305, 184, 246);
+      portal.lineStyle(3, 0x7ce7ff, 0.2);
+      portal.strokeEllipse(790, 305, 145, 205);
+    }
 
     createAmbientMotes(this, {
       seed: 'boss-corruption',
@@ -198,8 +205,8 @@ export class BossScene extends Phaser.Scene {
   createArena() {
     this.platformDefinitions = [
       { x: 480, y: 511, width: 960, height: 58, texture: TEXTURE_KEYS.tileStone, floor: true },
-      { x: 288, y: 376, width: 176, height: 20, texture: TEXTURE_KEYS.tilePlatform },
-      { x: 666, y: 352, width: 170, height: 20, texture: TEXTURE_KEYS.tilePlatform },
+      { x: 288, y: 376, width: 176, height: 20, texture: TEXTURE_KEYS.tileStone },
+      { x: 666, y: 352, width: 170, height: 20, texture: TEXTURE_KEYS.tileStone },
     ];
     this.platforms = this.physics.add.staticGroup();
 
@@ -221,7 +228,7 @@ export class BossScene extends Phaser.Scene {
     edge.fillStyle(0xffffff, 0.12);
     edge.fillRect(0, FLOOR_TOP + 5, ARENA_WIDTH, 3);
 
-    createLabel(this, 'ARENA DEL PORTAL', 480, 116, {
+    createLabel(this, 'BABILANDIA CORROMPIDA', 480, 116, {
       fontSize: '11px',
       color: 0xf0bdff,
       depth: 7,
