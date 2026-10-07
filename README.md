@@ -2,21 +2,30 @@
 
 **Pequeños Babitos, grandes aventuras.**
 
-BABITOS es un plataformas 2D familiar hecho con JavaScript, Phaser 3 y Vite. En este primer *vertical slice* puedes crear un Babito por capas, elegir un poder y recorrer Babilandia para enfrentarte a COME, VUELA, DA VUELTAS y al Babito Corrupto. Las monedas sirven para comprar cosméticos en la tienda del Señor Empanadilla y el Señor Pingüino.
+BABITOS es un plataformas 2D familiar hecho con JavaScript, Phaser 3 y Vite. En este primer *vertical slice* puedes crear un Babito por capas, elegir un poder y recorrer Babilandia para enfrentarte a COME, VUELA, DA VUELTAS y al Babito Corrupto. Las monedas del juego, llamadas Babicoins, sirven para comprar cosméticos en la tienda del Señor Empanadilla y el Señor Pingüino.
 
 El juego funciona completamente en el navegador, sin backend ni base de datos. La partida se guarda en `localStorage` bajo la clave versionada `babitos.save.v1`.
 
 Juega en: [https://jorgegalindocruces.github.io/Babitos/](https://jorgegalindocruces.github.io/Babitos/)
+
+Documentación vigente:
+
+- [Interacciones del juego](docs/INTERACTIONS.md): controles, flujo, menús, combate, persistencia y accesibilidad implementada.
+- [Registro de cambios](docs/CHANGELOG.md): iteraciones, commits, assets y comprobaciones asociadas.
+- [Diseño y roadmap](docs/GAME_DESIGN.md): visión completa y separación entre contenido actual y futuro.
+- [Especificación técnica](docs/IMPLEMENTATION_SPEC.md) y [criterios de aceptación](docs/ACCEPTANCE_CRITERIA.md).
 
 ## Recorrido jugable
 
 1. Título.
 2. Creador de Babitos: cuerpo, ojos, boca, brazos y accesorios son capas independientes.
 3. Elección de Fuego, Rayo o Roca.
-4. Babilandia, que también funciona como tutorial.
-5. Encuentros con COME, VUELA y DA VUELTAS; cada enemigo puede soltar entre cero y dos monedas.
-6. Combate contra el Babito Corrupto.
-7. Tienda de cosméticos y acceso a los adelantos de las siguientes fases.
+4. Intro de las Manzanas de Poder.
+5. Babilandia, que también funciona como tutorial.
+6. Seis encuentros con COME, VUELA y DA VUELTAS; cada enemigo puede soltar entre cero y dos monedas.
+7. Combate contra el Babito Corrupto.
+8. Tienda de cosméticos.
+9. Mapa con rejuego de Babilandia y avances estáticos de La Jungla y Ciudad Bicharraca.
 
 Los tamaños pequeño, normal y grande son puramente visuales: usan el mismo *hitbox* y las mismas estadísticas.
 
@@ -29,18 +38,22 @@ Los tamaños pequeño, normal y grande son puramente visuales: usan el mismo *hi
 | Atacar con el poder activo | `J` o `X` |
 | Pausa | `P` o `Esc` |
 | Activar o silenciar audio | `M` |
+| Saltar la intro | `S` |
 | Navegar por botones | `Tab` / `Mayús + Tab` |
 | Activar el botón enfocado | `Enter` o `Espacio` |
 
-También se puede usar ratón o pantalla táctil en los menús y los controles virtuales durante la partida. El botón `AUDIO` permanece disponible junto al lienzo y recuerda la preferencia local de mute.
+También se puede usar ratón o pantalla táctil en los menús. Los pads virtuales de movimiento, salto y ataque aparecen durante la partida cuando el navegador detecta una pantalla táctil o puntero grueso. `Espacio` salta mientras el foco está en el gameplay y activa un botón cuando el foco accesible está sobre ese control. El botón `AUDIO` permanece disponible junto al lienzo y recuerda la preferencia local de mute.
+
+La descripción exhaustiva, incluidas las reglas de foco, pausa, reintento y vulnerabilidad, está en [Interacciones del juego](docs/INTERACTIONS.md).
 
 ## Iteración 0.2 · Pulido audiovisual
 
 - Babilandia utiliza un nuevo fondo pixel art panorámico basado exclusivamente en la arquitectura, paleta y atmósfera de la lámina oficial. Si el asset no puede cargarse, el juego vuelve automáticamente al fondo procedural.
 - La arena de Babito Corrupto tiene un fondo 16:9 propio: Babilandia en ruinas al atardecer, basado en el ejemplo canónico del boss y con una zona de juego limpia para conservar la lectura de ataques y plataformas.
-- Ciudad Bicharraca, el último mundo del mapa, muestra ya su paisaje industrial 16:9 tanto en el fondo de la pantalla como en su avance jugable.
+- Ciudad Bicharraca, el último mundo del mapa, muestra ya su paisaje industrial 16:9 como fondo y recorte interior de su pantalla de avance estática; la tarjeta del mapa mantiene un icono procedural.
 - Música ambiental y efectos para interfaz, salto, ataque, daño, monedas, checkpoints, boss y compras se sintetizan en el navegador mediante Web Audio, sin archivos ni dependencias adicionales.
-- El Babito conserva poses legibles de ataque y daño, y reacciona al salto y al aterrizaje sin modificar su hitbox.
+- El Babito tiene clips diferenciados de `idle`, caminar, saltar, caer, atacar, recibir daño y KO. COME, VUELA, DA VUELTAS y Babito Corrupto también cambian de animación o pose según su estado.
+- Los botones responden en toda su superficie visible a ratón y toque, y ofrecen foco, estado deshabilitado y activación por teclado mediante controles HTML accesibles.
 - `Espacio` queda reservado para saltar durante el gameplay; los botones del HUD siguen disponibles con ratón, toque o navegación accesible mediante `Tab`.
 
 ## Ejecutar en local
@@ -81,7 +94,7 @@ src/
 art/
 ├── approved/          Dirección artística canónica
 └── original_drawings/ Dibujos originales de referencia
-docs/                  Diseño, arte, implementación y aceptación
+docs/                  Interacciones, cambios, diseño, arte, implementación y aceptación
 test/                  Pruebas automáticas sin navegador real
 ```
 
@@ -92,10 +105,11 @@ La configuración se mantiene fuera de las escenas siempre que es posible:
 - `src/data/levels/` contiene la geometría y entidades de cada fase.
 - `src/state/SaveStore.js` valida, migra y persiste la partida.
 - `src/game/createTextures.js` mantiene claves de textura estables mientras se sustituyen los gráficos temporales.
+- `docs/INTERACTIONS.md` es el contrato humano del comportamiento observable; los datos y el código enlazados allí son la fuente ejecutable.
 
 Este enfoque permite ampliar BABITOS sin introducir casos particulares en la interfaz o en la lógica de guardado.
 
-## Create your own Babito
+## Crea tu propio Babito
 
 Cada Babito se compone de siete categorías independientes: `body`, `eyes`, `mouth`, `arms`, `headAccessory`, `glasses` y `neckAccessory`. Ojos y boca nunca se combinan en una única “cara”.
 
@@ -118,7 +132,7 @@ Para añadir unos ojos, una boca, una skin o un accesorio:
 4. Usa `unlocked: true` y `price: 0` para una opción inicial. Las opciones bloqueadas se compran con monedas.
 5. Ejecuta `npm test` y `npm run build`.
 
-El Creator, la tienda, el guardado y `¡BABITO LOCO!` leen el catálogo automáticamente. El randomizador solo utiliza elementos desbloqueados.
+El Creador, la tienda, el guardado y `¡BABITO LOCO!` leen el catálogo automáticamente. El randomizador solo utiliza elementos desbloqueados.
 
 Para crear un nivel, añade sus datos a `src/data/levels/` y una escena que los consuma. Para un enemigo nuevo en futuras expansiones, mantén su comportamiento configurable y evita acoplarlo a un nivel concreto.
 
@@ -137,14 +151,16 @@ Vite usa rutas relativas (`base: './'`), por lo que imágenes, módulos y demás
 
 ## Placeholders actuales
 
-Las láminas de `art/approved/` son dirección artística, no *spritesheets* finales. Babilandia, la arena de Babito Corrupto y Ciudad Bicharraca ya disponen de fondos raster integrados en `public/assets/backgrounds/`, con fallback procedural. El resto del vertical slice utiliza texturas pixel art generadas por código con claves definitivas para:
+Las láminas de `art/approved/` son dirección artística, no *spritesheets* finales. El estado actual es:
 
-- capas del Babito y cosméticos;
-- COME, VUELA y DA VUELTAS;
-- Babito Corrupto, tenderos, moneda y Árbol de Poder;
-- proyectiles, plataformas, props y elementos del HUD.
+- Babilandia, la arena de Babito Corrupto y Ciudad Bicharraca tienen fondos raster con fallback procedural.
+- COME usa una hoja raster de producción.
+- Logo, Babito Corrupto, tenderos y Árbol de Poder tienen PNG raster; las poses del boss se componen en runtime.
+- Las capas y cosméticos del Babito, las hojas de VUELA y DA VUELTAS, la moneda, proyectiles, plataformas, props y HUD siguen siendo pixel art generado por código con claves definitivas.
 
-Estas texturas deben sustituirse gradualmente por sprites y animaciones finales sin cambiar sus IDs ni la lógica. El audio actual es procedural: funciona como primera dirección sonora, pero todavía debe sustituirse o ampliarse con música y efectos producidos. La Jungla y Ciudad Bicharraca son adelantos navegables; sus niveles y bosses completos pertenecen a iteraciones posteriores.
+Los placeholders deben sustituirse gradualmente por sprites y animaciones finales sin cambiar sus IDs ni la lógica. El audio actual es procedural: funciona como primera dirección sonora, pero todavía debe sustituirse o ampliarse con música y efectos producidos. La Jungla y Ciudad Bicharraca son pantallas de avance; sus niveles y bosses completos pertenecen a iteraciones posteriores.
+
+El estado exacto y la procedencia de los assets se describen en [ART_BIBLE.md](docs/ART_BIBLE.md) y `art/production/`.
 
 `worlds_environment_reference_only.png` sirve únicamente para escenarios, paleta y atmósfera. Los enemigos canónicos son los de `enemies_canonical.png`.
 
@@ -156,7 +172,8 @@ Las contribuciones son bienvenidas:
 2. Mantén el proyecto en JavaScript y evita dependencias innecesarias.
 3. Conserva los IDs y diseños canónicos; usa datos en lugar de hardcodear catálogos.
 4. Añade o actualiza pruebas cuando cambie la lógica.
-5. Comprueba `npm test` y `npm run build` antes de abrir un pull request.
+5. Actualiza [INTERACTIONS.md](docs/INTERACTIONS.md), los criterios y el [registro de cambios](docs/CHANGELOG.md) cuando cambie el comportamiento observable.
+6. Comprueba `npm test` y `npm run build` antes de abrir un pull request.
 
 Puedes proponer nuevos Babitos, cosméticos, niveles o enemigos para futuras expansiones. Los tres enemigos normales del vertical slice —COME, VUELA y DA VUELTAS— no deben sustituirse ni rediseñarse.
 
