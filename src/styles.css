@@ -58,6 +58,7 @@ body {
   font: 700 9px 'Silkscreen', monospace;
   letter-spacing: 0.04em;
   cursor: pointer;
+  touch-action: manipulation;
   opacity: 0.82;
   box-shadow: 0 3px 0 rgba(2, 8, 20, 0.72);
 }
@@ -107,6 +108,7 @@ body {
   display: block;
   width: 100% !important;
   height: 100% !important;
+  touch-action: none;
 }
 
 #game > div {

@@ -85,7 +85,15 @@ export class PlayerController {
 
   setEnabled(enabled) {
     this.enabled = enabled;
-    if (!enabled) this.body.setVelocityX(0);
+    if (!enabled) {
+      this.body.setAccelerationX(0);
+      this.body.setVelocityX(0);
+      this.jumpBufferedUntil = -Infinity;
+      this.keyboardPressed.jump = false;
+      this.keyboardPressed.attack = false;
+      this.virtualPressed.jump = false;
+      this.virtualPressed.attack = false;
+    }
   }
 
   update(time) {
@@ -225,9 +233,17 @@ export class PlayerController {
     this.hurtUntil = -Infinity;
     this.wasGrounded = false;
     this.previousVerticalVelocity = 0;
+    this.keyboardPressed.jump = false;
+    this.keyboardPressed.attack = false;
+    this.virtual = { left: false, right: false, jump: false, attack: false };
+    this.virtualPressed = { jump: false, attack: false };
     this.avatar.cancelMotionPulses?.();
     this.body.enableBody(true, this.checkpoint.x, this.checkpoint.y, true, true);
+    this.body.setAcceleration(0);
     this.body.setVelocity(0);
+    this.body.setAngularVelocity(0);
+    this.avatar.setPosition(this.checkpoint.x, this.checkpoint.y + 2);
+    this.avatar.setAlpha(1);
     this.onHealth?.(this.health, this.config.maxHealth);
   }
 

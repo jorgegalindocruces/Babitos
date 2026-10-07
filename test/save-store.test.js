@@ -219,6 +219,40 @@ test('updates identity, power, coins and partial progress safely', () => {
   assert.equal(state.progress.phase1Complete, false);
 });
 
+test('restarts story progress without erasing the Babito collection or repeat-proof rewards', () => {
+  const store = new SaveStore({ storage: createMemoryStorage() });
+  store.setName('Luna');
+  store.setSize('large');
+  store.addCoins(80);
+  assert.equal(store.purchaseCosmetic('eyes', 'eyes_cute').ok, true);
+  assert.equal(store.equipCosmetic('eyes', 'eyes_cute').ok, true);
+  store.setSelectedPower('rock');
+  store.setProgress({
+    scene: 'shop',
+    checkpoint: 'plaza-2',
+    boss1Defeated: true,
+    phase1Complete: true,
+  });
+  store.claimReward('boss-1-cleansed', 30);
+
+  const restarted = store.restartAdventure();
+
+  assert.equal(restarted.name, 'Luna');
+  assert.equal(restarted.size, 'large');
+  assert.equal(restarted.appearance.eyes, 'eyes_cute');
+  assert.ok(restarted.unlockedCosmetics.eyes.includes('eyes_cute'));
+  assert.equal(restarted.coins, 90);
+  assert.equal(restarted.selectedPower, null);
+  assert.deepEqual(restarted.unlockedPowers, []);
+  assert.deepEqual(restarted.progress, {
+    scene: 'creator',
+    checkpoint: 'start',
+    boss1Defeated: false,
+    phase1Complete: false,
+    claimedRewards: ['boss-1-cleansed'],
+  });
+});
+
 test('claims coin rewards atomically and only once', () => {
   const storage = createMemoryStorage();
   const store = new SaveStore({ storage });

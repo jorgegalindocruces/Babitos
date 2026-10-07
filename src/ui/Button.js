@@ -170,8 +170,7 @@ function createButtonRegistry(scene) {
     },
     activateFocused() {
       if (!this.focused?.isFocusable() || !this.focused.keyboardShortcuts) {
-        this.moveFocus(1, true);
-        return false;
+        if (!this.moveFocus(1, true)) return false;
       }
 
       return this.focused.activate('keyboard');
@@ -197,6 +196,10 @@ function createButtonRegistry(scene) {
         || !keyboardEventBelongsToGame(scene, event)
         || event?.repeat
       ) return;
+      // Gameplay scenes can expose pointer-only controls (for example the
+      // pause icon). Do not swallow Space when there is no menu action that
+      // is intentionally bound to keyboard shortcuts.
+      if (shortcutButtons(registry).length === 0) return;
       event?.preventDefault?.();
       event?.stopPropagation?.();
       registry.activateFocused();
@@ -414,6 +417,23 @@ export class Button extends Phaser.GameObjects.Container {
 
   focus() {
     return this.registry?.setFocus(this) ?? false;
+  }
+
+  /**
+   * Moves both the canvas focus ring and the browser's native accessibility
+   * focus. Use this after a menu changes its available actions so a second
+   * Enter/Space press activates the newly-relevant control.
+   */
+  focusAccessible() {
+    const focused = this.focus();
+    if (!focused || !this.accessibleElement?.focus) return focused;
+
+    try {
+      this.accessibleElement.focus({ preventScroll: true });
+    } catch {
+      this.accessibleElement.focus();
+    }
+    return true;
   }
 
   blur() {

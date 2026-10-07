@@ -10,6 +10,7 @@ import {
   createLabel,
   createPanel,
   createTitle,
+  CHARACTER_ASSETS,
   UI_COLORS,
 } from '../ui/sceneHelpers.js';
 import {
@@ -112,8 +113,11 @@ export class IntroScene extends Phaser.Scene {
       depth: 18,
     });
 
-    const tree = this.add.image(274, 281, TEXTURE_KEYS.powerTreeSad)
-      .setScale(2.25)
+    const treeTexture = this.textures.exists(CHARACTER_ASSETS.powerTreeSadV2.key)
+      ? CHARACTER_ASSETS.powerTreeSadV2.key
+      : TEXTURE_KEYS.powerTreeSad;
+    const tree = this.add.image(274, 280, treeTexture)
+      .setDisplaySize(258, 258)
       .setDepth(16);
     this.tweens.add({
       targets: tree,

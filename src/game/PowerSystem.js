@@ -1,8 +1,19 @@
 import Phaser from 'phaser';
 import gameData from '../data/game-data.json';
 
+const POWER_PROJECTILE_FLAG = 'isPowerProjectile';
+
 export function getPower(powerId) {
   return gameData.powers.find((power) => power.id === powerId) ?? gameData.powers[0];
+}
+
+/**
+ * Collision callbacks can receive their participants in a different order when
+ * groups are involved. Keep a positive identity check so terrain can never be
+ * mistaken for (and destroyed as) a projectile.
+ */
+export function isPowerProjectile(candidate) {
+  return Boolean(candidate?.getData?.(POWER_PROJECTILE_FLAG));
 }
 
 /** Creates a projectile with all tuning read from game-data.json. */
@@ -15,6 +26,7 @@ export function launchPower(scene, group, { x, y, facing = 1, powerId = 'fire', 
   projectile.setDepth(12);
   projectile.setDataEnabled();
   projectile.setData({
+    [POWER_PROJECTILE_FLAG]: true,
     owner,
     powerId: power.id,
     damage: power.damage,

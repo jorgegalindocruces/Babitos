@@ -32,10 +32,6 @@ const CATEGORY_LABELS = Object.freeze({
   neckAccessory: 'CUELLO',
 });
 
-function itemTextureKey(item) {
-  return typeof item.assetKey === 'string' && item.assetKey ? item.assetKey : item.id;
-}
-
 export class ShopScene extends Phaser.Scene {
   constructor() {
     super('ShopScene');
@@ -182,10 +178,10 @@ export class ShopScene extends Phaser.Scene {
     });
 
     this.empanadilla = this.add.image(102, 263, TEXTURE_KEYS.merchantEmpanadilla)
-      .setScale(1.12)
+      .setDisplaySize(104, 104)
       .setDepth(20);
     this.pinguino = this.add.image(219, 265, TEXTURE_KEYS.merchantPinguino)
-      .setScale(1.06)
+      .setDisplaySize(104, 104)
       .setDepth(20);
 
     this.tweens.add({
@@ -303,24 +299,21 @@ export class ShopScene extends Phaser.Scene {
       button.labelText.setX(28);
       this.catalogObjects.push(button);
 
-      const textureKey = itemTextureKey(item);
-      if (item.id === 'none' || !this.textures.exists(textureKey)) {
-        const emptyIcon = this.add.graphics({ x: x - 104, y }).setDepth(120);
-        emptyIcon.lineStyle(3, 0xb7d9e9, 0.8);
-        emptyIcon.strokeCircle(0, 0, 16);
-        emptyIcon.beginPath();
-        emptyIcon.moveTo(-10, -10);
-        emptyIcon.lineTo(10, 10);
-        emptyIcon.moveTo(10, -10);
-        emptyIcon.lineTo(-10, 10);
-        emptyIcon.strokePath();
-        this.catalogObjects.push(emptyIcon);
-      } else {
-        const icon = this.add.image(x - 104, y, textureKey).setDepth(120);
-        const maxDimension = Math.max(icon.width, icon.height, 1);
-        icon.setScale(Math.min(0.95, 39 / maxDimension));
-        this.catalogObjects.push(icon);
-      }
+      // Preview every layer on a real Babito. Isolated eye/mouth pixels were
+      // too small to read and did not prove that a catalog choice was usable.
+      const previewAppearance = {
+        ...snapshot.appearance,
+        [item.category]: item.id,
+      };
+      const preview = new BabitoAvatar(
+        this,
+        x - 104,
+        y,
+        previewAppearance,
+        'normal',
+      ).setScale(0.78).setDepth(120);
+      preview.setMotion('idle');
+      this.catalogObjects.push(preview);
     });
 
     this.pageText.setText(`PÁGINA ${this.page + 1} / ${this.pageCount}`);

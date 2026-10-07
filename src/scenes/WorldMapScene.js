@@ -9,6 +9,7 @@ import {
   createLabel,
   createPanel,
   createTitle,
+  CHARACTER_ASSETS,
   UI_COLORS,
 } from '../ui/sceneHelpers.js';
 import { createAmbientMotes, fadeIn, transitionToScene } from '../ui/effects.js';
@@ -224,7 +225,13 @@ export class WorldMapScene extends Phaser.Scene {
     jungle.fillRect(39, -18, 13, 51);
     jungle.fillStyle(0x6edcf1, 0.9);
     jungle.fillRect(-7, -13, 14, 50);
-    this.add.image(x, y + 5, TEXTURE_KEYS.powerTreeSad).setScale(0.42).setDepth(134);
+    const requestedTree = this.phaseComplete
+      ? CHARACTER_ASSETS.powerTreeRestoredV2.key
+      : CHARACTER_ASSETS.powerTreeSadV2.key;
+    const treeTexture = this.textures.exists(requestedTree)
+      ? requestedTree
+      : TEXTURE_KEYS.powerTreeSad;
+    this.add.image(x, y + 3, treeTexture).setDisplaySize(72, 72).setDepth(134);
   }
 
   createCityIcon(x, y) {

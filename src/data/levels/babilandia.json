@@ -4,11 +4,11 @@
   "worldWidth": 5600,
   "spawn": { "x": 130, "y": 400 },
   "platforms": [
-    { "x": 600, "y": 510, "width": 1200, "height": 60, "kind": "ground" },
-    { "x": 1840, "y": 510, "width": 1120, "height": 60, "kind": "ground" },
-    { "x": 3040, "y": 510, "width": 1120, "height": 60, "kind": "ground" },
-    { "x": 4185, "y": 510, "width": 1050, "height": 60, "kind": "ground" },
-    { "x": 5180, "y": 510, "width": 840, "height": 60, "kind": "ground" },
+    { "x": 600, "y": 510, "width": 1204, "height": 60, "kind": "ground" },
+    { "x": 1800, "y": 510, "width": 1204, "height": 60, "kind": "ground" },
+    { "x": 3000, "y": 510, "width": 1204, "height": 60, "kind": "ground" },
+    { "x": 4200, "y": 510, "width": 1204, "height": 60, "kind": "ground" },
+    { "x": 5200, "y": 510, "width": 804, "height": 60, "kind": "ground" },
     { "x": 520, "y": 410, "width": 180, "height": 26, "kind": "platform" },
     { "x": 1080, "y": 390, "width": 210, "height": 26, "kind": "platform" },
     { "x": 1450, "y": 430, "width": 150, "height": 26, "kind": "platform" },
@@ -20,10 +20,10 @@
     { "x": 4550, "y": 365, "width": 210, "height": 26, "kind": "platform" }
   ],
   "checkpoints": [
-    { "id": "start", "x": 130, "y": 438 },
-    { "id": "market_gate", "x": 1550, "y": 438 },
-    { "id": "fountain", "x": 3150, "y": 438 },
-    { "id": "boss_gate", "x": 4550, "y": 438 }
+    { "id": "start", "x": 130, "y": 480 },
+    { "id": "market_gate", "x": 1550, "y": 480 },
+    { "id": "fountain", "x": 3150, "y": 480 },
+    { "id": "boss_gate", "x": 4550, "y": 480 }
   ],
   "enemies": [
     { "id": "come_1", "type": "come", "x": 920, "y": 420 },
@@ -33,5 +33,5 @@
     { "id": "da_vueltas_1", "type": "da_vueltas", "x": 3260, "y": 420 },
     { "id": "come_2", "type": "come", "x": 4140, "y": 420 }
   ],
-  "bossPortal": { "x": 5260, "y": 423 }
+  "bossPortal": { "x": 5260, "y": 480 }
 }

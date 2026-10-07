@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 import { createTextures } from '../game/createTextures.js';
 import { SaveStore } from '../state/SaveStore.js';
-import { BACKGROUND_ASSETS } from '../ui/sceneHelpers.js';
+import { BACKGROUND_ASSETS, CHARACTER_ASSETS } from '../ui/sceneHelpers.js';
 
 const DEV_QA_SCENES = new Set([
   'TitleScene',
@@ -37,7 +37,10 @@ export class BootScene extends Phaser.Scene {
   }
 
   preload() {
-    for (const asset of Object.values(BACKGROUND_ASSETS)) {
+    for (const asset of [
+      ...Object.values(BACKGROUND_ASSETS),
+      ...Object.values(CHARACTER_ASSETS),
+    ]) {
       if (!this.textures.exists(asset.key)) {
         this.load.image(asset.key, `${import.meta.env.BASE_URL}${asset.url}`);
       }

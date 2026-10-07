@@ -3,7 +3,7 @@ import levelData from '../data/levels/babilandia.json';
 import gameData from '../data/game-data.json';
 import { EnemyController } from '../game/EnemyController.js';
 import { PlayerController } from '../game/PlayerController.js';
-import { makeImpact } from '../game/PowerSystem.js';
+import { isPowerProjectile, makeImpact } from '../game/PowerSystem.js';
 import { createButton } from '../ui/Button.js';
 import {
   addPixelBackground,
@@ -15,6 +15,11 @@ import {
   createTitle,
 } from '../ui/sceneHelpers.js';
 import { flashScreen, showToast, transitionToScene } from '../ui/effects.js';
+
+function prefersTouchControls() {
+  if (typeof window === 'undefined' || typeof navigator === 'undefined') return false;
+  return navigator.maxTouchPoints > 0 || Boolean(window.matchMedia?.('(pointer: coarse)').matches);
+}
 
 export class GameScene extends Phaser.Scene {
   constructor() {
@@ -83,7 +88,7 @@ export class GameScene extends Phaser.Scene {
     this.createBossPortal();
     this.createPhysicsInteractions();
     this.createHud();
-    this.createTouchControls();
+    if (prefersTouchControls()) this.createTouchControls();
     this.createPauseKeys();
 
     this.store.setProgress({ scene: 'babilandia', checkpoint: savedCheckpoint.id });
@@ -95,12 +100,12 @@ export class GameScene extends Phaser.Scene {
   }
 
   createPlatforms() {
-    this.platforms = this.add.group();
+    this.platforms = this.physics.add.staticGroup();
     for (const platform of this.level.platforms) {
       const texture = platform.kind === 'ground' ? 'tile_ground' : 'tile_platform';
       const tile = this.add.tileSprite(platform.x, platform.y, platform.width, platform.height, texture)
         .setDepth(4);
-      this.physics.add.existing(tile, true);
+      tile.setData({ isPlatform: true, kind: platform.kind });
       this.platforms.add(tile);
     }
   }
@@ -148,7 +153,9 @@ export class GameScene extends Phaser.Scene {
   createCheckpoints() {
     this.checkpointSprites = this.physics.add.staticGroup();
     this.level.checkpoints.forEach((checkpoint) => {
-      const sprite = this.checkpointSprites.create(checkpoint.x, checkpoint.y, 'checkpoint')
+      // Keep the flag beside the respawn point rather than directly on top of
+      // the Babito. The trigger remains close enough to activate on approach.
+      const sprite = this.checkpointSprites.create(checkpoint.x - 42, checkpoint.y, 'checkpoint')
         .setOrigin(0.5, 1)
         .setDepth(8)
         .setData('checkpoint', checkpoint);
@@ -175,6 +182,7 @@ export class GameScene extends Phaser.Scene {
     this.portal = this.physics.add.staticImage(x, y, 'portal')
       .setOrigin(0.5, 1)
       .setDepth(8);
+    this.portal.refreshBody();
     this.portal.body.setSize(54, 74).setOffset(5, 4);
     this.portalLabel = createLabel(this, 'PORTAL SELLADO', x, y - 104, {
       fontSize: '11px', color: 0xff779b, depth: 15, scrollFactor: 1,
@@ -183,11 +191,16 @@ export class GameScene extends Phaser.Scene {
 
   createPhysicsInteractions() {
     this.physics.add.collider(this.coins, this.platforms);
-    this.physics.add.collider(this.projectiles, this.platforms, (projectile) => {
+    this.physics.add.collider(this.projectiles, this.platforms, (first, second) => {
+      const projectile = isPowerProjectile(first) ? first : (isPowerProjectile(second) ? second : null);
+      if (!projectile?.active) return;
       makeImpact(this, projectile.x, projectile.y, 0xffcf3c);
       projectile.destroy();
-    });
-    this.physics.add.overlap(this.projectiles, this.enemySprites, (projectile, enemySprite) => {
+    }, (first, second) => isPowerProjectile(first) || isPowerProjectile(second));
+    this.physics.add.overlap(this.projectiles, this.enemySprites, (first, second) => {
+      const projectile = isPowerProjectile(first) ? first : (isPowerProjectile(second) ? second : null);
+      const enemySprite = projectile === first ? second : first;
+      if (!projectile?.active || !enemySprite?.active) return;
       if (!projectile.active || projectile.getData('owner') !== 'player') return;
       const controller = enemySprite.getData('controller');
       const damaged = controller?.takeDamage(projectile.getData('damage') ?? 1, projectile.x);
@@ -198,7 +211,7 @@ export class GameScene extends Phaser.Scene {
         });
       }
       projectile.destroy();
-    });
+    }, (first, second) => isPowerProjectile(first) || isPowerProjectile(second));
     this.physics.add.overlap(this.player.body, this.enemySprites, (_playerBody, enemySprite) => {
       const controller = enemySprite.getData('controller');
       if (controller?.canHurtPlayer()) this.player.takeDamage(enemySprite.x, controller.config.damage);
@@ -397,6 +410,7 @@ export class GameScene extends Phaser.Scene {
 
   showGameOver() {
     if (this.gameOverContainer) return;
+    this.fallRecoveryPending = false;
     this.physics.world.pause();
     this.pauseButton?.setEnabled(false);
     this.gameOverContainer = this.add.container(0, 0).setDepth(4000).setScrollFactor(0);
@@ -411,6 +425,7 @@ export class GameScene extends Phaser.Scene {
       onPress: () => {
         this.gameOverContainer.destroy(true);
         this.gameOverContainer = null;
+        this.fallRecoveryPending = false;
         this.physics.world.resume();
         this.player.respawn();
         this.pauseButton?.setEnabled(true);
@@ -430,10 +445,15 @@ export class GameScene extends Phaser.Scene {
   handleFall() {
     if (this.fallRecoveryPending || this.gameOverContainer) return;
     this.fallRecoveryPending = true;
-    const healthBefore = this.player.health;
     this.player.takeDamage(this.player.body.x, 1);
-    if (healthBefore > 1) {
-      this.time.delayedCall(380, () => {
+    if (this.player.health > 0) {
+      this.player.setEnabled(false);
+      this.player.body.setVelocity(0);
+      this.fallRecoveryTimer = this.time.delayedCall(380, () => {
+        if (!this.scene.isActive() || this.gameOverContainer) {
+          this.fallRecoveryPending = false;
+          return;
+        }
         this.player.respawn({ restoreHealth: false });
         this.fallRecoveryPending = false;
       });

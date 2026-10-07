@@ -7,9 +7,9 @@ import {
 } from './createTextures.js';
 
 export const BABITO_SIZE_SCALES = Object.freeze({
-  small: 0.82,
+  small: 0.75,
   normal: 1,
-  large: 1.18,
+  large: 1.25,
 });
 
 export const DEFAULT_BABITO_APPEARANCE = Object.freeze({
@@ -164,7 +164,8 @@ export class BabitoAvatar extends Phaser.GameObjects.Container {
       return image;
     };
 
-    // Order matters: arms behind the body, cosmetics in front of the face.
+    // Order matters: capes and arms sit behind the body; bow ties stay in front.
+    makeLayer('cape', TEXTURE_KEYS.neck.heroCape).setVisible(false);
     makeLayer('arms', TEXTURE_KEYS.arms.default);
     makeLayer('body', TEXTURE_KEYS.body.cyan);
     makeLayer('eyes', TEXTURE_KEYS.eyes.normal);
@@ -201,7 +202,15 @@ export class BabitoAvatar extends Phaser.GameObjects.Container {
       TEXTURE_KEYS.arms.round,
     );
     this.appearance.arms = appearanceKey ?? TEXTURE_KEYS.arms.round;
-    this._setLayerTexture('arms', this._motionArmsKey ?? appearanceKey);
+    // Round fins use temporary action poses. Distinct cosmetic silhouettes
+    // remain visible while moving so the creator never promises an option
+    // that silently disappears during gameplay.
+    const canUseMotionPose = appearanceKey === TEXTURE_KEYS.arms.round
+      || appearanceKey === TEXTURE_KEYS.arms.default;
+    this._setLayerTexture(
+      'arms',
+      canUseMotionPose ? (this._motionArmsKey ?? appearanceKey) : appearanceKey,
+    );
     this.layers.arms.clearTint();
     this.layers.arms.setTint(BABITO_PALETTES[this.bodyColorId].tint);
   }
@@ -259,7 +268,9 @@ export class BabitoAvatar extends Phaser.GameObjects.Container {
     this._setLayerTexture('mouth', mouthKey);
     this._setLayerTexture('head', headKey);
     this._setLayerTexture('glasses', glassesKey);
-    this._setLayerTexture('neck', neckKey);
+    const capeKey = neckKey === TEXTURE_KEYS.neck.heroCape ? neckKey : null;
+    this._setLayerTexture('cape', capeKey);
+    this._setLayerTexture('neck', capeKey ? null : neckKey);
     this._refreshArmLayer();
 
     this.setSizeVariant(size ?? patch.size ?? this.sizeVariant);

@@ -7,6 +7,23 @@ const TEXTURES = {
   da_vueltas: 'enemy_da_vueltas',
 };
 
+function setWorldBodySize(sprite, width, height) {
+  const scaleX = Math.max(0.001, Math.abs(sprite.scaleX));
+  const scaleY = Math.max(0.001, Math.abs(sprite.scaleY));
+  sprite.body.setSize(width / scaleX, height / scaleY, true);
+}
+
+function setWorldBodyCircle(sprite, radius) {
+  const scale = Math.max(0.001, Math.abs(sprite.scaleX));
+  const rawRadius = radius / scale;
+  const diameter = rawRadius * 2;
+  sprite.body.setCircle(
+    rawRadius,
+    Math.max(0, (sprite.width - diameter) / 2),
+    Math.max(0, (sprite.height - diameter) / 2),
+  );
+}
+
 export class EnemyController {
   constructor(scene, definition, playerBody, onDefeat) {
     this.scene = scene;
@@ -27,17 +44,32 @@ export class EnemyController {
     this.sprite.setDepth(10).setData('controller', this);
     this.sprite.setCollideWorldBounds(true);
     this.sprite.setBounce(this.type === 'da_vueltas' ? 0.45 : 0);
-    if (this.type === 'come') this.sprite.body.setSize(62, 52).setOffset(9, 10);
-    if (this.type === 'vuela') {
-      this.sprite.body.allowGravity = false;
-      this.sprite.body.setSize(38, 26).setOffset(5, 8);
+    if (this.type === 'come') {
+      // COME must tower over a Babito, as in the canonical character sheet.
+      this.sprite.setDisplaySize(118, 118);
+      setWorldBodySize(this.sprite, 82, 68);
     }
-    if (this.type === 'da_vueltas') this.sprite.body.setCircle(24, 5, 5);
+    if (this.type === 'vuela') {
+      // VUELA is deliberately the smallest enemy and reads as a quick nuisance.
+      this.sprite.setDisplaySize(74, 74);
+      this.sprite.body.allowGravity = false;
+      setWorldBodySize(this.sprite, 54, 32);
+    }
+    if (this.type === 'da_vueltas') {
+      this.sprite.setDisplaySize(78, 78);
+      setWorldBodyCircle(this.sprite, 29);
+    }
+    this.baseScale = { x: this.sprite.scaleX, y: this.sprite.scaleY };
 
-    this.stateBadge = scene.add.text(definition.x, definition.y - 48, this.state, {
-      fontFamily: 'Silkscreen, monospace', fontSize: '8px', color: '#dff8ff',
-      backgroundColor: '#071326bb', padding: { x: 4, y: 2 },
-    }).setOrigin(0.5).setDepth(20).setAlpha(0.78);
+    const showDebugState = import.meta.env.DEV
+      && typeof location !== 'undefined'
+      && new URLSearchParams(location.search).get('debugAI') === '1';
+    this.stateBadge = showDebugState
+      ? scene.add.text(definition.x, definition.y - 48, this.state, {
+        fontFamily: 'Silkscreen, monospace', fontSize: '8px', color: '#dff8ff',
+        backgroundColor: '#071326bb', padding: { x: 4, y: 2 },
+      }).setOrigin(0.5).setDepth(20).setAlpha(0.78)
+      : null;
   }
 
   setState(next) {
@@ -52,10 +84,15 @@ export class EnemyController {
 
   get elapsed() { return this.scene.time.now - this.stateStartedAt; }
 
+  setVisualScale(x = 1, y = x) {
+    this.sprite.setScale(this.baseScale.x * x, this.baseScale.y * y);
+    return this;
+  }
+
   update() {
     if (this.dead || !this.sprite.active) return;
-    this.stateBadge.setPosition(this.sprite.x, this.sprite.y - this.sprite.displayHeight * 0.65 - 12);
-    this.stateBadge.setFlipX(false);
+    this.stateBadge?.setPosition(this.sprite.x, this.sprite.y - this.sprite.displayHeight * 0.65 - 12);
+    this.stateBadge?.setFlipX(false);
     if (this.type === 'come') this.updateCome();
     else if (this.type === 'vuela') this.updateVuela();
     else this.updateDaVueltas();
@@ -75,15 +112,15 @@ export class EnemyController {
       else if (absolute > 470) this.setState('PATROL');
     } else if (this.state === 'WINDUP') {
       this.sprite.setVelocityX(0);
-      this.sprite.setScale(1.04, 0.94);
+      this.setVisualScale(1.04, 0.94);
       if (this.elapsed > 430) this.setState('BITE');
     } else if (this.state === 'BITE') {
-      this.sprite.setScale(1.12, 0.9);
+      this.setVisualScale(1.12, 0.9);
       this.sprite.setVelocityX(this.direction * 235);
       if (this.elapsed > 260) this.setState('RECOVER');
     } else if (this.state === 'RECOVER') {
       this.sprite.setVelocityX(-this.direction * 36);
-      this.sprite.setScale(1);
+      this.setVisualScale();
       if (this.elapsed > 720) this.setState('PATROL');
     }
     this.sprite.setFlipX(this.direction < 0);
@@ -125,10 +162,11 @@ export class EnemyController {
       if (this.elapsed > 1800) this.setState('WINDUP');
     } else if (this.state === 'WINDUP') {
       this.sprite.setVelocityX(0).setAngularVelocity(280);
-      this.sprite.setScale(1.1, 0.9);
+      this.setVisualScale(1.1, 0.9);
       if (this.elapsed > 650) this.setState('SPIN');
     } else if (this.state === 'SPIN') {
-      this.sprite.setScale(1).setAngularVelocity(880);
+      this.setVisualScale();
+      this.sprite.setAngularVelocity(880);
       this.sprite.setVelocityX(this.direction * this.config.spinSpeed);
       if (this.sprite.body.blocked.left || this.sprite.body.blocked.right) this.direction *= -1;
       if (this.elapsed > 2100) this.setState('DIZZY');
@@ -167,12 +205,13 @@ export class EnemyController {
     if (this.dead) return;
     this.dead = true;
     this.sprite.body.enable = false;
-    this.stateBadge.destroy();
+    this.stateBadge?.destroy();
     this.scene.tweens.add({
       targets: this.sprite,
       y: this.sprite.y - 28,
       angle: this.type === 'da_vueltas' ? 120 : 0,
-      scale: 0.2,
+      scaleX: this.baseScale.x * 0.12,
+      scaleY: this.baseScale.y * 0.12,
       alpha: 0,
       duration: 330,
       ease: 'Back.In',

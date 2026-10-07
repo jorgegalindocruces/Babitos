@@ -9,6 +9,7 @@ import {
   createLabel,
   createPanel,
   createTitle,
+  CHARACTER_ASSETS,
 } from '../ui/sceneHelpers.js';
 import { createAmbientMotes, fadeIn, transitionToScene } from '../ui/effects.js';
 
@@ -176,8 +177,11 @@ export class ComingSoonScene extends Phaser.Scene {
 
     this.add.tileSprite(286, 365, 316, 32, TEXTURE_KEYS.tilePlatform)
       .setDepth(24);
-    this.add.image(381, 319, TEXTURE_KEYS.powerTreeSad)
-      .setScale(0.5)
+    const treeTexture = this.textures.exists(CHARACTER_ASSETS.powerTreeSadV2.key)
+      ? CHARACTER_ASSETS.powerTreeSadV2.key
+      : TEXTURE_KEYS.powerTreeSad;
+    this.add.image(381, 318, treeTexture)
+      .setDisplaySize(82, 82)
       .setDepth(25);
     this.add.image(172, 337, TEXTURE_KEYS.propFlower)
       .setScale(0.8)
@@ -187,7 +191,7 @@ export class ComingSoonScene extends Phaser.Scene {
       .setDepth(30);
     avatar.setFacing(1).setMotion('idle');
     this.add.image(316, 255, TEXTURE_KEYS.enemyVuela)
-      .setScale(0.68)
+      .setDisplaySize(54, 54)
       .setAlpha(0.85)
       .setDepth(29);
   }
@@ -227,7 +231,7 @@ export class ComingSoonScene extends Phaser.Scene {
       .setDepth(30);
     avatar.setFacing(1).setMotion('idle');
     this.add.image(408, 337, TEXTURE_KEYS.enemyDaVueltas)
-      .setScale(0.58)
+      .setDisplaySize(54, 54)
       .setAlpha(0.88)
       .setDepth(29);
   }

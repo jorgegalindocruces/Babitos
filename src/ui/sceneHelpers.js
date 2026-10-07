@@ -23,6 +23,46 @@ export const BACKGROUND_ASSETS = Object.freeze({
   }),
 });
 
+/** Approved character art that is loaded once by BootScene and reused by scenes. */
+export const CHARACTER_ASSETS = Object.freeze({
+  logoV2: Object.freeze({
+    key: 'babitos_logo_v2',
+    url: 'assets/characters/babitos-logo-v2.png',
+  }),
+  enemyComeV2: Object.freeze({
+    key: 'enemy_come',
+    url: 'assets/characters/enemy-come-v2.png',
+  }),
+  enemyVuelaV2: Object.freeze({
+    key: 'enemy_vuela',
+    url: 'assets/characters/enemy-vuela-v2.png',
+  }),
+  enemyDaVueltasV2: Object.freeze({
+    key: 'enemy_da_vueltas',
+    url: 'assets/characters/enemy-da-vueltas-v2.png',
+  }),
+  bossCorruptV2: Object.freeze({
+    key: 'boss_corrupt',
+    url: 'assets/characters/boss-corrupt-v2.png',
+  }),
+  merchantEmpanadillaV2: Object.freeze({
+    key: 'merchant_empanadilla',
+    url: 'assets/characters/merchant-empanadilla-v2.png',
+  }),
+  merchantPinguinoV2: Object.freeze({
+    key: 'merchant_pinguino',
+    url: 'assets/characters/merchant-pinguino-v2.png',
+  }),
+  powerTreeSadV2: Object.freeze({
+    key: 'power_tree_sad_v2',
+    url: 'assets/characters/power-tree-sad-v2.png',
+  }),
+  powerTreeRestoredV2: Object.freeze({
+    key: 'power_tree_restored_v2',
+    url: 'assets/characters/power-tree-restored-v2.png',
+  }),
+});
+
 export const BACKGROUND_THEMES = Object.freeze({
   title: Object.freeze({
     sky: Object.freeze([0x061129, 0x081a35, 0x0b2745, 0x103653, 0x174560, 0x1d536a]),

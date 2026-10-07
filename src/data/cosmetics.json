@@ -2,7 +2,14 @@
   "body": [
     { "id": "body_cyan", "label": "Cian clásico", "assetKey": "body_cyan", "color": "#35d6ee", "unlocked": true, "price": 0 },
     { "id": "body_pink", "label": "Rosa chicle", "assetKey": "body_pink", "color": "#ff7aa8", "unlocked": true, "price": 0 },
+    { "id": "body_yellow", "label": "Amarillo solar", "assetKey": "body_yellow", "color": "#ffc52d", "unlocked": true, "price": 0 },
+    { "id": "body_cream", "label": "Crema suave", "assetKey": "body_cream", "color": "#f4ecdc", "unlocked": true, "price": 0 },
     { "id": "body_lime", "label": "Lima eléctrica", "assetKey": "body_lime", "color": "#7ee35a", "unlocked": false, "price": 25 },
+    { "id": "body_purple", "label": "Morado aventura", "assetKey": "body_purple", "color": "#a26be0", "unlocked": false, "price": 25 },
+    { "id": "body_orange", "label": "Naranja chispa", "assetKey": "body_orange", "color": "#ff8434", "unlocked": false, "price": 30 },
+    { "id": "body_red", "label": "Rojo valiente", "assetKey": "body_red", "color": "#f13f55", "unlocked": false, "price": 30 },
+    { "id": "body_teal", "label": "Turquesa menta", "assetKey": "body_teal", "color": "#36d4c7", "unlocked": false, "price": 35 },
+    { "id": "body_charcoal", "label": "Carbón travieso", "assetKey": "body_charcoal", "color": "#3d4652", "unlocked": false, "price": 40 },
     { "id": "body_midnight", "label": "Noche Babita", "assetKey": "body_midnight", "color": "#33445b", "unlocked": false, "price": 40 }
   ],
   "eyes": [
@@ -19,7 +26,7 @@
   ],
   "arms": [
     { "id": "arms_round", "label": "Aletitas", "assetKey": "arms_round", "unlocked": true, "price": 0 },
-    { "id": "arms_hero", "label": "Pose heroica", "assetKey": "arms_hero", "unlocked": false, "price": 20 },
+    { "id": "arms_hero", "label": "Pose heroica", "assetKey": "arms_hero", "unlocked": true, "price": 0 },
     { "id": "arms_spring", "label": "Muelles locos", "assetKey": "arms_spring", "unlocked": false, "price": 35 }
   ],
   "headAccessory": [
@@ -30,11 +37,11 @@
   ],
   "glasses": [
     { "id": "none", "label": "Sin gafas", "assetKey": "glasses_none", "unlocked": true, "price": 0 },
-    { "id": "sunglasses", "label": "Gafas de sol", "assetKey": "sunglasses", "unlocked": false, "price": 20 }
+    { "id": "sunglasses", "label": "Gafas de sol", "assetKey": "sunglasses", "unlocked": true, "price": 0 }
   ],
   "neckAccessory": [
     { "id": "none", "label": "Sin accesorio", "assetKey": "neck_none", "unlocked": true, "price": 0 },
-    { "id": "bowtie", "label": "Pajarita", "assetKey": "bowtie", "unlocked": false, "price": 15 },
+    { "id": "bowtie", "label": "Pajarita", "assetKey": "bowtie", "unlocked": true, "price": 0 },
     { "id": "hero_cape", "label": "Capa heroica", "assetKey": "hero_cape", "unlocked": false, "price": 30 }
   ]
 }

@@ -332,6 +332,23 @@ export class SaveStore {
     return this.getState();
   }
 
+  /**
+   * Starts the story again without erasing the player's collected cosmetics.
+   * Claimed reward IDs are deliberately retained so replaying the first boss
+   * cannot mint the same one-off coin reward indefinitely.
+   */
+  restartAdventure() {
+    const next = this.getState();
+    next.selectedPower = null;
+    next.unlockedPowers = [];
+    next.progress = {
+      ...clone(DEFAULT_PROGRESS),
+      scene: 'creator',
+      claimedRewards: [...next.progress.claimedRewards],
+    };
+    return this.save(next);
+  }
+
   setName(name) {
     const next = this.getState();
     next.name = name;

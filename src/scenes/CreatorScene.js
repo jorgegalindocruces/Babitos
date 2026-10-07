@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 import { BabitoAvatar } from '../game/BabitoAvatar.js';
 import gameData from '../data/game-data.json';
-import { CREATOR_CATEGORIES, getCategoryItems, getCosmetic } from '../state/catalog.js';
+import { CREATOR_CATEGORIES, getCategoryItems } from '../state/catalog.js';
 import { createButton } from '../ui/Button.js';
 import {
   addPixelBackground,
@@ -14,7 +14,7 @@ import {
 import { createAmbientMotes, fadeIn, showToast, transitionToScene } from '../ui/effects.js';
 
 const CATEGORY_LABELS = {
-  body: 'BODY / SKIN',
+  body: 'COLOR / PIEL',
   eyes: 'OJOS',
   mouth: 'BOCA',
   arms: 'BRAZOS',
@@ -81,13 +81,14 @@ export class CreatorScene extends Phaser.Scene {
       label: config.label.toUpperCase(),
       fontSize: '9px',
       variant: id === this.save.size ? 'accent' : 'ghost',
+      autoFocus: false,
       onPress: (button) => this.selectSize(id, button),
       accessibleLabel: `Tamaño ${config.label}`,
     }));
 
     CREATOR_CATEGORIES.forEach((category, index) => this.createCategoryRow(category, index));
 
-    createButton(this, {
+    this.randomButton = createButton(this, {
       x: 610,
       y: 482,
       width: 190,
@@ -95,9 +96,10 @@ export class CreatorScene extends Phaser.Scene {
       label: '↻ ¡BABITO LOCO!',
       variant: 'accent',
       fontSize: '14px',
+      autoFocus: false,
       onPress: () => this.randomize(),
     });
-    createButton(this, {
+    this.continueButton = createButton(this, {
       x: 802,
       y: 482,
       width: 150,
@@ -119,6 +121,7 @@ export class CreatorScene extends Phaser.Scene {
       label: '‹ TÍTULO',
       variant: 'ghost',
       fontSize: '10px',
+      autoFocus: false,
       onPress: () => transitionToScene(this, 'TitleScene'),
     });
 
@@ -150,6 +153,7 @@ export class CreatorScene extends Phaser.Scene {
       label: '‹',
       fontSize: '16px',
       variant: 'ghost',
+      autoFocus: false,
       onPress: () => this.cycleCategory(category, -1),
       accessibleLabel: `Anterior opción de ${CATEGORY_LABELS[category]}`,
     });
@@ -161,6 +165,7 @@ export class CreatorScene extends Phaser.Scene {
       label: '›',
       fontSize: '16px',
       variant: 'ghost',
+      autoFocus: false,
       onPress: () => this.cycleCategory(category, 1),
       accessibleLabel: `Siguiente opción de ${CATEGORY_LABELS[category]}`,
     });
@@ -193,7 +198,9 @@ export class CreatorScene extends Phaser.Scene {
     if (!row || !item) return;
     row.optionText.setText(item.label ?? item.id);
     const lockedCount = row.all.length - row.unlocked.length;
-    row.metaText.setText(`${row.index + 1}/${row.unlocked.length}${lockedCount ? ` · ${lockedCount} EN TIENDA` : ''}`);
+    row.metaText.setText(
+      `${row.index + 1}/${row.unlocked.length} DISP.${lockedCount ? ` · TIENDA: ${lockedCount}` : ''}`,
+    );
   }
 
   selectSize(sizeId, selectedButton) {

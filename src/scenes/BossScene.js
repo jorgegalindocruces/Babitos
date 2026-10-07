@@ -3,7 +3,12 @@ import gameData from '../data/game-data.json';
 import { BabitoAvatar } from '../game/BabitoAvatar.js';
 import { PlayerController } from '../game/PlayerController.js';
 import { createTextures, TEXTURE_KEYS } from '../game/createTextures.js';
-import { getPower, launchPower, makeImpact } from '../game/PowerSystem.js';
+import {
+  getPower,
+  isPowerProjectile,
+  launchPower,
+  makeImpact,
+} from '../game/PowerSystem.js';
 import { createButton } from '../ui/Button.js';
 import {
   addPixelBackground,
@@ -24,6 +29,17 @@ import {
 const ARENA_WIDTH = 960;
 const ARENA_HEIGHT = 540;
 const FLOOR_TOP = 482;
+
+function prefersTouchControls() {
+  if (typeof window === 'undefined' || typeof navigator === 'undefined') return false;
+  return navigator.maxTouchPoints > 0 || Boolean(window.matchMedia?.('(pointer: coarse)').matches);
+}
+
+function setWorldBodySize(sprite, width, height) {
+  const scaleX = Math.max(0.001, Math.abs(sprite.scaleX));
+  const scaleY = Math.max(0.001, Math.abs(sprite.scaleY));
+  sprite.body.setSize(width / scaleX, height / scaleY, true);
+}
 
 const BOSS_STATE = Object.freeze({
   INTRO: 'INTRO',
@@ -128,7 +144,7 @@ export class BossScene extends Phaser.Scene {
     if (this.qaOneHit) this.boss.setX(350);
     this.createPhysicsInteractions();
     this.createHud();
-    this.createTouchControls();
+    if (prefersTouchControls()) this.createTouchControls();
     this.createPauseKeys();
 
     this.store.setProgress({ scene: 'boss1', checkpoint: 'boss_gate' });
@@ -183,7 +199,7 @@ export class BossScene extends Phaser.Scene {
       { x: 288, y: 376, width: 176, height: 20, texture: TEXTURE_KEYS.tilePlatform },
       { x: 666, y: 352, width: 170, height: 20, texture: TEXTURE_KEYS.tilePlatform },
     ];
-    this.platforms = this.add.group();
+    this.platforms = this.physics.add.staticGroup();
 
     for (const definition of this.platformDefinitions) {
       const platform = this.add.tileSprite(
@@ -192,8 +208,7 @@ export class BossScene extends Phaser.Scene {
         definition.width,
         definition.height,
         definition.texture,
-      ).setDepth(4);
-      this.physics.add.existing(platform, true);
+      ).setDepth(4).setData('isPlatform', true);
       this.platforms.add(platform);
       definition.gameObject = platform;
     }
@@ -215,12 +230,13 @@ export class BossScene extends Phaser.Scene {
   createBoss() {
     this.boss = this.physics.add.sprite(790, FLOOR_TOP - 48, TEXTURE_KEYS.bossCorrupt)
       .setDepth(14)
+      .setDisplaySize(132, 132)
       .setCollideWorldBounds(true);
-    this.boss.body.setSize(62, 72, true);
+    setWorldBodySize(this.boss, 76, 84);
+    this.bossBaseScale = { x: this.boss.scaleX, y: this.boss.scaleY };
     this.boss.body.setMaxVelocity(650, 1000);
     this.boss.setDataEnabled();
     this.boss.setData({ boss: true, health: this.bossHealth });
-    this.boss.setTint(0xf3c5ff);
 
     this.bossAura = this.add.circle(this.boss.x, this.boss.y, 53, 0xc84fff, 0.12)
       .setStrokeStyle(3, 0xf19aff, 0.38)
@@ -239,21 +255,23 @@ export class BossScene extends Phaser.Scene {
   createPhysicsInteractions() {
     this.physicsLinks.push(
       this.physics.add.collider(this.boss, this.platforms, () => this.handleBossLanding()),
-      this.physics.add.collider(this.playerProjectiles, this.platforms, (projectile) => {
+      this.physics.add.collider(this.playerProjectiles, this.platforms, (first, second) => {
+        const projectile = isPowerProjectile(first) ? first : (isPowerProjectile(second) ? second : null);
         if (!projectile?.active) return;
         makeImpact(this, projectile.x, projectile.y, 0xffcf3c);
         projectile.destroy();
-      }),
-      this.physics.add.collider(this.bossProjectiles, this.platforms, (projectile) => {
+      }, (first, second) => isPowerProjectile(first) || isPowerProjectile(second)),
+      this.physics.add.collider(this.bossProjectiles, this.platforms, (first, second) => {
+        const projectile = isPowerProjectile(first) ? first : (isPowerProjectile(second) ? second : null);
         if (!projectile?.active) return;
         makeImpact(this, projectile.x, projectile.y, 0xff5a36);
         projectile.destroy();
-      }),
-      // Phaser normalizes Group-vs-Sprite to Sprite-vs-Group internally, so
-      // this callback receives the boss first and the projectile second.
-      this.physics.add.overlap(this.playerProjectiles, this.boss, (boss, projectile) => {
+      }, (first, second) => isPowerProjectile(first) || isPowerProjectile(second)),
+      this.physics.add.overlap(this.playerProjectiles, this.boss, (first, second) => {
+        const projectile = isPowerProjectile(first) ? first : (isPowerProjectile(second) ? second : null);
+        const boss = projectile === first ? second : first;
         this.handleBossHit(projectile, boss);
-      }),
+      }, (first, second) => isPowerProjectile(first) || isPowerProjectile(second)),
       this.physics.add.overlap(this.player.body, this.bossProjectiles, (_body, projectile) => {
         this.hitPlayerWithObject(projectile);
       }),
@@ -423,7 +441,10 @@ export class BossScene extends Phaser.Scene {
     if (this.encounterSuspended || this.bossDefeated || !this.boss?.active) return;
     this.bossVulnerable = false;
     this.clearAttackObjects();
-    this.boss.setAngle(0).setAlpha(1);
+    this.boss
+      .setAngle(0)
+      .setAlpha(1)
+      .setScale(this.bossBaseScale.x, this.bossBaseScale.y);
     this.boss.body.checkCollision.none = false;
     this.boss.body.allowGravity = true;
     this.boss.setVelocity(0);
@@ -444,8 +465,8 @@ export class BossScene extends Phaser.Scene {
 
     this.tweens.add({
       targets: this.boss,
-      scaleX: 1.12,
-      scaleY: 0.9,
+      scaleX: this.bossBaseScale.x * 1.12,
+      scaleY: this.bossBaseScale.y * 0.9,
       duration: 180,
       yoyo: true,
       repeat: 2,
@@ -730,7 +751,8 @@ export class BossScene extends Phaser.Scene {
     this.boss.body.allowGravity = true;
     this.boss.body.checkCollision.none = false;
     this.boss.setTexture(TEXTURE_KEYS.bossCured);
-    this.boss.body.setSize(44, 48, true);
+    this.boss.setDisplaySize(72, 72);
+    setWorldBodySize(this.boss, 44, 48);
     this.bossState = BOSS_STATE.PURIFIED;
     this.stateText.setText(STATE_COPY[BOSS_STATE.PURIFIED]).setColor('#91ffc2');
     this.bossAura.setFillStyle(0x79ffd0, 0.16).setStrokeStyle(3, 0xb5ffe5, 0.62);

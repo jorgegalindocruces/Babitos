@@ -241,10 +241,11 @@ function drawBabitoEyes(ctx, style) {
   }
 
   if (style === 'crazy') {
-    rect(ctx, 16, 20, 7, 8, COLORS.ink);
-    rect(ctx, 18, 22, 2, 2, COLORS.white);
-    rect(ctx, 28, 22, 4, 5, COLORS.ink);
-    rect(ctx, 29, 22, 1, 1, COLORS.white);
+    // Canonical star eyes: unmistakable at the creator's smallest preview.
+    polygon(ctx, [[19, 18], [21, 22], [25, 22], [22, 25], [23, 29], [19, 27], [15, 29], [16, 25], [13, 22], [17, 22]], COLORS.ink);
+    polygon(ctx, [[31, 18], [33, 22], [37, 22], [34, 25], [35, 29], [31, 27], [27, 29], [28, 25], [25, 22], [29, 22]], COLORS.ink);
+    rect(ctx, 18, 21, 2, 2, COLORS.white);
+    rect(ctx, 30, 21, 2, 2, COLORS.white);
     return;
   }
 
@@ -261,9 +262,10 @@ function drawBabitoMouth(ctx, style) {
   }
 
   if (style === 'cute') {
-    rect(ctx, 24, 29, 2, 2, COLORS.ink);
-    pixelLine(ctx, 24, 31, 21, 33, COLORS.ink, 1);
-    pixelLine(ctx, 25, 31, 28, 33, COLORS.ink, 1);
+    // A small open smile with a clearly visible tongue, matching its label.
+    rect(ctx, 20, 29, 10, 5, COLORS.ink);
+    rect(ctx, 22, 32, 6, 3, COLORS.blush);
+    rect(ctx, 24, 31, 4, 1, COLORS.white);
     return;
   }
 
@@ -289,10 +291,26 @@ function drawArm(ctx, x0, y0, x1, y1) {
   ellipse(ctx, x1, y1, 2, 2, '#ffffff');
 }
 
+function drawBabitoFin(ctx, side, pose = 'rest') {
+  const mirror = (x) => (side < 0 ? x : 48 - x);
+  const pointsByPose = {
+    rest: [[15, 22], [8, 21], [3, 27], [7, 34], [15, 31]],
+    raised: [[17, 27], [8, 22], [6, 13], [11, 10], [16, 20]],
+    attack: [[15, 22], [7, 19], [1, 22], [7, 27], [15, 29]],
+  };
+  const insetByPose = {
+    rest: [[14, 24], [9, 24], [6, 27], [9, 31], [14, 29]],
+    raised: [[15, 25], [10, 21], [9, 15], [11, 14], [14, 21]],
+    attack: [[14, 24], [8, 22], [5, 22], [8, 25], [14, 27]],
+  };
+  polygon(ctx, pointsByPose[pose].map(([x, y]) => [mirror(x), y]), COLORS.ink);
+  polygon(ctx, insetByPose[pose].map(([x, y]) => [mirror(x), y]), '#ffffff');
+}
+
 function drawBabitoArms(ctx, pose) {
   if (pose === 'raised' || pose === 'hero') {
-    drawArm(ctx, 12, 27, 6, 16);
-    drawArm(ctx, 37, 27, 43, 16);
+    drawBabitoFin(ctx, -1, 'raised');
+    drawBabitoFin(ctx, 1, 'raised');
     return;
   }
   if (pose === 'spring') {
@@ -315,12 +333,12 @@ function drawBabitoArms(ctx, pose) {
     return;
   }
   if (pose === 'attack') {
-    drawArm(ctx, 12, 27, 6, 29);
-    drawArm(ctx, 37, 25, 46, 22);
+    drawBabitoFin(ctx, -1, 'rest');
+    drawBabitoFin(ctx, 1, 'attack');
     return;
   }
-  drawArm(ctx, 12, 27, 6, 29);
-  drawArm(ctx, 37, 27, 43, 29);
+  drawBabitoFin(ctx, -1, 'rest');
+  drawBabitoFin(ctx, 1, 'rest');
 }
 
 function drawStrawHat(ctx) {

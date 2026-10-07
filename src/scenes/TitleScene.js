@@ -1,6 +1,5 @@
 import Phaser from 'phaser';
 import { BabitoAvatar } from '../game/BabitoAvatar.js';
-import { TEXTURE_KEYS } from '../game/createTextures.js';
 import { createButton } from '../ui/Button.js';
 import {
   addPixelBackground,
@@ -9,6 +8,7 @@ import {
   createLabel,
   createPanel,
   createTitle,
+  CHARACTER_ASSETS,
   UI_COLORS,
 } from '../ui/sceneHelpers.js';
 import {
@@ -52,6 +52,7 @@ export class TitleScene extends Phaser.Scene {
     this.save = this.store.getState();
     this.menuButtons = [];
     this.controlsOverlay = null;
+    this.newAdventureOverlay = null;
 
     addPixelBackground(this, 'title', { groundHeight: 46 });
     createAmbientMotes(this, {
@@ -69,6 +70,7 @@ export class TitleScene extends Phaser.Scene {
 
     this.escapeHandler = () => {
       if (this.controlsOverlay) this.closeControls();
+      else if (this.newAdventureOverlay) this.closeNewAdventureConfirmation();
     };
     this.input.keyboard?.on('keydown-ESC', this.escapeHandler);
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
@@ -86,27 +88,23 @@ export class TitleScene extends Phaser.Scene {
     glow.lineStyle(4, UI_COLORS.cyan, 0.16);
     glow.strokeEllipse(304, 112, 454, 144);
 
-    createTitle(this, 'BABITOS', 304, 94, {
-      fontSize: 66,
-      color: UI_COLORS.white,
-      stroke: 0x071326,
-      strokeThickness: 10,
-      depth: 10,
-    });
-    createLabel(this, 'PEQUEÑOS BABITOS · GRANDES AVENTURAS', 304, 145, {
+    if (this.textures.exists(CHARACTER_ASSETS.logoV2.key)) {
+      this.add.image(304, 99, CHARACTER_ASSETS.logoV2.key)
+        .setDisplaySize(500, 167)
+        .setDepth(10);
+    } else {
+      createTitle(this, 'BABITOS', 304, 94, {
+        fontSize: 66,
+        color: UI_COLORS.white,
+        stroke: 0x071326,
+        strokeThickness: 10,
+        depth: 10,
+      });
+    }
+    createLabel(this, 'PEQUEÑOS BABITOS · GRANDES AVENTURAS', 304, 174, {
       fontSize: 11,
       color: UI_COLORS.yellow,
       depth: 11,
-    });
-
-    const coinLeft = this.add.image(76, 96, TEXTURE_KEYS.coin).setScale(2).setDepth(11);
-    const coinRight = this.add.image(532, 96, TEXTURE_KEYS.coin).setScale(2).setDepth(11);
-    this.tweens.add({
-      targets: [coinLeft, coinRight],
-      angle: 360,
-      duration: 4200,
-      repeat: -1,
-      ease: 'Linear',
     });
   }
 
@@ -180,10 +178,15 @@ export class TitleScene extends Phaser.Scene {
       y: firstY,
       width: 286,
       height: 52,
-      label: 'JUGAR',
+      label: destination ? 'NUEVA AVENTURA' : 'JUGAR',
       variant: 'primary',
-      accessibleLabel: 'Jugar desde el creador de Babitos',
-      onPress: () => this.startNewAdventure(),
+      accessibleLabel: destination
+        ? 'Comenzar una nueva aventura'
+        : 'Jugar desde el creador de Babitos',
+      onPress: () => {
+        if (destination) this.openNewAdventureConfirmation();
+        else this.startNewAdventure();
+      },
     }));
 
     if (destination) {
@@ -215,14 +218,86 @@ export class TitleScene extends Phaser.Scene {
   }
 
   startNewAdventure() {
-    this.store.setProgress({ scene: 'creator' });
+    this.store.restartAdventure();
     transitionToScene(this, 'CreatorScene', {}, {
       announcement: 'Abriendo el creador de Babitos',
     });
   }
 
+  openNewAdventureConfirmation() {
+    if (this.newAdventureOverlay || this.controlsOverlay) return;
+    this.menuButtons.forEach((button) => button.setEnabled(false));
+
+    const blocker = this.add.rectangle(480, 270, 960, 540, 0x020814, 0.84)
+      .setDepth(900)
+      .setInteractive();
+    const panel = createPanel(this, 480, 270, 650, 324, {
+      depth: 910,
+      fillColor: 0x0b2745,
+      fillAlpha: 0.99,
+      strokeColor: UI_COLORS.cyan,
+      strokeWidth: 4,
+    });
+    const title = createTitle(this, '¿NUEVA AVENTURA?', 480, 154, {
+      fontSize: 30,
+      color: UI_COLORS.yellow,
+      depth: 920,
+    });
+    const copy = createBodyText(
+      this,
+      'Reiniciarás la historia, el checkpoint y el poder elegido.\nConservarás tu Babito, monedas y cosméticos.',
+      480,
+      236,
+      {
+        fontSize: 16,
+        color: '#f7fbff',
+        lineSpacing: 8,
+        wordWrapWidth: 540,
+        depth: 920,
+      },
+    );
+    const cancel = createButton(this, {
+      x: 354,
+      y: 348,
+      width: 216,
+      height: 48,
+      label: 'SEGUIR AQUÍ',
+      variant: 'secondary',
+      depth: 930,
+      onPress: () => this.closeNewAdventureConfirmation(),
+    });
+    const confirm = createButton(this, {
+      x: 606,
+      y: 348,
+      width: 216,
+      height: 48,
+      label: 'REINICIAR',
+      variant: 'danger',
+      depth: 930,
+      autoFocus: false,
+      accessibleLabel: 'Confirmar nueva aventura y reiniciar el progreso de la historia',
+      onPress: () => this.startNewAdventure(),
+    });
+
+    this.newAdventureOverlay = {
+      objects: [blocker, panel, title, copy, cancel, confirm],
+    };
+    cancel.focusAccessible();
+    announce('Confirmar nueva aventura. Conservas tu Babito, monedas y cosméticos.');
+  }
+
+  closeNewAdventureConfirmation() {
+    if (!this.newAdventureOverlay) return;
+    const { objects } = this.newAdventureOverlay;
+    this.newAdventureOverlay = null;
+    objects.forEach((object) => object?.destroy());
+    this.menuButtons.forEach((button) => button.setEnabled(true));
+    this.menuButtons[0]?.focusAccessible();
+    announce('Menú principal');
+  }
+
   openControls() {
-    if (this.controlsOverlay) return;
+    if (this.controlsOverlay || this.newAdventureOverlay) return;
     this.menuButtons.forEach((button) => button.setEnabled(false));
 
     const blocker = this.add.rectangle(480, 270, 960, 540, 0x020814, 0.82)
@@ -278,7 +353,7 @@ export class TitleScene extends Phaser.Scene {
     });
 
     this.controlsOverlay = { objects: [blocker, panel, title, copy, hint, close] };
-    close.focus();
+    close.focusAccessible();
     announce('Controles. Usa A y D o flechas para moverte, espacio para saltar y J o X para atacar.');
   }
 
@@ -288,7 +363,7 @@ export class TitleScene extends Phaser.Scene {
     this.controlsOverlay = null;
     objects.forEach((object) => object?.destroy());
     this.menuButtons.forEach((button) => button.setEnabled(true));
-    this.menuButtons[0]?.focus();
+    this.menuButtons[0]?.focusAccessible();
     announce('Menú principal');
   }
 }
