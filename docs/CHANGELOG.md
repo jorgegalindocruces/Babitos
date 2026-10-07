@@ -9,6 +9,8 @@ Este archivo relaciona las iteraciones entregadas con sus cambios observables, c
 
 ## Contexto documental sincronizado — 2026-10-08
 
+Commit [`6935710`](https://github.com/jorgegalindocruces/Babitos/commit/6935710):
+
 - añadió `INTERACTIONS.md` como referencia canónica de controles, escenas, menús, gameplay, animación, guardado, audio y rutas QA;
 - separó contenido jugable, avances y roadmap en todos los documentos;
 - corrigió el stack actual a JavaScript y la ruta completa con Intro y Mapa;
