@@ -59,7 +59,7 @@ export async function requestUiFonts(
 
 /**
  * Avoid holding the whole game indefinitely on a slow font request. If the
- * request completes later, main.js refreshes any text already on screen.
+ * request completes later, gameBoot.js refreshes any text already on screen.
  */
 export async function waitForUiFonts(fontPromise, timeoutMs = 1200) {
   const delay = Math.max(0, Number(timeoutMs) || 0);

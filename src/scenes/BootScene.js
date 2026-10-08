@@ -27,12 +27,13 @@ function getDevQaLaunch() {
   const scene = params.get('qa');
   if (!DEV_QA_SCENES.has(scene)) return null;
   const requestedCoins = Number.parseInt(params.get('qaCoins') ?? '', 10);
+  const requestedWorld = params.get('world')?.trim().toLowerCase();
   return {
     scene,
     coins: Number.isFinite(requestedCoins) ? Phaser.Math.Clamp(requestedCoins, 0, 999) : null,
     completePhaseOne: params.get('qaComplete') === '1',
     data: scene === 'ComingSoonScene'
-      ? { world: params.get('world') === 'city' ? 'city' : 'jungle' }
+      ? { world: requestedWorld === 'jungle' || requestedWorld === 'jungla' ? requestedWorld : 'city' }
       : {},
   };
 }

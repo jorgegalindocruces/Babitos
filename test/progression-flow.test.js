@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 
 import {
@@ -9,6 +10,7 @@ import {
 import {
   enterWorldMap,
   replayPhaseOne,
+  resolveComingSoonRequest,
 } from '../src/state/progressionFlow.js';
 
 function createCompletedPhaseOneStore() {
@@ -79,4 +81,37 @@ test('progression helpers require a store with setProgress()', () => {
       { name: 'TypeError', message: 'A progress store with setProgress() is required.' },
     );
   }
+});
+
+test('the retired Jungle preview redirects to playable Phase 2 and Coming Soon stays City-only', () => {
+  assert.deepEqual(resolveComingSoonRequest('jungle'), {
+    kind: 'redirect',
+    scene: 'GameScene',
+    data: { level: 'jungla' },
+  });
+  assert.deepEqual(resolveComingSoonRequest('JUNGLA'), {
+    kind: 'redirect',
+    scene: 'GameScene',
+    data: { level: 'jungla' },
+  });
+  assert.deepEqual(resolveComingSoonRequest('city'), {
+    kind: 'preview',
+    world: 'city',
+  });
+  assert.deepEqual(resolveComingSoonRequest(undefined), {
+    kind: 'preview',
+    world: 'city',
+  });
+});
+
+test('ComingSoonScene no longer advertises the playable Jungle as unreleased', async () => {
+  const [sceneSource, bootSource] = await Promise.all([
+    readFile(new URL('../src/scenes/ComingSoonScene.js', import.meta.url), 'utf8'),
+    readFile(new URL('../src/scenes/BootScene.js', import.meta.url), 'utf8'),
+  ]);
+
+  assert.match(sceneSource, /resolveComingSoonRequest\(data\.world\)/u);
+  assert.match(sceneSource, /Las Fases 1 y 2 ya están disponibles/u);
+  assert.doesNotMatch(sceneSource, /createJunglePreview|MUNDO 2|termina en la Fase 1/u);
+  assert.match(bootSource, /requestedWorld === 'jungle'.*requestedWorld === 'jungla'.*'city'/su);
 });

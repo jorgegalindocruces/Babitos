@@ -40,7 +40,14 @@ async function openPlayDialog() {
     focusCanvas();
     return;
   }
-  await bootGame();
+  const controller = await bootGame();
+  // The first boot is asynchronous. If the player closed the dialog while
+  // Phaser was loading, freeze the newly created game instead of letting it
+  // run (or stealing focus) behind the landing page.
+  if (!playDialog.open) {
+    controller.setActive(false);
+    return;
+  }
   focusCanvas();
 }
 
@@ -81,6 +88,7 @@ artDialog.addEventListener('click', (event) => {
   if (event.target === artDialog) artDialog.close();
 });
 
-// Direct links (#jugar) and development QA routes (?qa=…) open the game.
+// Direct links (#jugar) and development-only QA routes (?qa=…) open the game.
 const params = new URLSearchParams(location.search);
-if (location.hash === '#jugar' || params.has('qa')) void openPlayDialog();
+const hasDevelopmentQaRoute = import.meta.env.DEV && params.has('qa');
+if (location.hash === '#jugar' || hasDevelopmentQaRoute) void openPlayDialog();

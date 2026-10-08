@@ -1,9 +1,11 @@
 import Phaser from 'phaser';
+import gameData from '../data/game-data.json';
 import { BabitoAvatar } from '../game/BabitoAvatar.js';
 import { TEXTURE_KEYS, createTextures } from '../game/createTextures.js';
 import { CREATOR_CATEGORIES, getCategoryItems } from '../state/catalog.js';
 import { enterWorldMap } from '../state/progressionFlow.js';
 import { createButton } from '../ui/Button.js';
+import { getShopBossRewardCopy } from '../ui/shopRewardCopy.js';
 import {
   addPixelBackground,
   announce,
@@ -206,12 +208,19 @@ export class ShopScene extends Phaser.Scene {
       color: UI_COLORS.cyan,
       depth: 23,
     });
-    createBodyText(this, 'DERROTA AL BOSS: +30 MONEDAS', 158, 449, {
-      fontSize: 10,
-      color: '#ffd97b',
-      wordWrapWidth: 230,
-      depth: 23,
-    });
+    createBodyText(
+      this,
+      getShopBossRewardCopy(snapshot.progress, gameData.bossData),
+      158,
+      448,
+      {
+        fontSize: 9,
+        color: '#ffd97b',
+        lineSpacing: 1,
+        wordWrapWidth: 242,
+        depth: 23,
+      },
+    );
   }
 
   createCatalogPanel() {
