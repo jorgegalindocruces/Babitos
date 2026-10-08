@@ -48,7 +48,9 @@ Commit [`a720de9`](https://github.com/jorgegalindocruces/Babitos/commit/a720de9)
 - dejó explícito que los despliegues mediante GitHub Actions ignoran el archivo `CNAME` del artefacto y usan la configuración Pages del repositorio;
 - añadió una regresión documental para evitar que la URL canónica o los DNS de GitHub desaparezcan por accidente.
 
-Pruebas: 64 casos automáticos, compilación de producción y `git diff --check`. HTTPS queda pendiente de que los DNS del registrador apunten a GitHub y se emita el certificado.
+Pruebas: 64 casos automáticos, compilación de producción y `git diff --check`.
+
+Seguimiento del 8 de octubre de 2026: los cuatro registros `A`, los cuatro `AAAA` y el alias `www` ya resuelven públicamente a GitHub Pages; el dominio raíz sirve el despliegue de `main` y `www` redirige al raíz. GitHub sigue aprovisionando el certificado (`The certificate does not exist yet`), por lo que **Enforce HTTPS** se activará cuando termine la emisión, sin modificar de nuevo los DNS correctos.
 
 ## Movimiento y acabado del Babito — 2026-10-08
 

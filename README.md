@@ -175,6 +175,12 @@ Registros que debe tener el proveedor DNS:
 
 No se usan comodines. Cualquier registro `A`, `AAAA`, `ALIAS` o `ANAME` adicional en `@`, o un `CNAME` distinto en `www`, debe retirarse para no bloquear el certificado. Tras propagarse el DNS, GitHub emite el certificado y permite activar **Enforce HTTPS**. La verificación de propiedad es independiente: GitHub genera un token que debe conservarse como `TXT` en `_github-pages-challenge-jorgegalindocruces`.
 
+Estado de producción verificado el 8 de octubre de 2026: GitHub Pages guarda `babitos.es` como dominio personalizado, los registros `A`, `AAAA` y `www` anteriores ya están activos y el sitio responde desde Pages. La emisión del certificado es el último paso automático; mientras la API responda `The certificate does not exist yet`, no se deben sustituir esos DNS. En cuanto GitHub termine de emitirlo, se activa **Enforce HTTPS** con:
+
+```bash
+gh api --method PUT repos/jorgegalindocruces/Babitos/pages -F https_enforced=true
+```
+
 ## Placeholders actuales
 
 Las láminas de `art/approved/` son dirección artística, no *spritesheets* finales. El estado actual es:
