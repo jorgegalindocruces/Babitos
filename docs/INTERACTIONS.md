@@ -228,6 +228,7 @@ La interacción del combate se implementa en [BossScene.js](../src/scenes/BossSc
 ## Animación y feedback
 
 - El Babito tiene 51 poses sincronizadas entre sus siete capas: `idle` (6 frames), `walk` (8), `run` (8), `jump` (6), `fall` (6), `attack` (6), `hurt` (5) y `dead` (6). Caminar y correr son ciclos diferentes; cada estado cambia apoyo de pies, brazos, expresión y silueta sin alterar la hitbox.
+- Su construcción base es la misma en Creador, HUD, gameplay y landing: en la rejilla interna de 48 px, el cuerpo ovoide mide 31 × 33 px, los ojos normales 3 × 7 px, la sonrisa 7 px, las mejillas 3 × 2 px y los pies hasta 10 px; las aletas son compactas. La paleta cian usa `#7CDBF9`, luz `#A8EDFF`, sombra `#2BBFE5`, rubor `#FF7196` y contorno `#07111E`; las variantes de color heredan la misma geometría. La opción inicial no equipa sombrero, sin modificar los guardados que ya tengan otro accesorio. El contrato completo está en [babito-v3.md](../art/production/babito-v3.md).
 - La animación se selecciona después de resolver movimiento y física en el mismo frame. Los tamaños pequeño, normal y grande producen cajas de render enteras de 64, 80 y 96 px y conservan una línea de suelo común sin cambiar el cuerpo físico.
 - COME tiene `idle`, `walk`, `windup`, `attack`, `hurt` y `defeat` sobre su spritesheet raster. `WINDUP` recorre la preparación y `BITE` empieza en la pose de mordisco sin reiniciar una fila ofensiva completa; todos los clips se anclan por los pies a la superficie física.
 - VUELA tiene `idle`, `fly`, `dive`, `attack`, `hurt` y `defeat` en un atlas raster de 36 poses; `dive`, `attack`, `hurt` y `defeat` no vuelven del último frame al primero. DA VUELTAS mantiene `idle`, `roll`, `windup`, `hurt` y `defeat` en su hoja procedural.
@@ -293,7 +294,7 @@ Ejemplos: `http://localhost:5173/?qa=GameScene&qaLevel=jungla&qaCheckpoint=ruina
 | Anclaje de carteles y decoración | [surfaceAnchoring.js](../src/game/surfaceAnchoring.js) |
 | Estados de enemigos | [EnemyController.js](../src/game/EnemyController.js) |
 | Límites, rebotes y dirección estable de enemigos | [EnemyBehavior.js](../src/game/EnemyBehavior.js) |
-| Avatar por capas | [BabitoAvatar.js](../src/game/BabitoAvatar.js) |
+| Avatar por capas y construcción canónica | [BabitoAvatar.js](../src/game/BabitoAvatar.js), [createTextures.js](../src/game/createTextures.js) y [babito-v3.md](../art/production/babito-v3.md) |
 | Animaciones de enemigos | [EnemyAnimations.js](../src/game/EnemyAnimations.js) |
 | Animación del boss | [BossAnimator.js](../src/game/BossAnimator.js) |
 | Combate de La Oscuridad y geometría de meteoritos | [DarknessBossScene.js](../src/scenes/DarknessBossScene.js) y [bossPatternGeometry.js](../src/game/bossPatternGeometry.js) |

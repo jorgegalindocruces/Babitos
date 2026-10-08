@@ -7,6 +7,18 @@ Este archivo relaciona las iteraciones entregadas con sus cambios observables, c
 - Mantener sincronizados `README.md`, `INTERACTIONS.md`, `GAME_DESIGN.md`, `IMPLEMENTATION_SPEC.md` y `ACCEPTANCE_CRITERIA.md` cuando cambien flujo, controles, estados, persistencia o contenido jugable.
 - Añadir una entrada aquí por cada cambio observable, con el commit final y las pruebas realizadas.
 
+## Babito alineado con el arte canónico — 2026-10-08
+
+Commit [`fa77fc2`](https://github.com/jorgegalindocruces/Babitos/commit/fa77fc2). El protagonista deja atrás la silueta ancha y rectangular del renderer anterior y adopta la construcción de la referencia aprobada:
+
+- **Silueta y rostro**: en la rejilla interna de 48 px, cuerpo ovoide de 31 × 33 px, ojos normales de 3 × 7 px, sonrisa y mejillas compactas, aletas descendentes y pies cortos; la sombra inferior sigue el volumen en lugar de formar una banda.
+- **Color**: el cian base pasa a `#7CDBF9`, con luz `#A8EDFF` y sombra `#2BBFE5`, sin alterar las variantes desbloqueables.
+- **Sistema completo**: se conservan los 51 frames, ocho estados, siete capas cosméticas, tres tamaños visuales, baseline y hitbox de 28 × 40. La opción inicial queda sin sombrero; los guardados existentes no cambian.
+- **Landing**: [babito.png](../public/assets/landing/babito.png) se vuelve a exportar desde el mismo renderer con transparencia binaria y nearest 4×, para que portada y juego compartan identidad.
+- **Referencia**: proporciones, proceso e integración quedan inventariados en [babito-v3.md](../art/production/babito-v3.md). El rediseño fue determinista en Canvas y no utilizó generación de imagen.
+
+Validación: 114 pruebas automáticas, build de producción y QA visual en Creador, caminar, ataque y KO.
+
 ## Contexto integral, landing y Fase 2 reconciliados — 2026-10-08
 
 Commits [`dbe1757`](https://github.com/jorgegalindocruces/Babitos/commit/dbe1757) y [`19d6fc6`](https://github.com/jorgegalindocruces/Babitos/commit/19d6fc6), tras contrastar los cambios de game feel, Fase 2 y landing con código, datos, arte, guardado y despliegue real:

@@ -32,6 +32,7 @@ Landing → JUGAR → diálogo → Boot → Título
 - Los bosses canónicos son Babito Corrupto, La Oscuridad y Boss Total; los dos primeros están implementados. La Oscuridad es intangible en la sombra y solo la luz la vuelve vulnerable.
 - COME es mayor que el Babito; VUELA es menor y aparece solo o en pareja; DA VUELTAS es la bola verde con pinchos y solo es vulnerable mareado.
 - No rediseñar personajes canónicos ni inventar sustitutos para los tres enemigos.
+- El Babito conserva la construcción aprobada de [babito-v3.md](../art/production/babito-v3.md): en la rejilla interna de 48 px, cuerpo ovoide 31 × 33, cara compacta, aletas y pies cortos y paleta cian canónica. Animar o equipar cosméticos no autoriza a ensancharlo, convertirlo en rectangular ni agrandar sus rasgos base.
 - Ojos y boca son capas separadas dentro de siete categorías.
 - Pequeño, normal y grande no alteran hitbox ni estadísticas.
 - Los poderes no se compran con Babicoins.

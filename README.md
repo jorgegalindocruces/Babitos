@@ -14,6 +14,7 @@ Documentación vigente:
 - [Registro de cambios](docs/CHANGELOG.md): iteraciones, commits, assets y comprobaciones asociadas.
 - [Diseño y roadmap](docs/GAME_DESIGN.md): visión completa y separación entre contenido actual y futuro.
 - [Especificación técnica](docs/IMPLEMENTATION_SPEC.md) y [criterios de aceptación](docs/ACCEPTANCE_CRITERIA.md).
+- [Babito canónico v3](art/production/babito-v3.md): referencia, proporciones, paleta, animación y export web del protagonista.
 
 ## Landing page
 
@@ -60,7 +61,7 @@ La descripción exhaustiva, incluidas las reglas de foco, pausa, reintento y vul
 - La arena de Babito Corrupto tiene un fondo 16:9 propio: Babilandia en ruinas al atardecer, basado en el ejemplo canónico del boss y con una zona de juego limpia para conservar la lectura de ataques y plataformas.
 - Ciudad Bicharraca, el último mundo del mapa, muestra ya su paisaje industrial 16:9 como fondo y recorte interior de su pantalla de avance estática; la tarjeta del mapa mantiene un icono procedural.
 - Música ambiental y efectos para interfaz, salto, ataque, daño, monedas, checkpoints, boss y compras se sintetizan en el navegador mediante Web Audio, sin archivos ni dependencias adicionales.
-- El Babito usa un atlas por capas de 64 px y 51 poses: `idle`, caminar, correr, saltar, caer, atacar, recibir daño y KO. Cada ciclo mueve silueta, pies, brazos y expresión sin perder la personalización. COME, VUELA, DA VUELTAS y Babito Corrupto cambian de animación o pose según su estado; La Oscuridad ondula, viaja por sombra, telegrafía cada patrón, se ilumina al quedar expuesta y se disipa en luciérnagas.
+- El Babito usa un atlas por capas de 64 px y 51 poses: `idle`, caminar, correr, saltar, caer, atacar, recibir daño y KO. Su base sigue el [arte canónico](art/production/babito-v3.md): cuerpo ovoide de 31 × 33 px en la rejilla interna de 48 px, rostro compacto, aletas y pies cortos y la paleta cian aprobada. Cada ciclo mueve silueta, pies, brazos y expresión sin perder la personalización. COME, VUELA, DA VUELTAS y Babito Corrupto cambian de animación o pose según su estado; La Oscuridad ondula, viaja por sombra, telegrafía cada patrón, se ilumina al quedar expuesta y se disipa en luciérnagas.
 - El Babito ocupa ahora cajas visuales de 64, 80 y 96 px en pequeño, normal y grande, manteniendo una única hitbox de 28 × 40 y la misma línea de apoyo. COME ancla sus pies al cuerpo físico para no hundirse en suelo o plataformas durante caminar, anticipar o morder.
 - El suelo base sigue siendo sólido; las plataformas elevadas de Babilandia, La Jungla y las dos arenas de jefe son unidireccionales: se atraviesan al subir desde abajo, sostienen al personaje al caer y `S`/`↓` permite dejarse caer a través de ellas. Los proyectiles continúan impactando contra todo el terreno.
 - VUELA usa un atlas raster de 36 poses fiel al diseño canónico. Sus ciclos de vuelo, picado, anticipación, daño y derrota son independientes; un impacto interrumpe un ataque peligroso antes de reanudar la IA.
@@ -191,16 +192,16 @@ No se usan comodines. Cualquier registro `A`, `AAAA`, `ALIAS` o `ANAME` adiciona
 
 Estado de producción verificado el 8 de octubre de 2026: GitHub Pages está `built`, guarda `babitos.es` como dominio personalizado, tiene el certificado aprobado para `babitos.es` y `www.babitos.es` y **Enforce HTTPS** está activo. `https://babitos.es/` responde correctamente; `www` y la URL técnica de Pages redirigen al dominio canónico. No queda ninguna acción pendiente de DNS, certificado o HTTPS.
 
-## Placeholders actuales
+## Estado actual de los assets
 
 Las láminas de `art/approved/` son dirección artística, no *spritesheets* finales. El estado actual es:
 
 - Babilandia, la arena de Babito Corrupto y Ciudad Bicharraca tienen fondos raster con fallback procedural.
 - COME y VUELA usan hojas raster de producción.
 - Logo, Babito Corrupto, tenderos y Árbol de Poder tienen PNG raster; las poses del boss se componen en runtime.
-- Las capas y cosméticos del Babito, la hoja de DA VUELTAS, la moneda, proyectiles, plataformas, props y HUD siguen siendo pixel art generado por código con claves definitivas.
+- El atlas base del Babito es arte procedural canónico de producción; sus capas cosméticas se generan por código con claves definitivas y heredan la misma geometría. La hoja de DA VUELTAS, la moneda, proyectiles, plataformas, props y HUD siguen siendo pixel art procedural.
 
-Los placeholders deben sustituirse gradualmente por sprites y animaciones finales sin cambiar sus IDs ni la lógica. El audio actual es procedural: funciona como primera dirección sonora, pero todavía debe sustituirse o ampliarse con música y efectos producidos. La Jungla y La Oscuridad usan arte procedural (fondo, losetas, setas, farolillos y el sprite del jefe) a la espera de assets raster de producción. Ciudad Bicharraca es una pantalla de avance; su nivel y Boss Total pertenecen a iteraciones posteriores.
+Los elementos todavía provisionales deben sustituirse gradualmente por sprites y animaciones finales sin cambiar sus IDs ni la lógica; el Babito base no forma parte de esa lista. El audio actual es procedural: funciona como primera dirección sonora, pero todavía debe sustituirse o ampliarse con música y efectos producidos. La Jungla y La Oscuridad usan arte procedural (fondo, losetas, setas, farolillos y el sprite del jefe) a la espera de assets raster de producción. Ciudad Bicharraca es una pantalla de avance; su nivel y Boss Total pertenecen a iteraciones posteriores.
 
 El estado exacto y la procedencia de los assets se describen en [ART_BIBLE.md](docs/ART_BIBLE.md) y `art/production/`.
 

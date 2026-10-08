@@ -112,8 +112,10 @@ Estos criterios validan el vertical slice 0.2 descrito en [INTERACTIONS.md](INTE
 
 ## Animación y arte
 
+- El Babito base sin accesorios se reconoce como el aprobado: en la rejilla interna de 48 px, cuerpo ovoide de 31 × 33 px, ojos normales de 3 × 7 px, sonrisa de hasta 7 px, mejillas de 3 × 2 px, aletas en reposo con un ancho total no superior a 1,35 veces el cuerpo y pies de hasta 10 px. El cian usa `#7CDBF9`, luz `#A8EDFF`, sombra `#2BBFE5`, rubor `#FF7196` y contorno `#07111E`.
 - El Babito distingue `idle`, `walk`, `run`, `jump`, `fall`, `attack`, `hurt` y `dead` mediante poses y siluetas diferentes, sin cambiar su hitbox, perder sus capas equipadas ni despegarse del suelo al cambiar de tamaño.
 - Sus siete capas permanecen sincronizadas durante los 51 frames; caminar no reutiliza las poses de correr y ataque, daño y KO terminan en un frame final legible.
+- La exportación `public/assets/landing/babito.png` mide 256 × 256, usa transparencia binaria y escala nearest 4×: cada bloque visible de 4 × 4 conserva un único RGBA y contiene la paleta canónica.
 - Cada estado de COME, VUELA y DA VUELTAS tiene un mapping explícito a un clip existente. Cambiar entre estados que comparten clip no lo reinicia; `hurt` y `defeat` son one-shot, y anticipación/mordisco de COME no recorren la misma secuencia desde el principio. Babito Corrupto cambia de pose entre patrones, `RECOVER` y purificación. La Oscuridad ondula en sombra, se desvanece en `SHIFT`, anticipa rasante/meteoritos/charco/apagado, muestra anillo dorado en `EXPOSED` y se disipa en luciérnagas.
 - El atlas raster de VUELA contiene 36 celdas de 256 × 256 con contenido, margen transparente y alpha 0/255; se renderiza a 64 × 64 sin escala fraccionaria ni deformación.
 - Pausar congela el frame de animación y reanudar continúa sin desincronizarlo.
