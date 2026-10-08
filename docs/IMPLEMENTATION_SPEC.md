@@ -8,10 +8,10 @@ Especificación vigente del vertical slice 0.2. El comportamiento observable com
 - Resolución lógica efectiva: 960 × 540, `Phaser.Scale.FIT`, centrado, `autoRound: true`, `pixelArt: true` y `roundPixels: true`.
 - En escritorio, el área jugable no se amplía por encima de 960 × 540 CSS px: así cada píxel lógico conserva una escala entera. Por debajo de ese tamaño, `FIT` reduce el lienzo manteniendo 16:9 y sin overflow.
 - Física Arcade con gravedad global de 1350 y cuatro punteros activos para multitouch.
-- Build estático con `base: './'` y despliegue en GitHub Pages.
+- Build estático con `base: './'` y despliegue en GitHub Pages. El dominio canónico es `https://babitos.es/`; la URL de proyecto bajo `/Babitos/` permanece como origen técnico compatible.
 - Node.js 24 en CI; `npm ci`, `npm test` y `npm run build` son la puerta de entrega.
 
-La configuración de arranque está en [main.js](../src/main.js) y el workflow en [deploy-pages.yml](../.github/workflows/deploy-pages.yml).
+La configuración de arranque está en [main.js](../src/main.js) y el workflow en [deploy-pages.yml](../.github/workflows/deploy-pages.yml). Al publicar mediante Actions, el dominio se guarda en la configuración Pages del repositorio y no en un archivo `CNAME` del artefacto.
 
 ## Escenas y flujo
 

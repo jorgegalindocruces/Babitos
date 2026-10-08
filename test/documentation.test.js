@@ -134,6 +134,19 @@ test('the current implementation stack is documented as JavaScript, not TypeScri
   }
 });
 
+test('the public site and deployment docs use babitos.es as the canonical domain', async () => {
+  const index = await readRepositoryFile('index.html');
+  const readme = await readRepositoryFile('README.md');
+  const implementation = await readRepositoryFile('docs/IMPLEMENTATION_SPEC.md');
+
+  assert.match(index, /rel="canonical" href="https:\/\/babitos\.es\/"/u);
+  assert.match(index, /property="og:url" content="https:\/\/babitos\.es\/"/u);
+  assert.match(readme, /Juega en: \[https:\/\/babitos\.es\/\]/u);
+  assert.match(readme, /185\.199\.108\.153[\s\S]*185\.199\.111\.153/u);
+  assert.match(readme, /`www` \| `jorgegalindocruces\.github\.io`/u);
+  assert.match(implementation, /dominio canónico es `https:\/\/babitos\.es\/`/u);
+});
+
 test('documented local paths resolve and cover the essential code and art contracts', async () => {
   const links = [];
 

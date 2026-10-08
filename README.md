@@ -6,7 +6,7 @@ BABITOS es un plataformas 2D familiar hecho con JavaScript, Phaser 3 y Vite. En 
 
 El juego funciona completamente en el navegador, sin backend ni base de datos. La partida se guarda en `localStorage` bajo la clave versionada `babitos.save.v1`.
 
-Juega en: [https://jorgegalindocruces.github.io/Babitos/](https://jorgegalindocruces.github.io/Babitos/)
+Juega en: [https://babitos.es/](https://babitos.es/)
 
 Documentación vigente:
 
@@ -147,9 +147,29 @@ Configuración inicial del repositorio:
 1. Abre **Settings → Pages** en GitHub.
 2. En **Build and deployment → Source**, selecciona **GitHub Actions**.
 3. Envía los cambios a `main` o ejecuta el workflow **Deploy BABITOS to GitHub Pages** desde la pestaña **Actions**.
-4. Cuando termine, el sitio estará previsto en [https://jorgegalindocruces.github.io/Babitos/](https://jorgegalindocruces.github.io/Babitos/).
+4. Cuando termine, el sitio se publica en [https://babitos.es/](https://babitos.es/). La URL técnica `https://jorgegalindocruces.github.io/Babitos/` queda como origen de GitHub Pages.
 
 Vite usa rutas relativas (`base: './'`), por lo que imágenes, módulos y demás recursos funcionan tanto en `/` como bajo `/Babitos/`.
+
+### Dominio `babitos.es`
+
+El dominio canónico se configura en **Settings → Pages → Custom domain**. Como el proyecto publica mediante un workflow personalizado de GitHub Actions, GitHub ignora los archivos `CNAME` del artefacto: la configuración efectiva vive en Pages y no requiere `public/CNAME`.
+
+Registros que debe tener el proveedor DNS:
+
+| Tipo | Host | Valor |
+|---|---|---|
+| `A` | `@` | `185.199.108.153` |
+| `A` | `@` | `185.199.109.153` |
+| `A` | `@` | `185.199.110.153` |
+| `A` | `@` | `185.199.111.153` |
+| `AAAA` | `@` | `2606:50c0:8000::153` |
+| `AAAA` | `@` | `2606:50c0:8001::153` |
+| `AAAA` | `@` | `2606:50c0:8002::153` |
+| `AAAA` | `@` | `2606:50c0:8003::153` |
+| `CNAME` | `www` | `jorgegalindocruces.github.io` |
+
+No se usan comodines. Cualquier registro `A`, `AAAA`, `ALIAS` o `ANAME` adicional en `@`, o un `CNAME` distinto en `www`, debe retirarse para no bloquear el certificado. Tras propagarse el DNS, GitHub emite el certificado y permite activar **Enforce HTTPS**. La verificación de propiedad es independiente: GitHub genera un token que debe conservarse como `TXT` en `_github-pages-challenge-jorgegalindocruces`.
 
 ## Placeholders actuales
 
