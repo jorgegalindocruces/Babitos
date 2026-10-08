@@ -84,7 +84,7 @@ HUD: corazones, monedas, poder activo, encuentros y pausa; durante el boss añad
 - Game Over contra el boss: reinicia el encuentro completo.
 - Pausa: congela simulación y animaciones; permite continuar o volver al título.
 
-El suelo y las plataformas son cuerpos de colisión independientes de los fondos. Los poderes solo pueden destruir su propio proyectil al impactar; nunca eliminan terreno.
+El suelo y las plataformas son cuerpos de colisión independientes de los fondos. El suelo base es sólido; las plataformas elevadas son unidireccionales, se atraviesan desde abajo y sostienen al caer desde arriba. Los poderes solo pueden destruir su propio proyectil al impactar; nunca eliminan terreno.
 
 ## Interacción y accesibilidad
 

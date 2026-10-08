@@ -7,6 +7,20 @@ Este archivo relaciona las iteraciones entregadas con sus cambios observables, c
 - Mantener sincronizados `README.md`, `INTERACTIONS.md`, `GAME_DESIGN.md`, `IMPLEMENTATION_SPEC.md` y `ACCEPTANCE_CRITERIA.md` cuando cambien flujo, controles, estados, persistencia o contenido jugable.
 - Añadir una entrada aquí por cada cambio observable, con el commit final y las pruebas realizadas.
 
+## Babito ampliado y plataformas unidireccionales — 2026-10-08
+
+Commit [`a360fd9`](https://github.com/jorgegalindocruces/Babitos/commit/a360fd9):
+
+- amplió pequeño, normal y grande de 48/64/80 px a cajas de render de 64/80/96 px sin modificar la hitbox de 28 × 40 ni la línea de apoyo;
+- convirtió las plataformas elevadas de Babilandia y de la arena de Babito Corrupto en superficies unidireccionales: se atraviesan desde abajo o por el lateral inferior y sostienen al caer desde arriba;
+- mantuvo el suelo base completamente sólido y dejó los colliders de proyectiles separados, por lo que los poderes siguen destruyéndose al impactar sin alterar el terreno;
+- aplicó la misma decisión física a Babito, COME, DA VUELTAS, monedas y Babito Corrupto, mientras VUELA continúa atravesando toda plataforma;
+- ancló los frames de COME a `body.bottom`, eliminando los 25 px de hundimiento que causaba centrar un render de 118 px sobre una hitbox de 68 px;
+- reajustó el aislamiento `qaEnemy` de los enemigos terrestres para que su cuerpo, y no el desfase visual anterior, quede realmente apoyado en el suelo;
+- añadió contratos puros para escala/baseline, anclaje enemigo y colisión semisólida, con regresiones de ascenso, descenso, reposo, contacto lateral, tolerancia y orden de argumentos.
+
+QA visual: Babito normal y grande en `idle`; COME real en `PATROL` y aislado en `BITE`; pies alineados con la superficie y badge de estado fuera del sprite. Pruebas: 74 casos automáticos, compilación de producción y `git diff --check`.
+
 ## Estados de enemigos y VUELA raster — 2026-10-08
 
 Commit [`d0466ea`](https://github.com/jorgegalindocruces/Babitos/commit/d0466ea):

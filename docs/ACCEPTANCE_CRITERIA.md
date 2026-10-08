@@ -35,7 +35,7 @@ Estos criterios validan el vertical slice 0.2 descrito en [INTERACTIONS.md](INTE
 
 - Ojos y boca son capas distintas; se pueden combinar las siete categorías de apariencia.
 - Los selectores recorren solo opciones desbloqueadas y equipan el resultado inmediatamente.
-- Pequeño, normal y grande cambian el render, nunca hitbox o estadísticas.
+- Pequeño, normal y grande muestran cajas de render de 64, 80 y 96 px respectivamente; nunca cambian la hitbox de 28 × 40 ni las estadísticas y conservan una línea de pies común.
 - `¡BABITO LOCO!` usa solo cosméticos desbloqueados.
 - Fuego, Rayo y Roca se pueden seleccionar y sus diferencias de velocidad, trayectoria, cooldown y daño coinciden con [game-data.json](../src/data/game-data.json).
 - No se puede continuar sin elegir un poder y los poderes no se compran con Babicoins.
@@ -46,10 +46,12 @@ Estos criterios validan el vertical slice 0.2 descrito en [INTERACTIONS.md](INTE
 - `A`/`D` o flechas mueven; `W`, `↑` o `Espacio` saltan; `J` o `X` atacan.
 - El salto conserva coyote time, buffer y altura variable; el daño aplica retroceso, parpadeo e invulnerabilidad temporal.
 - El HUD muestra 3 corazones máximos, Babicoins, poder y teclas, encuentros y pausa.
+- El suelo base permanece sólido al saltar, caer o aproximarse de lado.
+- Una plataforma elevada se atraviesa desde abajo durante el ascenso, no bloquea lateralmente a un cuerpo que ya está debajo y sostiene al Babito al descender desde arriba o permanecer quieto sobre ella.
 - Un proyectil que toca terreno se destruye. Ningún poder destruye, oculta, desplaza ni desactiva el suelo o las plataformas.
 - El fondo es decorativo: la colisión depende exclusivamente de plataformas físicas independientes.
 - Cada cartel tutorial tiene una superficie física bajo el poste, su base coincide exactamente con esa superficie y el texto queda dentro de la tabla. Ninguno atraviesa terreno, flota o queda oculto por DA VUELTAS/checkpoints.
-- COME es mayor que el Babito y solo daña al morder; VUELA es menor, aparece solo y en pareja y solo daña en picado; DA VUELTAS solo daña al girar y solo recibe daño mientras está mareado.
+- COME es mayor que el Babito, apoya sus pies exactamente sobre suelo o plataforma en `walk`, `WINDUP` y `BITE`, y solo daña al morder; VUELA es menor, aparece solo y en pareja y solo daña en picado; DA VUELTAS solo daña al girar y solo recibe daño mientras está mareado.
 - Un enemigo en `hurt` termina su reacción antes de reanudar la IA: no cambia a un ataque, no daña ni recibe impactos repetidos durante ese intervalo. Golpear a COME o VUELA durante una acción ofensiva conduce a `RECOVER` o `RETURN`.
 - VUELA atraviesa las plataformas durante `DIVE` y `RETURN`, conserva los límites del mundo y nunca queda bloqueado bajo geometría de terreno.
 - Cada enemigo puede soltar 0, 1 o 2 monedas y recoger una suma exactamente una.
@@ -66,7 +68,7 @@ Estos criterios validan el vertical slice 0.2 descrito en [INTERACTIONS.md](INTE
 
 ## Babito Corrupto
 
-- La arena conserva suelo y plataformas estables antes, durante y después de disparar.
+- La arena conserva suelo y plataformas estables antes, durante y después de disparar; su suelo es sólido y las plataformas elevadas se atraviesan al ascender y sostienen al caer.
 - El boss se llama Babito Corrupto, tiene 16 de vida y ejecuta `FIREBALL`, `FROM_ABOVE` y `FURY_CHARGE` con avisos previos legibles.
 - Al terminar cada patrón entra 1,9 s en `RECOVER`. Solo entonces recibe daño; fuera de esa ventana el impacto se bloquea con feedback.
 - Fuego y Rayo restan 1; Roca resta 2.

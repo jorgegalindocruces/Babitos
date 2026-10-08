@@ -31,6 +31,9 @@ const ESSENTIAL_LINK_TARGETS = Object.freeze([
   'src/scenes/GameScene.js',
   'src/scenes/BossScene.js',
   'src/game/EnemyBehavior.js',
+  'src/game/EnemyPresentation.js',
+  'src/game/BabitoPresentation.js',
+  'src/game/platformCollision.js',
   'src/ui/Button.js',
   'src/state/SaveStore.js',
   'public/assets/characters/enemy-vuela-sheet-v4.png',
@@ -193,8 +196,13 @@ test('scope and critical gameplay invariants are explicit', async () => {
 
   assert.match(gameDesign, /La Jungla y Ciudad Bicharraca[\s\S]*Pantallas de avance estáticas/u);
   assert.match(interactions, /un poder nunca destruye, oculta ni desactiva suelo o plataformas/u);
+  assert.match(interactions, /El suelo base es completamente sólido/u);
+  assert.match(interactions, /Las plataformas elevadas son unidireccionales/u);
+  assert.match(interactions, /cajas de render enteras de 64, 80 y 96 px/u);
+  assert.match(interactions, /todos los clips se anclan por los pies a la superficie física/u);
   assert.match(interactions, /`idle` \(6 frames\), `walk` \(8\), `run` \(8\), `jump` \(6\), `fall` \(6\), `attack` \(6\), `hurt` \(5\) y `dead` \(6\)/u);
   assert.match(interactions, /Caminar y correr son ciclos diferentes/u);
   assert.match(acceptance, /Ningún poder destruye, oculta, desplaza ni desactiva el suelo o las plataformas/u);
+  assert.match(acceptance, /Una plataforma elevada se atraviesa desde abajo/u);
   assert.match(acceptance, /`Tab` y `Mayús \+ Tab`[\s\S]*`Enter` y `Espacio`/u);
 });

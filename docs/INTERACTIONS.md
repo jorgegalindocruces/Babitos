@@ -71,7 +71,7 @@ Todos los botones de Phaser comparten el comportamiento de [Button.js](../src/ui
 - El nombre admite hasta 24 caracteres y se guarda al escribir.
 - Las siete capas son independientes: `body`, `eyes`, `mouth`, `arms`, `headAccessory`, `glasses` y `neckAccessory`.
 - Las flechas anterior/siguiente recorren únicamente opciones desbloqueadas y equipan la elección al instante.
-- Pequeño, normal y grande cambian solo el render; comparten hitbox, daño, velocidad y ventajas.
+- Pequeño, normal y grande muestran el atlas en cajas de 64, 80 y 96 px; comparten la hitbox física de 28 × 40, daño, velocidad y ventajas.
 - `¡BABITO LOCO!` randomiza solo elementos desbloqueados.
 - `TÍTULO` vuelve al inicio; `CONTINUAR` guarda y abre la selección de poder.
 
@@ -100,6 +100,7 @@ Los cinco carteles tutoriales también se definen allí sin coordenada vertical 
 - El Babito tiene 3 corazones, aceleración y frenado, salto de altura variable, 110 ms de *coyote time* y 120 ms de *jump buffer*.
 - Un golpe quita un corazón, aplica retroceso y concede 1050 ms de invulnerabilidad con parpadeo.
 - El ataque sale en la dirección en que mira el Babito y respeta el cooldown del poder.
+- El suelo base es completamente sólido. Las plataformas elevadas son unidireccionales: su cara inferior y sus laterales se atraviesan al ascender o al llegar desde abajo, y su cara superior sostiene al Babito, enemigos terrestres y monedas cuando descienden desde arriba. No existe todavía un comando para dejarse caer con `↓`.
 - Los proyectiles desaparecen al tocar terreno. Invariante crítico: un poder nunca destruye, oculta ni desactiva suelo o plataformas; el fondo es decorativo y no tiene colisión.
 - El HUD muestra corazones, Babicoins, poder y teclas de ataque, encuentros derrotados y pausa.
 
@@ -120,7 +121,7 @@ Los cinco carteles tutoriales también se definen allí sin coordenada vertical 
 
 VUELA aparece una vez en solitario y después en pareja. Cada enemigo puede soltar 0, 1 o 2 Babicoins. El portal del boss permanece sellado hasta derrotar los seis encuentros; tocarlo antes informa cuántos faltan y aparta al jugador.
 
-Un impacto aceptado reproduce `hurt` completo como reacción no cíclica. Durante esa reacción el enemigo no avanza su estado, no daña al Babito y no acepta otro impacto. COME interrumpe `WINDUP`/`BITE` hacia `RECOVER`; VUELA interrumpe `TARGET`/`WINDUP`/`DIVE` hacia `RETURN`; DA VUELTAS conserva `DIZZY`. VUELA no colisiona con plataformas: las atraviesa durante picado y regreso, pero conserva límites del mundo y overlaps de combate.
+Un impacto aceptado reproduce `hurt` completo como reacción no cíclica. Durante esa reacción el enemigo no avanza su estado, no daña al Babito y no acepta otro impacto. COME interrumpe `WINDUP`/`BITE` hacia `RECOVER`; VUELA interrumpe `TARGET`/`WINDUP`/`DIVE` hacia `RETURN`; DA VUELTAS conserva `DIZZY`. COME ancla el borde inferior de cada frame al borde inferior de su cuerpo físico, por lo que sus pies permanecen sobre suelo o plataforma también durante `WINDUP` y `BITE`. VUELA no colisiona con plataformas: las atraviesa durante picado y regreso, pero conserva límites del mundo y overlaps de combate.
 
 #### Pausa
 
@@ -137,7 +138,7 @@ La interacción del combate se implementa en [BossScene.js](../src/scenes/BossSc
 - El HUD muestra corazones, poder, nombre, barra y vida del boss, patrón actual y pausa.
 - Pausa congela todo el encuentro. Llegar a cero corazones abre `GAME OVER`; `REINTENTAR` reinicia la pelea completa. La arena tiene suelo continuo y límites físicos, por lo que no usa la recuperación por caída de Babilandia.
 - Al vencer, el boss se purifica —no muere—, se reproduce el diálogo y se conceden 30 Babicoins una sola vez. `IR A LA TIENDA` abre la tienda.
-- La arena usa suelo y plataformas físicas independientes del fondo. Disparar nunca puede eliminar la base de la fase.
+- La arena usa suelo y plataformas físicas independientes del fondo. El suelo continuo es sólido y las dos plataformas elevadas son unidireccionales para jugador y boss. Disparar nunca puede eliminar la base de la fase.
 
 ### Tienda
 
@@ -158,8 +159,8 @@ La interacción del combate se implementa en [BossScene.js](../src/scenes/BossSc
 ## Animación y feedback
 
 - El Babito tiene 51 poses sincronizadas entre sus siete capas: `idle` (6 frames), `walk` (8), `run` (8), `jump` (6), `fall` (6), `attack` (6), `hurt` (5) y `dead` (6). Caminar y correr son ciclos diferentes; cada estado cambia apoyo de pies, brazos, expresión y silueta sin alterar la hitbox.
-- La animación se selecciona después de resolver movimiento y física en el mismo frame. Los tamaños pequeño, normal y grande conservan la línea de suelo y no añaden transformaciones fraccionarias que hagan temblar el pixel art.
-- COME tiene `idle`, `walk`, `windup`, `attack`, `hurt` y `defeat` sobre su spritesheet raster. `WINDUP` recorre la preparación y `BITE` empieza en la pose de mordisco sin reiniciar una fila ofensiva completa.
+- La animación se selecciona después de resolver movimiento y física en el mismo frame. Los tamaños pequeño, normal y grande producen cajas de render enteras de 64, 80 y 96 px y conservan una línea de suelo común sin cambiar el cuerpo físico.
+- COME tiene `idle`, `walk`, `windup`, `attack`, `hurt` y `defeat` sobre su spritesheet raster. `WINDUP` recorre la preparación y `BITE` empieza en la pose de mordisco sin reiniciar una fila ofensiva completa; todos los clips se anclan por los pies a la superficie física.
 - VUELA tiene `idle`, `fly`, `dive`, `attack`, `hurt` y `defeat` en un atlas raster de 36 poses; `dive`, `attack`, `hurt` y `defeat` no vuelven del último frame al primero. DA VUELTAS mantiene `idle`, `roll`, `windup`, `hurt` y `defeat` en su hoja procedural.
 - Babito Corrupto cambia de pose en intro, los tres patrones, `RECOVER` y su forma purificada.
 - Pausar congela también los relojes de animación.

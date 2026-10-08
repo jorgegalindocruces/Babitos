@@ -53,6 +53,8 @@ Implementado en [PlayerController.js](../src/game/PlayerController.js):
 - invulnerabilidad de 1050 ms tras daño y 1500 ms tras respawn;
 - dirección persistente y un único ataque sujeto al cooldown del poder.
 
+[BabitoPresentation.js](../src/game/BabitoPresentation.js) es la fuente runtime de las escalas `1`, `1.25` y `1.5`, que convierten la celda de 64 px en cajas visibles de 64, 80 y 96 px. [game-data.json](../src/data/game-data.json) replica esos valores para catálogo y documentación; una regresión exige que ambos contratos coincidan. El offset de baseline compensa la escala, de modo que aumentar el render no mueve los pies ni la hitbox.
+
 `moveSpeed` sigue presente en `game-data.json`, pero el movimiento efectivo actual usa aceleración, drag y velocidad máxima definidos en el controlador. No se debe presentar todavía como tuning completamente data-driven.
 
 ## Poderes y colisiones
@@ -67,6 +69,8 @@ Implementado en [PlayerController.js](../src/game/PlayerController.js):
 
 Invariante: ningún disparo puede destruir, desactivar o esconder terreno. Fondos raster, plataformas visuales y cuerpos de colisión tienen responsabilidades separadas.
 
+[platformCollision.js](../src/game/platformCollision.js) discrimina terreno por `kind`. `ground` y geometría sin clasificar son sólidos. Para `platform`, el *process callback* acepta separación solo si la velocidad vertical no es ascendente y el borde inferior del paso anterior estaba como máximo 4 px por debajo de la cara superior. Así se atraviesan cara inferior y laterales, pero se aterriza y permanece sobre la cara superior. El proceso se comparte entre jugador, enemigos terrestres, monedas y boss; VUELA continúa sin collider. Los colliders de proyectiles son independientes y siguen consumiendo el proyectil contra cualquier terreno.
+
 ## Enemigos
 
 - COME: `PATROL → CHASE → WINDUP → BITE → RECOVER`; solo `BITE` daña.
@@ -77,11 +81,13 @@ Los drops se eligen entre 0, 1 o 2 monedas. Cada moneda usa overlap y suma una. 
 
 Las reacciones de daño son interrupciones temporales, no un clip decorativo superpuesto: usan la duración real de `hurt`, suspenden el reloj de estado, desactivan daño/impactos repetidos y conducen los ataques de COME y VUELA a `RECOVER`/`RETURN`. VUELA no registra collider con plataformas, de modo que un picado no puede quedar atrapado debajo de una plataforma durante `RETURN`. [EnemyBehavior.js](../src/game/EnemyBehavior.js) resuelve límites y rebotes con direcciones deterministas para evitar inversión cada frame.
 
+[EnemyPresentation.js](../src/game/EnemyPresentation.js) separa el anclaje visual del cuerpo físico. COME usa origen inferior y sigue `body.bottom`, por lo que sus 118 px visuales nunca se centran dentro de una hitbox de solo 68 px de alto ni se hunden al aplicar *squash/stretch*. VUELA y DA VUELTAS conservan origen central.
+
 ## Boss
 
 Babito Corrupto tiene 16 de vida. Su ciclo es `FIREBALL → FROM_ABOVE → FURY_CHARGE`; después de cada patrón, `RECOVER` habilita daño durante 1900 ms. Fuera de esa ventana el proyectil se consume con feedback de bloqueo. La victoria llama a `claimReward('boss1_reward', 30)`, marca la fase y abre Tienda; el ID evita duplicar el premio.
 
-La arena usa cuerpos estáticos propios para suelo y plataformas. La lógica completa está en [BossScene.js](../src/scenes/BossScene.js).
+La arena usa cuerpos estáticos propios con `kind: ground|platform`; el suelo es sólido y las plataformas elevadas comparten el proceso unidireccional con Babilandia. La lógica completa está en [BossScene.js](../src/scenes/BossScene.js).
 
 ## Pausa, caída y reintento
 
@@ -93,7 +99,7 @@ Cada escena jugable mantiene un reloj de gameplay descontando el tiempo pausado.
 ## Animación
 
 - [BabitoAnimations.js](../src/game/BabitoAnimations.js) define el contrato puro de 51 poses: `idle`, `walk`, `run`, `jump`, `fall`, `attack`, `hurt` y `dead`, con duraciones y selección de locomoción verificables sin Phaser.
-- [BabitoAvatar.js](../src/game/BabitoAvatar.js) compone las siete capas sobre celdas de 64 px, muestrea el mismo frame para todas y alinea pequeño/normal/grande sobre una línea de suelo común. El cuerpo físico nunca cambia. `POST_UPDATE` aplica el estado después de que `PlayerController` resuelva la física para evitar un frame visual de retraso.
+- [BabitoAvatar.js](../src/game/BabitoAvatar.js) compone las siete capas sobre celdas de 64 px, muestrea el mismo frame para todas y aplica las escalas de [BabitoPresentation.js](../src/game/BabitoPresentation.js) sobre una línea de suelo común. El cuerpo físico nunca cambia. `POST_UPDATE` aplica el estado después de que `PlayerController` resuelva la física para evitar un frame visual de retraso.
 - [EnemyAnimations.js](../src/game/EnemyAnimations.js): hojas, subclips, duración, mapeo de estados y resolución QA para COME, VUELA y DA VUELTAS. VUELA usa [enemy-vuela-sheet-v4.png](../public/assets/characters/enemy-vuela-sheet-v4.png), 36 celdas raster de 256 px mostradas a escala exacta de 1/4.
 - [BossAnimator.js](../src/game/BossAnimator.js): poses escalonadas para intro, tres patrones, `RECOVER` y purificación.
 

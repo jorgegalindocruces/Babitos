@@ -48,10 +48,10 @@ El frame nunca modifica la hitbox. Los estados de ataque, daño, vulnerabilidad 
 ## Color, escala y legibilidad
 
 - Mantener grupos de píxeles nítidos; no aplicar suavizado fotográfico.
-- El Babito se dibuja en celdas de 64 px con volumen, contorno y highlights más finos que el placeholder original. La animación usa cambios reales de silueta, apoyo de pies, brazos, expresión, inclinación y *squash/stretch*; no se simula con una única imagen deslizándose o con escalas fraccionarias en runtime.
+- El Babito se dibuja en celdas fuente de 64 px con volumen, contorno y highlights más finos que el placeholder original. Sus tres cajas de presentación son 64, 80 y 96 px, siempre con dimensiones enteras y una línea de pies compartida. La animación usa cambios reales de silueta, apoyo de pies, brazos, expresión, inclinación y *squash/stretch*; no se simula con una única imagen deslizándose.
 - VUELA se autoriza en celdas raster de 256 px y se muestra a 64 × 64 mediante escala exacta de 1/4 y filtro nearest. Cada pose conserva margen transparente y alpha 0/255 para evitar neblina, rectángulos o interpolación sobre el fondo.
 - Usar contorno azul marino u oscuro y una paleta limitada por mundo.
-- COME siempre se percibe mayor que el Babito; VUELA, menor. Los tres tamaños del Babito cambian el render, no la colisión.
+- COME siempre se percibe mayor que el Babito; VUELA, menor. Los tres tamaños del Babito cambian el render, no la colisión. Los pies de COME se anclan al borde inferior del cuerpo físico en todos sus clips y nunca atraviesan visualmente la superficie de apoyo.
 - Reservar contraste para personaje, enemigos, proyectiles, señales de peligro, monedas y plataformas reales.
 - Un cartel diegético forma una sola silueta de tabla, texto y poste. El poste toca una superficie física; el texto nunca flota fuera de la tabla ni se coloca sobre un enemigo o checkpoint.
 - No incorporar texto, HUD, logos o marcas de agua dentro de un asset de fondo.

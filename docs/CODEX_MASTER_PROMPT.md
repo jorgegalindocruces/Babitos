@@ -35,6 +35,7 @@ La Jungla y Ciudad Bicharraca solo tienen avances estáticos. La Oscuridad, Boss
 - Los poderes no se compran con Babicoins.
 - `worlds_environment_reference_only.png` define entorno y atmósfera, nunca enemigos.
 - Fondos, render de plataformas y cuerpos de colisión son capas distintas. Un proyectil puede destruirse contra terreno; nunca puede destruir el terreno.
+- El suelo base es sólido. Las plataformas elevadas son unidireccionales: personajes y monedas las atraviesan al ascender desde abajo y aterrizan al descender; los proyectiles siguen chocando con ellas.
 - La victoria purifica a Babito Corrupto y su recompensa de monedas es única.
 
 ## Forma de trabajar
