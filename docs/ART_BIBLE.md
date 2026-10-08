@@ -50,6 +50,7 @@ El frame nunca modifica la hitbox. Los estados de ataque, daño, vulnerabilidad 
 - Usar contorno azul marino u oscuro y una paleta limitada por mundo.
 - COME siempre se percibe mayor que el Babito; VUELA, menor. Los tres tamaños del Babito cambian el render, no la colisión.
 - Reservar contraste para personaje, enemigos, proyectiles, señales de peligro, monedas y plataformas reales.
+- Un cartel diegético forma una sola silueta de tabla, texto y poste. El poste toca una superficie física; el texto nunca flota fuera de la tabla ni se coloca sobre un enemigo o checkpoint.
 - No incorporar texto, HUD, logos o marcas de agua dentro de un asset de fondo.
 
 ## Sustitución de placeholders

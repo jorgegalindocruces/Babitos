@@ -48,6 +48,7 @@ Estos criterios validan el vertical slice 0.2 descrito en [INTERACTIONS.md](INTE
 - El HUD muestra 3 corazones máximos, Babicoins, poder y teclas, encuentros y pausa.
 - Un proyectil que toca terreno se destruye. Ningún poder destruye, oculta, desplaza ni desactiva el suelo o las plataformas.
 - El fondo es decorativo: la colisión depende exclusivamente de plataformas físicas independientes.
+- Cada cartel tutorial tiene una superficie física bajo el poste, su base coincide exactamente con esa superficie y el texto queda dentro de la tabla. Ninguno atraviesa terreno, flota o queda oculto por DA VUELTAS/checkpoints.
 - COME es mayor que el Babito y solo daña al morder; VUELA es menor, aparece solo y en pareja y solo daña en picado; DA VUELTAS solo daña al girar y solo recibe daño mientras está mareado.
 - Cada enemigo puede soltar 0, 1 o 2 monedas y recoger una suma exactamente una.
 - El portal permanece cerrado hasta derrotar los seis encuentros e informa cuántos faltan.

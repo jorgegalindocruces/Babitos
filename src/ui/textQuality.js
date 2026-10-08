@@ -1,4 +1,5 @@
 export const MAX_UI_TEXT_RESOLUTION = 2;
+export const TEXT_METRICS_REFRESH_EVENT = 'babitos-text-metrics-refresh';
 const WIDTH_FIT_STATE = Symbol('babitos.textWidthFit');
 
 function positiveNumber(value, fallback) {
@@ -96,6 +97,8 @@ export function refreshTextAfterFontLoad(textObject) {
   if (fit) {
     fitTextToWidth(textObject, fit.maxWidth, { minFontSize: fit.minFontSize });
   }
+
+  textObject.emit?.(TEXT_METRICS_REFRESH_EVENT, textObject);
 
   return textObject;
 }

@@ -14,6 +14,7 @@ import {
   fitTextToWidth,
   getUiTextResolution,
   refreshTextAfterFontLoad,
+  TEXT_METRICS_REFRESH_EVENT,
 } from '../src/ui/textQuality.js';
 
 test('UI text resolution is consistent and capped on high-density displays', () => {
@@ -56,6 +57,7 @@ test('wide text is re-rasterized at an integer font size instead of scaled', () 
 
 test('late fonts recalculate metrics and repeat integer width fitting', () => {
   let metricsUpdates = 0;
+  const events = [];
   const textObject = {
     width: 100,
     style: {
@@ -71,6 +73,9 @@ test('late fonts recalculate metrics and repeat integer width fitting', () => {
       this.width = value * 12;
       return this;
     },
+    emit(event, value) {
+      events.push([event, value]);
+    },
   };
 
   // It initially fits with fallback metrics, but the constraint must still be remembered.
@@ -80,6 +85,7 @@ test('late fonts recalculate metrics and repeat integer width fitting', () => {
   assert.equal(metricsUpdates, 1);
   assert.equal(textObject.style.fontSize, '10px');
   assert.equal(textObject.width, 120);
+  assert.deepEqual(events, [[TEXT_METRICS_REFRESH_EVENT, textObject]]);
 });
 
 test('the remote font stylesheet is activated without blocking initial rendering', async () => {

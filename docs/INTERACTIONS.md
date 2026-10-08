@@ -93,6 +93,8 @@ Todos los botones de Phaser comparten el comportamiento de [Button.js](../src/ui
 
 El nivel, sus seis encuentros, plataformas, checkpoints y portal se definen en [babilandia.json](../src/data/levels/babilandia.json); la orquestación está en [GameScene.js](../src/scenes/GameScene.js).
 
+Los cinco carteles tutoriales también se definen allí sin coordenada vertical manual. Cada poste se apoya exactamente en la superficie física más alta bajo su posición y el texto queda contenido dentro de su tabla de madera; si no existe soporte, el cartel no se dibuja en el aire. El aviso de DA VUELTAS está separado tanto del enemigo como del checkpoint.
+
 #### Movimiento, vida y ataque
 
 - El Babito tiene 3 corazones, aceleración y frenado, salto de altura variable, 110 ms de *coyote time* y 120 ms de *jump buffer*.
@@ -195,6 +197,7 @@ Solo con el servidor de desarrollo, `BootScene` admite rutas para revisar pantal
 - `&qaCoins=90` para garantizar al menos ese saldo, hasta 999; no reduce monedas existentes;
 - `&qaComplete=1` para marcar la Fase 1 como completada;
 - `&qaCombat=1` en `GameScene` para empezar en el primer checkpoint, acercar a COME, dejarlo a un golpe y forzar drops de dos monedas;
+- `&qaCheckpoint=start|market_gate|fountain|boss_gate` en `GameScene` para revisar una zona concreta y su decoración sin persistir ese punto QA en el guardado;
 - `&qaOneHit=1` en `BossScene` para colocar al boss a un golpe y entrar pronto en `RECOVER`;
 - `&debugAI=1` en Babilandia para mostrar la etiqueta del estado actual de cada enemigo.
 
@@ -208,6 +211,7 @@ Ejemplo: `http://localhost:5173/?qa=ComingSoonScene&world=city`.
 | Carga, animaciones y rutas QA | [BootScene.js](../src/scenes/BootScene.js) |
 | Entrada y estado del jugador | [PlayerController.js](../src/game/PlayerController.js) |
 | Proyectiles y poderes | [PowerSystem.js](../src/game/PowerSystem.js) |
+| Anclaje de carteles y decoración | [surfaceAnchoring.js](../src/game/surfaceAnchoring.js) |
 | Estados de enemigos | [EnemyController.js](../src/game/EnemyController.js) |
 | Avatar por capas | [BabitoAvatar.js](../src/game/BabitoAvatar.js) |
 | Animaciones de enemigos | [EnemyAnimations.js](../src/game/EnemyAnimations.js) |

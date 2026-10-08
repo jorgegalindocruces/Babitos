@@ -30,6 +30,7 @@ TitleScene → CreatorScene → PowerScene → IntroScene
 - [game-data.json](../src/data/game-data.json): jugador, tamaños, poderes, enemigos y boss.
 - [cosmetics.json](../src/data/cosmetics.json): siete categorías, claves de asset, desbloqueo inicial y precios.
 - [babilandia.json](../src/data/levels/babilandia.json): geometría, spawn, cuatro checkpoints, seis enemigos y portal.
+- Los carteles tutoriales de `babilandia.json` solo guardan `id`, `x` y texto. [surfaceAnchoring.js](../src/game/surfaceAnchoring.js) obtiene la superficie física superior, y `GameScene` compone tabla, texto y poste como una sola decoración apoyada.
 - [SaveStore.js](../src/state/SaveStore.js): normalización, migración y persistencia.
 
 El guardado versionado `babitos.save.v1` contiene nombre, tamaño, apariencia, poder seleccionado/desbloqueado, monedas, cosméticos desbloqueados/comprados y progreso. `restartAdventure()` conserva colección, apariencia, saldo e IDs de recompensas cobradas, y reinicia poder, checkpoint y relato. El mute se guarda aparte en `babitos.audio.v1`.
@@ -101,6 +102,6 @@ AudioSystem sintetiza música y efectos con Web Audio, desbloquea el contexto tr
 
 ## QA y extensión
 
-En desarrollo, `BootScene` acepta `?qa=<Scene>`, `qaCoins`, `qaComplete=1` y `world=jungle|city`. `GameScene` añade `qaCombat=1` y `debugAI=1`; `BossScene`, `qaOneHit=1`. Estos parámetros no se procesan en producción. `globalThis.__BABITOS__` expone versión, escena y una copia del save para smoke tests y mods.
+En desarrollo, `BootScene` acepta `?qa=<Scene>`, `qaCoins`, `qaComplete=1` y `world=jungle|city`. `GameScene` añade `qaCombat=1`, `qaCheckpoint=<id>` y `debugAI=1`; `BossScene`, `qaOneHit=1`. Estos parámetros no se procesan en producción. `globalThis.__BABITOS__` expone versión, escena y una copia del save para smoke tests y mods.
 
 Para extender el juego se conservan IDs estables, lógica data-driven y fallbacks. Un cambio de interacción debe actualizar [INTERACTIONS.md](INTERACTIONS.md), [ACCEPTANCE_CRITERIA.md](ACCEPTANCE_CRITERIA.md) y [CHANGELOG.md](CHANGELOG.md).

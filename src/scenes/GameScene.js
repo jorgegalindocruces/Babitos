@@ -4,7 +4,9 @@ import gameData from '../data/game-data.json';
 import { EnemyController } from '../game/EnemyController.js';
 import { PlayerController } from '../game/PlayerController.js';
 import { isPowerProjectile, makeImpact } from '../game/PowerSystem.js';
+import { placeOnSurface, TUTORIAL_SIGN_STYLE } from '../game/surfaceAnchoring.js';
 import { createButton, focusGameCanvas } from '../ui/Button.js';
+import { TEXT_METRICS_REFRESH_EVENT } from '../ui/textQuality.js';
 import {
   addPixelBackground,
   announce,
@@ -36,8 +38,12 @@ export class GameScene extends Phaser.Scene {
 
     this.level = levelData;
     this.qaCombat = false;
+    this.qaCheckpointId = null;
+    this.qaCheckpointActive = false;
     if (import.meta.env.DEV && typeof location !== 'undefined') {
-      this.qaCombat = new URLSearchParams(location.search).get('qaCombat') === '1';
+      const params = new URLSearchParams(location.search);
+      this.qaCombat = params.get('qaCombat') === '1';
+      this.qaCheckpointId = params.get('qaCheckpoint');
     }
     this.enemyControllers = [];
     this.gameplayTime = 0;
@@ -58,10 +64,15 @@ export class GameScene extends Phaser.Scene {
     this.createPlatforms();
     this.createCheckpoints();
 
-    const savedCheckpoint = this.qaCombat
-      ? this.level.checkpoints[0]
-      : (this.level.checkpoints.find((entry) => entry.id === this.save.progress.checkpoint)
-        ?? this.level.checkpoints[0]);
+    const qaCheckpoint = this.level.checkpoints.find(
+      (entry) => entry.id === this.qaCheckpointId,
+    );
+    this.qaCheckpointActive = Boolean(qaCheckpoint);
+    const savedCheckpoint = qaCheckpoint
+      ?? (this.qaCombat
+        ? this.level.checkpoints[0]
+        : (this.level.checkpoints.find((entry) => entry.id === this.save.progress.checkpoint)
+          ?? this.level.checkpoints[0]));
     this.projectiles = this.physics.add.group();
     this.coins = this.physics.add.group();
     this.enemySprites = this.physics.add.group();
@@ -95,7 +106,9 @@ export class GameScene extends Phaser.Scene {
     if (prefersTouchControls()) this.createTouchControls();
     this.createPauseKeys();
 
-    this.store.setProgress({ scene: 'babilandia', checkpoint: savedCheckpoint.id });
+    if (!this.qaCheckpointActive) {
+      this.store.setProgress({ scene: 'babilandia', checkpoint: savedCheckpoint.id });
+    }
     announce('Babilandia. Muévete, salta, derrota a los Bicharracos y recoge monedas.');
     showToast(this, 'A/D o ←/→ para moverte · W/↑/ESPACIO para saltar · J/X para atacar', {
       duration: 4200,
@@ -131,27 +144,83 @@ export class GameScene extends Phaser.Scene {
         skyline.fillRect(x + 76, 365 - height, 10, 20);
       }
     }
-    const labels = [
-      [325, 352, 'MUÉVETE Y SALTA'],
-      [1160, 330, 'COME MUERDE DE CERCA'],
-      [2050, 300, 'VUELA PUEDE VENIR EN PAREJA'],
-      [3260, 338, 'ATACA A DA VUELTAS CUANDO ESTÉ MAREADO'],
-      [4610, 306, 'DERROTA A TODOS PARA ABRIR EL PORTAL'],
-    ];
-    labels.forEach(([x, y, text]) => {
-      const sign = this.add.image(x, y + 50, 'prop_sign').setDepth(6).setScale(1.35);
-      createLabel(this, text, x, y, {
-        fontSize: '9px',
-        wordWrapWidth: 220,
-        depth: 7,
-        scrollFactor: 1,
-        color: 0xffffff,
-      });
-      sign.setData('decoration', true);
-    });
+    for (const definition of this.level.tutorialSigns ?? []) {
+      this.createTutorialSign(definition);
+    }
     for (let x = 100; x < this.level.worldWidth; x += 260) {
       this.add.image(x, 467, 'prop_flower').setDepth(7).setScale(x % 520 === 0 ? 1.2 : 0.85);
     }
+  }
+
+  createTutorialSign(definition) {
+    const placement = placeOnSurface(this.level.platforms, {
+      x: definition.x,
+      width: TUTORIAL_SIGN_STYLE.postWidth,
+      originX: 0.5,
+      originY: 1,
+    });
+    if (!placement) {
+      console.warn(`Tutorial sign "${definition.id}" has no supporting surface.`);
+      return null;
+    }
+
+    const label = createLabel(this, definition.text, 0, 0, {
+      fontSize: '9px',
+      wordWrapWidth: TUTORIAL_SIGN_STYLE.maxBoardWidth
+        - TUTORIAL_SIGN_STYLE.textPaddingX * 2,
+      depth: 0,
+      scrollFactor: 1,
+      color: 0xffffff,
+    });
+    const graphics = this.add.graphics();
+    const layoutSign = () => {
+      const boardWidth = Math.min(
+        TUTORIAL_SIGN_STYLE.maxBoardWidth,
+        Math.max(
+          TUTORIAL_SIGN_STYLE.minBoardWidth,
+          Math.ceil(label.width) + TUTORIAL_SIGN_STYLE.textPaddingX * 2,
+        ),
+      );
+      const boardHeight = Math.max(
+        TUTORIAL_SIGN_STYLE.minBoardHeight,
+        Math.ceil(label.height) + TUTORIAL_SIGN_STYLE.textPaddingY * 2,
+      );
+      const boardLeft = -Math.ceil(boardWidth / 2);
+      const evenBoardWidth = Math.ceil(boardWidth / 2) * 2;
+      const boardTop = -TUTORIAL_SIGN_STYLE.postHeight - boardHeight;
+
+      graphics.clear();
+      graphics.fillStyle(0x020814, 0.58);
+      graphics.fillRect(boardLeft + 4, boardTop + 5, evenBoardWidth, boardHeight);
+      graphics.fillStyle(0x071326, 1);
+      graphics.fillRect(-5, -TUTORIAL_SIGN_STYLE.postHeight, 10, TUTORIAL_SIGN_STYLE.postHeight);
+      graphics.fillRect(boardLeft, boardTop, evenBoardWidth, boardHeight);
+      graphics.fillStyle(0x7b4327, 1);
+      graphics.fillRect(-3, -TUTORIAL_SIGN_STYLE.postHeight, 6, TUTORIAL_SIGN_STYLE.postHeight);
+      graphics.fillStyle(0xb96635, 1);
+      graphics.fillRect(boardLeft + 3, boardTop + 3, evenBoardWidth - 6, boardHeight - 6);
+      graphics.fillStyle(0xd9914f, 1);
+      graphics.fillRect(boardLeft + 8, boardTop + 6, evenBoardWidth - 16, 3);
+      graphics.fillStyle(0x824326, 1);
+      graphics.fillRect(boardLeft + 8, boardTop + boardHeight - 9, evenBoardWidth - 16, 3);
+      graphics.fillStyle(0xe8c088, 1);
+      graphics.fillRect(boardLeft + 7, boardTop + 7, 3, 3);
+      graphics.fillRect(boardLeft + evenBoardWidth - 10, boardTop + boardHeight - 10, 3, 3);
+      label.setPosition(0, Math.round(boardTop + boardHeight / 2));
+    };
+    layoutSign();
+    label.on(TEXT_METRICS_REFRESH_EVENT, layoutSign);
+
+    const sign = this.add.container(placement.x, placement.y, [graphics, label])
+      .setDepth(6)
+      .setScrollFactor(1)
+      .setData({
+        decoration: true,
+        tutorialSign: definition.id,
+        supportKind: placement.support.platform.kind,
+        surfaceY: placement.surfaceY,
+      });
+    return sign;
   }
 
   createCheckpoints() {
@@ -272,10 +341,18 @@ export class GameScene extends Phaser.Scene {
     this.player.setCheckpoint(checkpoint.x, checkpoint.y - 20);
     this.player.restoreHealth();
     this.registry.get('audio')?.play('checkpoint');
-    this.store.setProgress({ checkpoint: checkpoint.id, scene: 'babilandia' });
+    if (!this.qaCheckpointActive) {
+      this.store.setProgress({ checkpoint: checkpoint.id, scene: 'babilandia' });
+    }
     this.checkpointSprites.children.iterate((entry) => entry?.clearTint());
     flag.setTint(0xffe36e);
-    showToast(this, '✓ Checkpoint guardado · corazones restaurados', { type: 'success', duration: 1500 });
+    showToast(
+      this,
+      this.qaCheckpointActive
+        ? '✓ Checkpoint QA activo · corazones restaurados'
+        : '✓ Checkpoint guardado · corazones restaurados',
+      { type: 'success', duration: 1500 },
+    );
   }
 
   createHud() {

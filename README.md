@@ -56,6 +56,7 @@ La descripción exhaustiva, incluidas las reglas de foco, pausa, reintento y vul
 - Los botones responden en toda su superficie visible a ratón y toque, y ofrecen foco, estado deshabilitado y activación por teclado mediante controles HTML accesibles.
 - `Espacio` queda reservado para saltar durante el gameplay; los botones del HUD siguen disponibles con ratón, toque o navegación accesible mediante `Tab`.
 - El canvas conserva 960 × 540 exactos en escritorio para no deformar la cuadrícula de píxel; fuentes, botones y avisos se cargan y rasterizan con una política de resolución común.
+- Los carteles tutoriales de Babilandia forman una sola pieza de tabla, texto y poste, y se anclan a plataformas reales en lugar de usar alturas decorativas manuales.
 
 ## Ejecutar en local
 
