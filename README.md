@@ -15,6 +15,10 @@ Documentación vigente:
 - [Diseño y roadmap](docs/GAME_DESIGN.md): visión completa y separación entre contenido actual y futuro.
 - [Especificación técnica](docs/IMPLEMENTATION_SPEC.md) y [criterios de aceptación](docs/ACCEPTANCE_CRITERIA.md).
 
+## Landing page
+
+`index.html` es la portada del juego: historia, creador y poderes, mundos, personajes, la sección «Del papel al píxel» con los dibujos originales y la galería de arte conceptual. El juego se abre en un diálogo al pulsar **JUGAR** (o con `https://babitos.es/#jugar`) y su motor solo se descarga en ese momento. Cerrar el diálogo deja la partida en pausa.
+
 ## Recorrido jugable
 
 1. Título.

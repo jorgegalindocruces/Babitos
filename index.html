@@ -16,34 +16,348 @@
     />
     <meta
       name="description"
-      content="Crea tu Babito, elige un poder y salva Babilandia en este plataformas 2D open source."
+      content="Crea tu Babito, elige un poder y recupera las Manzanas de Poder en este plataformas 2D gratuito que se juega en el navegador."
     />
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://babitos.es/" />
+    <meta property="og:title" content="BABITOS — Pequeños Babitos, grandes aventuras" />
+    <meta property="og:description" content="Un plataformas 2D familiar nacido de dibujos hechos a mano. Juega gratis en el navegador." />
+    <meta property="og:image" content="https://babitos.es/assets/landing/concept-worlds-environment-reference-only.webp" />
     <title>BABITOS — Pequeños Babitos, grandes aventuras</title>
   </head>
   <body>
-    <a class="skip-link" href="#game">Ir al juego</a>
-    <main id="app">
-      <div class="game-shell">
-        <div class="game-topline" aria-hidden="true">
-          <span>BABITOS</span>
-          <span>PEQUEÑOS HÉROES · GRANDES AVENTURAS</span>
+    <a class="skip-link" href="#contenido">Ir al contenido</a>
+
+    <header class="site-header">
+      <a class="brand" href="#inicio" aria-label="BABITOS, inicio">
+        <img src="./assets/landing/logo.webp" alt="" width="132" height="44" />
+      </a>
+      <nav class="site-nav" aria-label="Secciones">
+        <a href="#historia">Historia</a>
+        <a href="#personajes">Personajes</a>
+        <a href="#mundos">Mundos</a>
+        <a href="#papel">Del papel al píxel</a>
+        <a href="#arte">Arte</a>
+      </nav>
+      <button class="btn btn-play btn-small" type="button" data-play>▶ JUGAR</button>
+    </header>
+
+    <main id="contenido">
+      <section id="inicio" class="hero">
+        <div class="hero-backdrop" aria-hidden="true"></div>
+        <div class="hero-inner">
+          <img
+            class="hero-logo"
+            src="./assets/landing/logo.webp"
+            alt="BABITOS"
+            width="900"
+            height="300"
+          />
+          <p class="hero-tagline">Pequeños Babitos, grandes aventuras</p>
+          <p class="hero-pitch">
+            Crea tu propio Babito, elige un poder y salta, dispara y explora para devolver la luz
+            al Árbol de Poder. Un plataformas familiar que nació en una hoja de papel.
+          </p>
+          <div class="hero-actions">
+            <button class="btn btn-play btn-large" type="button" data-play>▶ JUGAR AHORA</button>
+            <a class="btn btn-ghost" href="#historia">Conoce la historia</a>
+          </div>
+          <ul class="hero-badges" aria-label="Características">
+            <li>Gratis</li>
+            <li>En el navegador</li>
+            <li>Sin registro</li>
+            <li>Guarda tu partida</li>
+            <li>Teclado y táctil</li>
+          </ul>
         </div>
-        <button
-          id="audio-toggle"
-          class="audio-toggle"
-          type="button"
-          aria-label="Silenciar audio"
-          aria-pressed="false"
-          aria-keyshortcuts="M"
-          title="Audio · tecla M"
-        >🔊 AUDIO</button>
-        <div id="game" role="application" aria-label="Videojuego BABITOS"></div>
-        <p id="game-status" class="sr-only" aria-live="polite">BABITOS está cargando.</p>
-      </div>
-      <noscript>Necesitas activar JavaScript para jugar a BABITOS.</noscript>
+        <img class="hero-babito" src="./assets/landing/babito.png" alt="Un Babito azul con sombrero de paja" width="256" height="256" />
+      </section>
+
+      <section id="historia" class="section story">
+        <h2 class="section-title"><span>La historia</span></h2>
+        <ol class="story-steps">
+          <li class="story-step">
+            <img src="./assets/landing/tree-restored.webp" alt="El Árbol de Poder, luminoso y lleno de manzanas" loading="lazy" width="700" height="700" />
+            <h3>1 · El Árbol de Poder</h3>
+            <p>
+              En el corazón de Babilandia crece el Árbol de Poder. Sus Manzanas de Poder llenan de luz,
+              color y alegría la ciudad de los Babitos.
+            </p>
+          </li>
+          <li class="story-step">
+            <img src="./assets/landing/tree-sad.webp" alt="El Árbol de Poder triste, apagado y sin manzanas" loading="lazy" width="700" height="700" />
+            <h3>2 · Llegan los Bicharracos</h3>
+            <p>
+              Una noche, los Bicharracos roban todas las manzanas. El árbol se apaga, sus ramas caen y
+              Babilandia pierde su brillo. Las manzanas quedan repartidas por tres mundos.
+            </p>
+          </li>
+          <li class="story-step">
+            <img src="./assets/landing/babito.png" class="pixel" alt="Tu Babito, listo para la aventura" loading="lazy" width="256" height="256" />
+            <h3>3 · Un pequeño héroe</h3>
+            <p>
+              Ahí entras tú. Crea tu Babito, elige Fuego, Rayo o Roca y viaja mundo a mundo para
+              recuperar cada manzana y devolver la luz al árbol.
+            </p>
+          </li>
+        </ol>
+      </section>
+
+      <section id="tu-babito" class="section creator">
+        <div class="split">
+          <div>
+            <h2 class="section-title"><span>Crea tu Babito</span></h2>
+            <p class="lead">
+              Cuerpo, ojos, boca, brazos, sombrero, gafas y cuello son capas independientes: combina
+              tu Babito favorito o pulsa <strong>¡BABITO LOCO!</strong> para sorprenderte. Pequeño,
+              normal o grande, todos saltan igual de alto.
+            </p>
+            <div class="powers">
+              <article class="power power-fire">
+                <h3>Fuego</h3>
+                <p>Fiable y equilibrado. Buen alcance y fácil de usar.</p>
+              </article>
+              <article class="power power-lightning">
+                <h3>Rayo</h3>
+                <p>El más rápido. Ideal contra rivales ágiles.</p>
+              </article>
+              <article class="power power-rock">
+                <h3>Roca</h3>
+                <p>Lenta, en parábola y muy potente.</p>
+              </article>
+            </div>
+          </div>
+          <button class="art-frame" type="button" data-zoom="./assets/landing/concept-babito-creator-style.webp" data-caption="Estilo del creador de Babitos">
+            <img src="./assets/landing/concept-babito-creator-style.webp" alt="Lámina del creador de Babitos con capas y combinaciones" loading="lazy" width="1400" height="933" />
+          </button>
+        </div>
+      </section>
+
+      <section id="mundos" class="section worlds">
+        <h2 class="section-title"><span>Tres mundos</span></h2>
+        <div class="world-grid">
+          <article class="world world-babilandia">
+            <div class="world-art" aria-hidden="true"></div>
+            <div class="world-body">
+              <p class="world-status is-playable">Fase 1 · Jugable</p>
+              <h3>Babilandia atacada</h3>
+              <p>La ciudad de los Babitos y tu primera aventura. Aprende a saltar y a disparar entre mercados, puentes y fuentes, y enfréntate a Babito Corrupto.</p>
+            </div>
+          </article>
+          <article class="world world-jungla">
+            <div class="world-art" aria-hidden="true"></div>
+            <div class="world-body">
+              <p class="world-status is-playable">Fase 2 · Jugable</p>
+              <h3>La Jungla</h3>
+              <p>Fosos sobre el río, puentes de cuerda, setas saltarinas y ruinas antiguas. Cuanto más avanzas, más se apaga la luz… y La Oscuridad espera.</p>
+            </div>
+          </article>
+          <article class="world world-ciudad">
+            <div class="world-art" aria-hidden="true"></div>
+            <div class="world-body">
+              <p class="world-status">Fase 3 · Próximamente</p>
+              <h3>Ciudad Bicharraca</h3>
+              <p>Fábricas, tuberías, láseres y humo de neón. El corazón del caos, donde el Boss Total guarda la última manzana.</p>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section id="personajes" class="section characters">
+        <h2 class="section-title"><span>Personajes</span></h2>
+
+        <h3 class="group-title">Los Bicharracos</h3>
+        <div class="cards">
+          <article class="card">
+            <img class="pixel" src="./assets/characters/enemy-come-v2.png" alt="COME, un monstruo rojo de boca enorme" loading="lazy" width="256" height="256" />
+            <h4>COME</h4>
+            <p>Rojo, enorme y con una boca gigante. Te persigue y muerde de cerca… pero no sabe nadar.</p>
+          </article>
+          <article class="card">
+            <img class="pixel" src="./assets/characters/enemy-vuela-v2.png" alt="VUELA, un murciélago morado" loading="lazy" width="256" height="256" />
+            <h4>VUELA</h4>
+            <p>Un murciélago morado y pequeño. Vuela solo o en pareja y ataca en picado.</p>
+          </article>
+          <article class="card">
+            <img class="pixel" src="./assets/characters/enemy-da-vueltas-v2.png" alt="DA VUELTAS, una bola verde con pinchos" loading="lazy" width="256" height="256" />
+            <h4>DA VUELTAS</h4>
+            <p>Una bola verde de pinchos que rueda sin parar. Solo puedes darle cuando queda mareada.</p>
+          </article>
+        </div>
+
+        <h3 class="group-title">Los jefes</h3>
+        <div class="cards">
+          <article class="card card-boss">
+            <img class="pixel" src="./assets/characters/boss-corrupt-v2.png" alt="Babito Corrupto, un Babito envuelto en llamas" loading="lazy" width="256" height="256" />
+            <h4>Babito Corrupto</h4>
+            <p>Era un Babito bueno, pero algo lo corrompió. Al vencerlo no muere: vuelve a ser normal.</p>
+          </article>
+          <article class="card card-boss">
+            <img class="pixel" src="./assets/landing/oscuridad.png" alt="La Oscuridad, una sombra con tentáculos y ojos violetas" loading="lazy" width="384" height="384" />
+            <h4>La Oscuridad</h4>
+            <p>Una sombra sin forma fija que viaja por la oscuridad. Solo la luz de los farolillos la vuelve vulnerable.</p>
+          </article>
+          <article class="card card-boss is-locked">
+            <img src="./assets/landing/drawing-boss3-boss-total-original.webp" alt="Boceto del Boss Total" loading="lazy" width="520" height="720" />
+            <h4>Boss Total</h4>
+            <p>El amo del caos. Combina los poderes de todos los demás. Próximamente.</p>
+          </article>
+        </div>
+
+        <h3 class="group-title">Los aliados</h3>
+        <div class="cards cards-two">
+          <article class="card">
+            <img class="pixel" src="./assets/characters/merchant-empanadilla-v2.png" alt="Señor Empanadilla" loading="lazy" width="256" height="256" />
+            <h4>Señor Empanadilla</h4>
+            <p>Tendero y amigo. Cambia tus Babicoins por sombreros, gafas, colores y mucho estilo.</p>
+          </article>
+          <article class="card">
+            <img class="pixel" src="./assets/characters/merchant-pinguino-v2.png" alt="Señor Pingüino" loading="lazy" width="256" height="256" />
+            <h4>Señor Pingüino</h4>
+            <p>Socio del Señor Empanadilla en la Tienda Babita. Nunca te dejará salir sin un cosmético nuevo.</p>
+          </article>
+        </div>
+      </section>
+
+      <section id="papel" class="section paper">
+        <h2 class="section-title"><span>Del papel al píxel</span></h2>
+        <p class="lead center">
+          Cada personaje de BABITOS empezó como un dibujo hecho a mano. Estos son los originales junto a
+          su versión en el juego.
+        </p>
+        <div class="paper-grid">
+          <figure class="paper-pair">
+            <img class="paper-drawing" src="./assets/landing/drawing-enemy-come-original.webp" alt="Dibujo original de COME" loading="lazy" />
+            <img class="paper-sprite pixel" src="./assets/characters/enemy-come-v2.png" alt="COME en el juego" loading="lazy" />
+            <figcaption>COME</figcaption>
+          </figure>
+          <figure class="paper-pair">
+            <img class="paper-drawing" src="./assets/landing/drawing-enemy-vuela-original.webp" alt="Dibujo original de VUELA" loading="lazy" />
+            <img class="paper-sprite pixel" src="./assets/characters/enemy-vuela-v2.png" alt="VUELA en el juego" loading="lazy" />
+            <figcaption>VUELA</figcaption>
+          </figure>
+          <figure class="paper-pair">
+            <img class="paper-drawing" src="./assets/landing/drawing-enemy-da-vueltas-original.webp" alt="Dibujo original de DA VUELTAS" loading="lazy" />
+            <img class="paper-sprite pixel" src="./assets/characters/enemy-da-vueltas-v2.png" alt="DA VUELTAS en el juego" loading="lazy" />
+            <figcaption>DA VUELTAS</figcaption>
+          </figure>
+          <figure class="paper-pair">
+            <img class="paper-drawing" src="./assets/landing/drawing-boss1-babito-corrupto-original.webp" alt="Dibujo original de Babito Corrupto" loading="lazy" />
+            <img class="paper-sprite pixel" src="./assets/characters/boss-corrupt-v2.png" alt="Babito Corrupto en el juego" loading="lazy" />
+            <figcaption>Babito Corrupto</figcaption>
+          </figure>
+          <figure class="paper-pair">
+            <img class="paper-drawing" src="./assets/landing/drawing-boss2-la-oscuridad-original.webp" alt="Dibujo original de La Oscuridad" loading="lazy" />
+            <img class="paper-sprite pixel" src="./assets/landing/oscuridad.png" alt="La Oscuridad en el juego" loading="lazy" />
+            <figcaption>La Oscuridad</figcaption>
+          </figure>
+          <figure class="paper-pair">
+            <img class="paper-drawing" src="./assets/landing/drawing-senor-empanadilla-original.webp" alt="Dibujo original del Señor Empanadilla" loading="lazy" />
+            <img class="paper-sprite pixel" src="./assets/characters/merchant-empanadilla-v2.png" alt="Señor Empanadilla en el juego" loading="lazy" />
+            <figcaption>Señor Empanadilla</figcaption>
+          </figure>
+          <figure class="paper-pair">
+            <img class="paper-drawing" src="./assets/landing/drawing-senor-pinguino-original.webp" alt="Dibujo original del Señor Pingüino" loading="lazy" />
+            <img class="paper-sprite pixel" src="./assets/characters/merchant-pinguino-v2.png" alt="Señor Pingüino en el juego" loading="lazy" />
+            <figcaption>Señor Pingüino</figcaption>
+          </figure>
+          <figure class="paper-pair">
+            <img class="paper-drawing" src="./assets/landing/drawing-power-tree-original.webp" alt="Dibujo original del Árbol de Poder" loading="lazy" />
+            <img class="paper-sprite" src="./assets/landing/tree-restored.webp" alt="El Árbol de Poder en el juego" loading="lazy" />
+            <figcaption>Árbol de Poder</figcaption>
+          </figure>
+        </div>
+      </section>
+
+      <section id="arte" class="section gallery">
+        <h2 class="section-title"><span>Arte conceptual</span></h2>
+        <p class="lead center">Las láminas que guían el juego. Pulsa una para verla en grande.</p>
+        <div class="gallery-grid">
+          <button class="art-frame is-wide" type="button" data-zoom="./assets/landing/concept-worlds-environment-reference-only.webp" data-caption="Tres mundos, una gran aventura">
+            <img src="./assets/landing/concept-worlds-environment-reference-only.webp" alt="Lámina de los tres mundos: Babilandia, La Jungla y Ciudad Bicharraca" loading="lazy" width="1400" height="933" />
+          </button>
+          <button class="art-frame is-wide" type="button" data-zoom="./assets/landing/concept-bosses-canonical.webp" data-caption="Tres jefes, un gran desafío">
+            <img src="./assets/landing/concept-bosses-canonical.webp" alt="Lámina de los tres jefes" loading="lazy" width="1400" height="933" />
+          </button>
+          <button class="art-frame" type="button" data-zoom="./assets/landing/concept-enemies-canonical.webp" data-caption="Los Bicharracos">
+            <img src="./assets/landing/concept-enemies-canonical.webp" alt="Lámina de los enemigos COME, VUELA y DA VUELTAS" loading="lazy" width="1400" height="933" />
+          </button>
+          <button class="art-frame" type="button" data-zoom="./assets/landing/concept-power-selection.webp" data-caption="Elige tu poder">
+            <img src="./assets/landing/concept-power-selection.webp" alt="Lámina de selección de poderes" loading="lazy" width="1400" height="933" />
+          </button>
+          <button class="art-frame" type="button" data-zoom="./assets/landing/concept-power-tree-canonical.webp" data-caption="El Árbol de Poder">
+            <img src="./assets/landing/concept-power-tree-canonical.webp" alt="Lámina del Árbol de Poder triste y restaurado" loading="lazy" width="1400" height="933" />
+          </button>
+          <button class="art-frame" type="button" data-zoom="./assets/landing/concept-shop-empanadilla-pinguino.webp" data-caption="La Tienda Babita">
+            <img src="./assets/landing/concept-shop-empanadilla-pinguino.webp" alt="Lámina de la tienda del Señor Empanadilla y el Señor Pingüino" loading="lazy" width="1400" height="933" />
+          </button>
+        </div>
+      </section>
+
+      <section class="section final-cta">
+        <h2>¿Listo, pequeño héroe?</h2>
+        <p>Babilandia te necesita. Tu partida se guarda sola en este navegador.</p>
+        <button class="btn btn-play btn-large" type="button" data-play>▶ JUGAR AHORA</button>
+        <dl class="controls">
+          <div><dt>Mover</dt><dd>A / D o ← →</dd></div>
+          <div><dt>Saltar</dt><dd>W, ↑ o Espacio</dd></div>
+          <div><dt>Bajar</dt><dd>S o ↓</dd></div>
+          <div><dt>Atacar</dt><dd>J o X</dd></div>
+          <div><dt>Pausa</dt><dd>P o Esc</dd></div>
+        </dl>
+      </section>
     </main>
+
+    <footer class="site-footer">
+      <p>BABITOS · Videojuego con corazón (y píxeles)</p>
+      <p>
+        Código abierto en
+        <a href="https://github.com/jorgegalindocruces/Babitos" rel="noopener">GitHub</a>
+        · Hecho con Phaser
+      </p>
+    </footer>
+
+    <dialog id="play-dialog" class="play-dialog" aria-labelledby="play-dialog-title">
+      <div class="play-dialog-bar">
+        <h2 id="play-dialog-title">BABITOS</h2>
+        <div class="play-dialog-actions">
+          <button class="dialog-btn" type="button" data-fullscreen aria-label="Pantalla completa">⛶</button>
+          <button class="dialog-btn" type="button" data-close aria-label="Cerrar el juego">✕</button>
+        </div>
+      </div>
+      <div id="app">
+        <div class="game-shell">
+          <div class="game-topline" aria-hidden="true">
+            <span>BABITOS</span>
+            <span>PEQUEÑOS HÉROES · GRANDES AVENTURAS</span>
+          </div>
+          <button
+            id="audio-toggle"
+            class="audio-toggle"
+            type="button"
+            aria-label="Silenciar audio"
+            aria-pressed="false"
+            aria-keyshortcuts="M"
+            title="Audio · tecla M"
+          >🔊 AUDIO</button>
+          <div id="game" role="application" aria-label="Videojuego BABITOS">
+            <p class="game-loading" data-loading>Cargando BABITOS…</p>
+          </div>
+          <p id="game-status" class="sr-only" aria-live="polite">BABITOS está cargando.</p>
+        </div>
+        <noscript>Necesitas activar JavaScript para jugar a BABITOS.</noscript>
+      </div>
+      <p class="play-dialog-hint">Cerrar el juego lo deja en pausa. Tu partida se guarda automáticamente.</p>
+    </dialog>
+
+    <dialog id="art-dialog" class="art-dialog" aria-label="Arte ampliado">
+      <figure>
+        <img alt="" data-art-image />
+        <figcaption data-art-caption></figcaption>
+      </figure>
+      <button class="dialog-btn art-close" type="button" data-close aria-label="Cerrar">✕</button>
+    </dialog>
+
     <script type="module" src="/src/main.js"></script>
   </body>
 </html>

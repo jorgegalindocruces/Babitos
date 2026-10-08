@@ -167,7 +167,7 @@ test('late font arrival refreshes top-level and nested Phaser text', () => {
 test('the page preserves native desktop pixels and discovers fonts before the module', async () => {
   const [styles, main, page, button, effects] = await Promise.all([
     readFile(new URL('../src/styles.css', import.meta.url), 'utf8'),
-    readFile(new URL('../src/main.js', import.meta.url), 'utf8'),
+    readFile(new URL('../src/gameBoot.js', import.meta.url), 'utf8'),
     readFile(new URL('../index.html', import.meta.url), 'utf8'),
     readFile(new URL('../src/ui/Button.js', import.meta.url), 'utf8'),
     readFile(new URL('../src/ui/effects.js', import.meta.url), 'utf8'),
@@ -175,6 +175,7 @@ test('the page preserves native desktop pixels and discovers fonts before the mo
 
   assert.match(styles, /width:\s*min\(100%,\s*966px,/u);
   assert.doesNotMatch(styles, /#game canvas[\s\S]*?width:\s*100%\s*!important/u);
+  // gameBoot.js boots Phaser lazily from the landing page's play dialog.
   assert.match(main, /await waitForUiFonts\(uiFontPromise\)/u);
   assert.match(page, /fonts\.googleapis\.com\/css2/u);
   assert.match(page, /id="babitos-ui-fonts"[\s\S]*?media="print"/u);

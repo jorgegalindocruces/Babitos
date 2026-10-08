@@ -1,178 +1,86 @@
-import Phaser from 'phaser';
 import './styles.css';
-import { AudioSystem } from './game/AudioSystem.js';
-import { BootScene } from './scenes/BootScene.js';
-import { TitleScene } from './scenes/TitleScene.js';
-import { CreatorScene } from './scenes/CreatorScene.js';
-import { PowerScene } from './scenes/PowerScene.js';
-import { IntroScene } from './scenes/IntroScene.js';
-import { GameScene } from './scenes/GameScene.js';
-import { BossScene } from './scenes/BossScene.js';
-import { DarknessBossScene } from './scenes/DarknessBossScene.js';
-import { ShopScene } from './scenes/ShopScene.js';
-import { WorldMapScene } from './scenes/WorldMapScene.js';
-import { ComingSoonScene } from './scenes/ComingSoonScene.js';
-import { refreshUiText, requestUiFonts, waitForUiFonts } from './ui/fontLoading.js';
+import { activateUiFontStylesheet } from './ui/fontLoading.js';
 
-const AUDIO_PREFERENCE_KEY = 'babitos.audio.v1';
+// The landing uses the game's fonts too; activate the non-blocking stylesheet.
+void activateUiFontStylesheet(document.getElementById('babitos-ui-fonts'));
 
-function readMutedPreference() {
-  try {
-    return globalThis.localStorage?.getItem(AUDIO_PREFERENCE_KEY) === 'muted';
-  } catch {
-    return false;
+const playDialog = document.getElementById('play-dialog');
+const artDialog = document.getElementById('art-dialog');
+let gameController = null;
+let bootPromise = null;
+
+/** Loads Phaser and the game only the first time the player presses Play. */
+function bootGame() {
+  bootPromise ??= import('./gameBoot.js')
+    .then(({ startGame }) => startGame())
+    .then((controller) => {
+      gameController = controller;
+      document.querySelector('[data-loading]')?.remove();
+      return controller;
+    })
+    .catch((error) => {
+      bootPromise = null;
+      const loading = document.querySelector('[data-loading]');
+      if (loading) loading.textContent = 'No se pudo cargar el juego. Recarga la página para intentarlo de nuevo.';
+      throw error;
+    });
+  return bootPromise;
+}
+
+function focusCanvas() {
+  document.querySelector('#game canvas')?.focus?.();
+}
+
+async function openPlayDialog() {
+  if (!playDialog.open) playDialog.showModal();
+  document.documentElement.classList.add('is-playing');
+  if (location.hash !== '#jugar') history.replaceState(null, '', '#jugar');
+  if (gameController) {
+    gameController.setActive(true);
+    focusCanvas();
+    return;
   }
+  await bootGame();
+  focusCanvas();
 }
 
-function saveMutedPreference(muted) {
-  try {
-    globalThis.localStorage?.setItem(AUDIO_PREFERENCE_KEY, muted ? 'muted' : 'enabled');
-  } catch {
-    // Audio remains usable when storage is unavailable or blocked.
-  }
+function closePlayDialog() {
+  gameController?.setActive(false);
+  if (playDialog.open) playDialog.close();
+  document.documentElement.classList.remove('is-playing');
+  if (location.hash === '#jugar') history.replaceState(null, '', location.pathname + location.search);
 }
 
-const audio = new AudioSystem({ muted: readMutedPreference() });
-audio.bindUnlock();
-
-const audioToggle = document.getElementById('audio-toggle');
-let toggleAudioPromise = null;
-
-function syncAudioToggle(announceChange = false) {
-  if (!audioToggle) return;
-  const { available, muted } = audio.getState();
-  audioToggle.disabled = !available;
-  // Stable toggle semantics: "pressed" means that mute mode is active.
-  // Keeping the name fixed avoids contradictory output such as
-  // "Activar audio, pulsado" in screen readers.
-  audioToggle.setAttribute('aria-pressed', String(muted));
-  audioToggle.setAttribute('aria-label', 'Silenciar audio');
-  audioToggle.textContent = available ? (muted ? '🔇 AUDIO' : '🔊 AUDIO') : 'AUDIO N/D';
-
-  if (announceChange) {
-    const status = document.getElementById('game-status');
-    if (status) status.textContent = muted ? 'Audio silenciado.' : 'Audio activado.';
-  }
+for (const button of document.querySelectorAll('[data-play]')) {
+  button.addEventListener('click', () => void openPlayDialog());
 }
+playDialog.querySelector('[data-close]').addEventListener('click', closePlayDialog);
 
-function announceAudioFailure() {
-  const status = document.getElementById('game-status');
-  if (status) status.textContent = 'No se pudo activar el audio. Vuelve a intentarlo.';
-}
+// Esc pauses the game; only the close button leaves the dialog.
+playDialog.addEventListener('cancel', (event) => event.preventDefault());
 
-function toggleAudio() {
-  if (toggleAudioPromise) return toggleAudioPromise;
-
-  toggleAudioPromise = (async () => {
-    const unlocked = await audio.unlock();
-    if (!unlocked) {
-      syncAudioToggle();
-      announceAudioFailure();
-      return false;
-    }
-
-    const muted = audio.toggleMuted();
-    saveMutedPreference(muted);
-    syncAudioToggle(true);
-    if (!muted) audio.play('ui');
-    return true;
-  })().finally(() => {
-    toggleAudioPromise = null;
-  });
-
-  return toggleAudioPromise;
-}
-
-const handleAudioToggleClick = () => {
-  void toggleAudio();
-};
-
-// Preserve native Space/Enter activation while keeping those events away from
-// Phaser's global keyboard capture and gameplay controls.
-const stopAudioToggleKeyPropagation = (event) => {
-  if (event.code === 'Space' || event.code === 'Enter') event.stopPropagation();
-};
-
-audioToggle?.addEventListener('click', handleAudioToggleClick);
-audioToggle?.addEventListener('keydown', stopAudioToggleKeyPropagation);
-audioToggle?.addEventListener('keyup', stopAudioToggleKeyPropagation);
-
-const muteShortcut = (event) => {
-  const tag = event.target?.tagName;
-  if (
-    event.repeat
-    || event.isComposing
-    || event.altKey
-    || event.ctrlKey
-    || event.metaKey
-    || event.shiftKey
-    || event.code !== 'KeyM'
-    || event.target?.isContentEditable
-    || ['INPUT', 'TEXTAREA', 'SELECT'].includes(tag)
-  ) return;
-  event.preventDefault();
-  void toggleAudio();
-};
-document.addEventListener('keydown', muteShortcut);
-syncAudioToggle();
-
-const config = {
-  type: Phaser.AUTO,
-  parent: 'game',
-  width: 960,
-  height: 540,
-  backgroundColor: '#071a33',
-  pixelArt: true,
-  roundPixels: true,
-  dom: { createContainer: true },
-  scale: {
-    mode: Phaser.Scale.FIT,
-    autoCenter: Phaser.Scale.CENTER_BOTH,
-    autoRound: true,
-  },
-  physics: {
-    default: 'arcade',
-    arcade: {
-      gravity: { y: 1350 },
-      debug: false,
-    },
-  },
-  input: {
-    activePointers: 4,
-  },
-  callbacks: {
-    preBoot: (game) => game.registry.set('audio', audio),
-  },
-  scene: [
-    BootScene,
-    TitleScene,
-    CreatorScene,
-    PowerScene,
-    IntroScene,
-    GameScene,
-    BossScene,
-    DarknessBossScene,
-    ShopScene,
-    WorldMapScene,
-    ComingSoonScene,
-  ],
-};
-
-const uiFontPromise = requestUiFonts();
-const fontsReadyAtBoot = await waitForUiFonts(uiFontPromise);
-const game = new Phaser.Game(config);
-
-if (!fontsReadyAtBoot) {
-  void uiFontPromise.then((loaded) => {
-    if (loaded) refreshUiText(game);
-  });
-}
-
-window.addEventListener('beforeunload', () => {
-  document.removeEventListener('keydown', muteShortcut);
-  audioToggle?.removeEventListener('click', handleAudioToggleClick);
-  audioToggle?.removeEventListener('keydown', stopAudioToggleKeyPropagation);
-  audioToggle?.removeEventListener('keyup', stopAudioToggleKeyPropagation);
-  void audio.destroy();
-  game.destroy(true);
+playDialog.querySelector('[data-fullscreen]').addEventListener('click', () => {
+  const shell = playDialog.querySelector('.game-shell');
+  if (document.fullscreenElement) void document.exitFullscreen?.();
+  else void shell.requestFullscreen?.().catch(() => {});
 });
+
+// Concept art lightbox.
+const artImage = artDialog.querySelector('[data-art-image]');
+const artCaption = artDialog.querySelector('[data-art-caption]');
+for (const frame of document.querySelectorAll('[data-zoom]')) {
+  frame.addEventListener('click', () => {
+    artImage.src = frame.dataset.zoom;
+    artImage.alt = frame.querySelector('img')?.alt ?? '';
+    artCaption.textContent = frame.dataset.caption ?? '';
+    artDialog.showModal();
+  });
+}
+artDialog.querySelector('[data-close]').addEventListener('click', () => artDialog.close());
+artDialog.addEventListener('click', (event) => {
+  if (event.target === artDialog) artDialog.close();
+});
+
+// Direct links (#jugar) and development QA routes (?qa=…) open the game.
+const params = new URLSearchParams(location.search);
+if (location.hash === '#jugar' || params.has('qa')) void openPlayDialog();

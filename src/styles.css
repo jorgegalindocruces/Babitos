@@ -19,16 +19,22 @@ body,
 body {
   min-height: 100vh;
   min-height: 100svh;
-  overflow: hidden;
+  overflow-x: hidden;
   background:
     radial-gradient(circle at 50% 0%, rgba(26, 101, 166, 0.32), transparent 44%),
     linear-gradient(180deg, #081a33 0%, #040914 100%);
 }
 
+/* The page stays still behind the play dialog. */
+html.is-playing,
+html.is-playing body {
+  overflow: hidden;
+}
+
 #app {
   display: grid;
   place-items: center;
-  padding: clamp(8px, 2vw, 24px);
+  padding: 0;
 }
 
 .game-shell {
@@ -166,7 +172,7 @@ body {
     padding: 0;
   }
   .game-shell {
-    width: min(100vw, 960px, calc(100svh * 16 / 9));
+    width: min(100vw, 960px, calc((100svh - 44px) * 16 / 9));
     border: 0;
     border-radius: 0;
   }
@@ -185,4 +191,464 @@ body {
     height: auto;
     aspect-ratio: 16 / 9;
   }
+}
+
+/* ------------------------------------------------------------------ */
+/* Landing page                                                        */
+/* ------------------------------------------------------------------ */
+
+:root {
+  --navy: #071a33;
+  --navy-deep: #040c1a;
+  --panel: #0b2240;
+  --line: #173e62;
+  --cyan: #71e5ff;
+  --yellow: #ffcf3c;
+  --pink: #ff557b;
+  --green: #36c96a;
+  --text: #f7fbff;
+  --muted: #b9d3e8;
+  --pixel: 'Silkscreen', monospace;
+}
+
+html { scroll-behavior: smooth; scroll-padding-top: 76px; }
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}
+
+img { max-width: 100%; height: auto; }
+.pixel { image-rendering: pixelated; }
+a { color: var(--cyan); }
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 14px 26px;
+  border: 3px solid #04101f;
+  border-radius: 12px;
+  font: 700 15px var(--pixel);
+  letter-spacing: 0.06em;
+  text-decoration: none;
+  cursor: pointer;
+  box-shadow: 0 5px 0 #04101f;
+  transition: transform 0.08s ease, box-shadow 0.08s ease, filter 0.15s ease;
+}
+.btn:hover { filter: brightness(1.08); }
+.btn:active { transform: translateY(4px); box-shadow: 0 1px 0 #04101f; }
+.btn:focus-visible,
+.dialog-btn:focus-visible,
+.art-frame:focus-visible,
+.site-nav a:focus-visible {
+  outline: 3px solid var(--yellow);
+  outline-offset: 3px;
+}
+.btn-play { background: var(--green); color: #fff; border-color: var(--yellow); text-shadow: 0 2px 0 #116a35; }
+.btn-ghost { background: rgba(7, 19, 38, 0.7); color: var(--text); border-color: var(--cyan); }
+.btn-large { padding: 18px 34px; font-size: clamp(15px, 2.2vw, 20px); }
+.btn-small { padding: 9px 16px; font-size: 12px; box-shadow: 0 3px 0 #04101f; }
+
+/* Header */
+.site-header {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 10px clamp(14px, 3vw, 32px);
+  background: rgba(4, 12, 26, 0.86);
+  backdrop-filter: blur(8px);
+  border-bottom: 2px solid var(--line);
+}
+.brand img { display: block; width: 132px; }
+.site-nav { display: flex; gap: 4px 18px; flex-wrap: wrap; margin-left: auto; }
+.site-nav a {
+  color: var(--muted);
+  font: 700 11px var(--pixel);
+  letter-spacing: 0.05em;
+  text-decoration: none;
+  padding: 6px 2px;
+}
+.site-nav a:hover { color: var(--yellow); }
+
+/* Hero */
+.hero {
+  position: relative;
+  min-height: min(88svh, 760px);
+  display: grid;
+  place-items: center;
+  padding: clamp(40px, 7vw, 90px) 16px clamp(70px, 9vw, 120px);
+  overflow: hidden;
+  text-align: center;
+}
+.hero-backdrop {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(180deg, rgba(4, 12, 26, 0.35) 0%, rgba(4, 12, 26, 0.55) 55%, var(--navy-deep) 100%),
+    url('/assets/backgrounds/babilandia-v2.webp') center 40% / cover no-repeat;
+  image-rendering: pixelated;
+  transform: scale(1.04);
+}
+.hero-inner { position: relative; max-width: 820px; }
+.hero-logo {
+  width: min(640px, 92vw);
+  filter: drop-shadow(0 10px 24px rgba(0, 0, 0, 0.55));
+  animation: float 4.5s ease-in-out infinite;
+}
+.hero-tagline {
+  margin: 4px 0 14px;
+  color: var(--yellow);
+  font: 700 clamp(13px, 2.4vw, 20px) var(--pixel);
+  letter-spacing: 0.06em;
+  text-shadow: 0 3px 0 #04101f;
+}
+.hero-pitch {
+  max-width: 620px;
+  margin: 0 auto 26px;
+  font-size: clamp(16px, 2.1vw, 20px);
+  line-height: 1.5;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.7);
+}
+.hero-actions { display: flex; flex-wrap: wrap; gap: 14px; justify-content: center; }
+.hero-badges {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  margin: 28px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.hero-badges li {
+  padding: 6px 12px;
+  border: 2px solid rgba(113, 229, 255, 0.5);
+  border-radius: 999px;
+  background: rgba(7, 19, 38, 0.72);
+  color: var(--cyan);
+  font: 700 10px var(--pixel);
+  letter-spacing: 0.05em;
+}
+.hero-babito {
+  position: absolute;
+  right: clamp(-30px, 4vw, 80px);
+  bottom: clamp(10px, 4vw, 40px);
+  width: clamp(110px, 16vw, 210px);
+  image-rendering: pixelated;
+  animation: hop 2.6s ease-in-out infinite;
+}
+
+@keyframes float { 50% { transform: translateY(-8px); } }
+@keyframes hop {
+  0%, 60%, 100% { transform: translateY(0); }
+  70% { transform: translateY(-34px); }
+  80% { transform: translateY(0) scale(1.05, 0.95); }
+}
+
+/* Sections */
+.section {
+  max-width: 1160px;
+  margin: 0 auto;
+  padding: clamp(56px, 8vw, 96px) clamp(16px, 4vw, 32px);
+}
+.section-title {
+  margin: 0 0 32px;
+  text-align: center;
+  font: 700 clamp(22px, 4vw, 36px) var(--pixel);
+  letter-spacing: 0.06em;
+  color: #fff;
+  text-shadow: 0 4px 0 #04101f;
+}
+.section-title span {
+  display: inline-block;
+  padding-bottom: 8px;
+  border-bottom: 4px solid var(--pink);
+}
+.lead { color: var(--muted); font-size: 17px; line-height: 1.6; }
+.lead.center { max-width: 720px; margin: -10px auto 32px; text-align: center; }
+.group-title {
+  margin: 40px 0 16px;
+  color: var(--yellow);
+  font: 700 15px var(--pixel);
+  letter-spacing: 0.06em;
+}
+
+/* Story */
+.story-steps {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 22px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.story-step,
+.card,
+.power,
+.world,
+.paper-pair {
+  border: 3px solid var(--line);
+  border-radius: 18px;
+  background: linear-gradient(180deg, var(--panel), #08182e);
+  box-shadow: 0 8px 0 #030a16;
+}
+.story-step { padding: 20px; text-align: center; }
+.story-step img { width: 100%; max-width: 230px; aspect-ratio: 1; object-fit: contain; }
+.story-step h3 { margin: 12px 0 8px; color: var(--cyan); font: 700 14px var(--pixel); }
+.story-step p { margin: 0; color: var(--muted); line-height: 1.55; }
+
+/* Creator */
+.split { display: grid; grid-template-columns: 1fr 1.1fr; gap: 32px; align-items: center; }
+.split .section-title { text-align: left; }
+.powers { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 20px; }
+.power { padding: 14px; }
+.power h3 { margin: 0 0 6px; font: 700 15px var(--pixel); }
+.power p { margin: 0; color: var(--muted); font-size: 14px; line-height: 1.4; }
+.power-fire { border-color: #ff5a36; } .power-fire h3 { color: #ff8a5c; }
+.power-lightning { border-color: #56dcff; } .power-lightning h3 { color: #8de9ff; }
+.power-rock { border-color: #a59bb0; } .power-rock h3 { color: #d5cbe0; }
+
+.art-frame {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 3px solid var(--line);
+  border-radius: 16px;
+  overflow: hidden;
+  background: #030a16;
+  cursor: zoom-in;
+  box-shadow: 0 8px 0 #030a16;
+  transition: transform 0.15s ease, border-color 0.15s ease;
+}
+.art-frame:hover { transform: translateY(-3px); border-color: var(--cyan); }
+.art-frame img { display: block; width: 100%; }
+
+/* Worlds */
+.world-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; }
+.world { overflow: hidden; display: flex; flex-direction: column; }
+.world-art {
+  aspect-ratio: 16 / 9;
+  background-size: cover;
+  background-position: center;
+  image-rendering: pixelated;
+  border-bottom: 3px solid var(--line);
+}
+.world-babilandia .world-art { background-image: url('/assets/backgrounds/babilandia-v2.webp'); }
+/* The jungle panel of the world sheet, framed on its painted landscape. */
+.world-jungla .world-art {
+  background-image: url('/assets/landing/concept-worlds-environment-reference-only.webp');
+  background-size: 300% auto;
+  background-position: 50% 31%;
+}
+.world-ciudad .world-art { background-image: url('/assets/backgrounds/ciudad-bicharraca-v1.webp'); filter: saturate(0.7); }
+.world-body { padding: 18px 20px 22px; }
+.world-body h3 { margin: 4px 0 8px; font: 700 18px var(--pixel); }
+.world-body p { margin: 0; color: var(--muted); line-height: 1.5; }
+.world-status {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: #2b2140;
+  color: #ffb8c9 !important;
+  font: 700 10px var(--pixel);
+  letter-spacing: 0.05em;
+}
+.world-status.is-playable { background: #12432a; color: #8ff3a9 !important; }
+
+/* Characters */
+.cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+.cards-two { grid-template-columns: repeat(2, 1fr); max-width: 760px; }
+.card { padding: 18px; text-align: center; }
+.card img { width: 150px; height: 150px; object-fit: contain; }
+.card h4 { margin: 8px 0 6px; color: var(--yellow); font: 700 15px var(--pixel); }
+.card p { margin: 0; color: var(--muted); line-height: 1.5; }
+.card-boss { border-color: #4b2c6b; }
+.card.is-locked img { object-fit: cover; border-radius: 10px; background: #f4f6f8; transform: rotate(-2deg); }
+
+/* Paper to pixel */
+.paper-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; }
+.paper-pair { position: relative; margin: 0; padding: 14px 14px 12px; }
+.paper-drawing {
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 5;
+  object-fit: cover;
+  border-radius: 10px;
+  background: #f4f6f8;
+  transform: rotate(-1.5deg);
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.4);
+}
+.paper-sprite {
+  position: absolute;
+  right: 8px;
+  bottom: 34px;
+  width: 46%;
+  filter: drop-shadow(0 6px 6px rgba(0, 0, 0, 0.55));
+}
+.paper-pair figcaption {
+  margin-top: 12px;
+  color: var(--cyan);
+  font: 700 12px var(--pixel);
+  text-align: center;
+}
+
+/* Gallery */
+.gallery-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
+.art-frame.is-wide { grid-column: span 2; }
+
+/* Final call */
+.final-cta { text-align: center; }
+.final-cta h2 { margin: 0 0 10px; font: 700 clamp(22px, 4vw, 34px) var(--pixel); color: var(--yellow); }
+.final-cta p { color: var(--muted); margin: 0 0 24px; }
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  margin: 34px 0 0;
+}
+.controls div {
+  padding: 8px 14px;
+  border: 2px solid var(--line);
+  border-radius: 10px;
+  background: #08182e;
+}
+.controls dt { color: var(--cyan); font: 700 10px var(--pixel); }
+.controls dd { margin: 2px 0 0; font-weight: 800; }
+
+.site-footer {
+  padding: 28px 16px 40px;
+  border-top: 2px solid var(--line);
+  color: var(--muted);
+  text-align: center;
+  font-size: 14px;
+}
+.site-footer p { margin: 4px 0; }
+
+/* Play dialog */
+.play-dialog {
+  width: min(100vw, 1000px);
+  max-width: 100vw;
+  max-height: 100svh;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  overflow: visible;
+}
+.play-dialog::backdrop { background: rgba(2, 6, 14, 0.88); backdrop-filter: blur(4px); }
+.play-dialog-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: min(100%, 966px, calc((100svh - 88px) * 16 / 9));
+  margin: 0 auto 8px;
+}
+.play-dialog-bar h2 { margin: 0; color: var(--cyan); font: 700 13px var(--pixel); letter-spacing: 0.08em; }
+.play-dialog-actions { display: flex; gap: 8px; }
+.dialog-btn {
+  min-width: 40px;
+  height: 36px;
+  border: 2px solid var(--cyan);
+  border-radius: 10px;
+  background: #071326;
+  color: #fff;
+  font: 700 16px var(--pixel);
+  cursor: pointer;
+}
+.dialog-btn:hover { border-color: var(--yellow); }
+.play-dialog-hint { margin: 8px 0 0; text-align: center; color: var(--muted); font-size: 12px; }
+.game-loading {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  margin: 0;
+  color: var(--cyan);
+  font: 700 14px var(--pixel);
+}
+.game-shell:fullscreen {
+  width: min(100vw, calc(100vh * 16 / 9));
+  border: 0;
+  border-radius: 0;
+  margin: auto;
+}
+.game-shell:fullscreen .game-topline { display: none; }
+.game-shell::backdrop { background: #000; }
+
+/* Art lightbox */
+.art-dialog {
+  max-width: min(96vw, 1500px);
+  max-height: 94svh;
+  padding: 0;
+  border: 3px solid var(--line);
+  border-radius: 16px;
+  background: #030a16;
+  overflow: auto;
+}
+.art-dialog::backdrop { background: rgba(2, 6, 14, 0.9); }
+.art-dialog figure { margin: 0; }
+.art-dialog img { display: block; width: 100%; }
+.art-dialog figcaption { padding: 10px 16px 14px; color: var(--cyan); font: 700 12px var(--pixel); }
+.art-close { position: absolute; top: 10px; right: 10px; }
+
+@media (max-width: 900px) {
+  .site-nav { display: none; }
+  .site-header .btn-small { margin-left: auto; }
+  .story-steps, .world-grid, .cards { grid-template-columns: 1fr; max-width: 520px; margin-inline: auto; }
+  .split { grid-template-columns: 1fr; }
+  .split .section-title { text-align: center; }
+  .paper-grid { grid-template-columns: repeat(2, 1fr); }
+  .gallery-grid { grid-template-columns: 1fr; }
+  .art-frame.is-wide { grid-column: auto; }
+  .hero-babito { opacity: 0.85; }
+}
+
+/* Phones: the dialog fills the screen and centres the landscape game. */
+@media (max-width: 720px), (max-height: 620px) {
+  .play-dialog[open] {
+    width: 100vw;
+    height: 100svh;
+    max-height: none;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    background: #02060e;
+  }
+  .play-dialog-bar {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    width: auto;
+    margin: 0;
+    padding: max(8px, env(safe-area-inset-top)) 12px 8px;
+  }
+  .play-dialog-hint { display: none; }
+}
+
+@media (max-width: 720px) and (orientation: portrait) {
+  .play-dialog[open]::after {
+    content: 'Gira el móvil para jugar a pantalla completa';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: max(18px, env(safe-area-inset-bottom));
+    color: var(--muted);
+    font: 700 11px var(--pixel);
+    text-align: center;
+  }
+}
+
+@media (max-width: 520px) {
+  .powers { grid-template-columns: 1fr; }
+  .paper-grid { grid-template-columns: 1fr; max-width: 360px; margin-inline: auto; }
+  .cards-two { grid-template-columns: 1fr; }
+  .play-dialog-hint { display: none; }
 }

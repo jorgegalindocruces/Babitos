@@ -7,6 +7,15 @@ Este archivo relaciona las iteraciones entregadas con sus cambios observables, c
 - Mantener sincronizados `README.md`, `INTERACTIONS.md`, `GAME_DESIGN.md`, `IMPLEMENTATION_SPEC.md` y `ACCEPTANCE_CRITERIA.md` cuando cambien flujo, controles, estados, persistencia o contenido jugable.
 - Añadir una entrada aquí por cada cambio observable, con el commit final y las pruebas realizadas.
 
+## Landing page con diálogo de juego — 2026-10-08
+
+Pendiente de commit. `index.html` pasa a ser una landing page del juego:
+- **Contenido**: hero, historia del Árbol de Poder, creador y poderes, tres mundos, personajes, «Del papel al píxel» (los dibujos originales junto a su sprite) y una galería de láminas conceptuales con visor.
+- **Juego en diálogo**: `JUGAR` abre un `<dialog>`. El motor se separa en [gameBoot.js](../src/gameBoot.js) y se carga solo en ese momento: la landing usa 6.5 kB de JavaScript y el juego 1.47 MB.
+- **Cerrar el diálogo**: pausa la partida, duerme el bucle, silencia el audio y devuelve el teclado a la página. `Esc` sigue siendo la pausa del juego, y `#jugar` abre el juego directamente.
+- **Arte**: optimizado a WebP en `public/assets/landing/` (1.9 MB entre todas las imágenes, cargadas en diferido).
+- **Pruebas**: en Chrome, escritorio y móvil, sin overflow horizontal. Build de producción servida sin errores ni imágenes rotas. Ciclo abrir → jugar → `Esc` → cerrar → desplazar con teclado → reabrir en pausa.
+
 ## Fase 2: La Jungla y La Oscuridad — 2026-10-08
 
 Commit [`1b767b9`](https://github.com/jorgegalindocruces/Babitos/commit/1b767b9). La Jungla deja de ser una pantalla de avance y se convierte en la Fase 2 jugable, con su jefe.

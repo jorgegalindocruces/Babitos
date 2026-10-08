@@ -5,6 +5,9 @@ Esta es la referencia canónica de las interacciones disponibles en BABITOS 0.2.
 ## Alcance actual
 
 ```text
+Landing (index.html)
+  ├─ Historia · Crea tu Babito · Mundos · Personajes · Del papel al píxel · Arte conceptual
+  └─ JUGAR → diálogo con el juego
 Boot
   └─ Título
       ├─ Creador → Poder → Intro → Babilandia → Babito Corrupto → Tienda → Mapa
@@ -20,6 +23,16 @@ Mapa
 ```
 
 Son jugables Babilandia con Babito Corrupto (Fase 1) y La Jungla con La Oscuridad (Fase 2). Ciudad Bicharraca tiene una pantalla de avance, no un nivel interactivo. Boss Total y el final pertenecen al roadmap.
+
+## Landing page
+
+La portada de `babitos.es` presenta el juego antes de jugar: hero con el logo y un Babito que salta, la historia del Árbol de Poder en tres pasos, el creador y los tres poderes, los tres mundos con su estado (dos jugables y Ciudad próximamente), personajes (Bicharracos, jefes y aliados), «Del papel al píxel» con cada dibujo original junto a su sprite y una galería de láminas conceptuales que se amplían en un visor.
+
+- Todos los botones `JUGAR` abren un diálogo modal con el juego. La primera apertura carga el motor (`Cargando BABITOS…`); las siguientes son inmediatas.
+- `Esc` dentro del diálogo pausa el juego, como siempre; solo el botón `✕` cierra el diálogo. Cerrar deja la partida en pausa, sin música y sin avanzar; al volver espera el panel `PAUSA`.
+- `⛶` pone el juego a pantalla completa. En móvil el diálogo ocupa toda la pantalla y, en vertical, sugiere girar el teléfono.
+- Con el diálogo cerrado, flechas, Espacio y `M` vuelven a comportarse como en cualquier página. Al cerrar, el foco vuelve al botón que lo abrió.
+- Un enlace a `https://babitos.es/#jugar` abre el juego directamente.
 
 ## Entradas globales
 
