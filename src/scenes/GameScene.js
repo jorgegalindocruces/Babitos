@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import levelData from '../data/levels/babilandia.json';
 import gameData from '../data/game-data.json';
 import { EnemyController } from '../game/EnemyController.js';
+import { enemyUsesPlatformCollision } from '../game/EnemyAnimations.js';
 import { BABITO_ANIMATION_CLIPS } from '../game/BabitoAnimations.js';
 import { PlayerController } from '../game/PlayerController.js';
 import { isPowerProjectile, makeImpact } from '../game/PowerSystem.js';
@@ -44,6 +45,9 @@ export class GameScene extends Phaser.Scene {
     this.qaMotion = null;
     this.qaMotionFrame = null;
     this.qaSize = null;
+    this.qaEnemyType = null;
+    this.qaEnemyState = null;
+    this.qaEnemyFrame = null;
     if (import.meta.env.DEV && typeof location !== 'undefined') {
       const params = new URLSearchParams(location.search);
       this.qaCombat = params.get('qaCombat') === '1';
@@ -54,6 +58,12 @@ export class GameScene extends Phaser.Scene {
         ? null
         : Number(requestedFrameParam);
       const requestedSize = params.get('qaSize')?.trim().toLowerCase();
+      const requestedEnemyType = params.get('qaEnemy')?.trim().toLowerCase();
+      const requestedEnemyState = params.get('qaEnemyState')?.trim() || null;
+      const requestedEnemyFrameParam = params.get('qaEnemyFrame');
+      const requestedEnemyFrame = requestedEnemyFrameParam == null
+        ? null
+        : Number(requestedEnemyFrameParam);
       this.qaMotion = [
         'idle', 'walk', 'run', 'jump', 'fall', 'attack', 'hurt', 'dead',
       ].includes(requestedMotion) ? requestedMotion : null;
@@ -64,6 +74,15 @@ export class GameScene extends Phaser.Scene {
         : null;
       this.qaSize = ['small', 'normal', 'large'].includes(requestedSize)
         ? requestedSize
+        : null;
+      this.qaEnemyType = Object.hasOwn(gameData.enemies, requestedEnemyType)
+        ? requestedEnemyType
+        : null;
+      this.qaEnemyState = requestedEnemyState;
+      this.qaEnemyFrame = requestedEnemyFrame != null
+        && Number.isInteger(requestedEnemyFrame)
+        && requestedEnemyFrame >= 0
+        ? requestedEnemyFrame
         : null;
     }
     this.enemyControllers = [];
@@ -90,7 +109,7 @@ export class GameScene extends Phaser.Scene {
     );
     this.qaCheckpointActive = Boolean(qaCheckpoint);
     const savedCheckpoint = qaCheckpoint
-      ?? (this.qaCombat
+      ?? (this.qaCombat || this.qaEnemyType
         ? this.level.checkpoints[0]
         : (this.level.checkpoints.find((entry) => entry.id === this.save.progress.checkpoint)
           ?? this.level.checkpoints[0]));
@@ -116,7 +135,29 @@ export class GameScene extends Phaser.Scene {
     this.cameras.main.setDeadzone(180, 100);
 
     this.createEnemies();
-    if (this.qaCombat) {
+    if (this.qaEnemyType) {
+      const qaEnemy = this.enemyControllers.find((enemy) => enemy.type === this.qaEnemyType);
+      if (qaEnemy) {
+        for (const enemy of this.enemyControllers) {
+          if (enemy === qaEnemy) continue;
+          enemy.sprite.body.enable = false;
+          enemy.sprite.setActive(false).setVisible(false);
+          enemy.visual.setVisible(false);
+          enemy.stateBadge?.setVisible(false);
+        }
+        const qaX = 390;
+        const qaY = qaEnemy.type === 'vuela' ? 270 : 420;
+        qaEnemy.home.set(qaX, qaY);
+        qaEnemy.sprite.setPosition(qaX, qaY);
+        const applied = qaEnemy.setQaPresentation(
+          this.qaEnemyState ?? qaEnemy.config.states[0],
+          this.qaEnemyFrame,
+        );
+        if (!applied) {
+          qaEnemy.setQaPresentation(qaEnemy.config.states[0], this.qaEnemyFrame);
+        }
+      }
+    } else if (this.qaCombat) {
       const firstEnemy = this.enemyControllers[0];
       firstEnemy.health = 1;
       firstEnemy.home.x = 350;
@@ -128,7 +169,7 @@ export class GameScene extends Phaser.Scene {
     if (prefersTouchControls()) this.createTouchControls();
     this.createPauseKeys();
 
-    if (!this.qaCheckpointActive) {
+    if (!this.qaCheckpointActive && !this.qaEnemyType) {
       this.store.setProgress({ scene: 'babilandia', checkpoint: savedCheckpoint.id });
     }
     announce('Babilandia. Muévete, salta, derrota a los Bicharracos y recoge monedas.');
@@ -268,7 +309,9 @@ export class GameScene extends Phaser.Scene {
       );
       this.enemyControllers.push(controller);
       this.enemySprites.add(controller.sprite);
-      this.physics.add.collider(controller.sprite, this.platforms);
+      if (enemyUsesPlatformCollision(controller.type)) {
+        this.physics.add.collider(controller.sprite, this.platforms);
+      }
     }
   }
 

@@ -1,15 +1,24 @@
 import assert from 'node:assert/strict';
+import path from 'node:path';
 import test from 'node:test';
+import { fileURLToPath } from 'node:url';
 
+import gameData from '../src/data/game-data.json' with { type: 'json' };
 import {
   ENEMY_ANIMATION_CLIPS,
   ENEMY_SHEET_ASSETS,
+  ENEMY_STATE_CLIPS,
   buildEnemyFrameRectangles,
+  enemyUsesPlatformCollision,
+  getEnemyClipDurationMs,
   getEnemyClipForState,
+  getEnemyStateAfterHit,
   getEnemyTintForState,
+  resolveEnemyQaPresentation,
   resetEnemyVisualForDefeat,
   shouldIgnoreEnemyClipIfPlaying,
 } from '../src/game/EnemyAnimations.js';
+import { getEnemyPatrolDirection, getEnemyWallDirection } from '../src/game/EnemyBehavior.js';
 import {
   BOSS_POSE_CLIPS,
   sampleBossPose,
@@ -18,6 +27,9 @@ import {
   PROCEDURAL_ENEMY_SHEETS,
   getProceduralFramePixelBounds,
 } from '../src/game/ProceduralEnemySheets.js';
+import { decodeRgbaPng } from '../scripts/normalize-vuela-atlas.mjs';
+
+const TEST_DIR = path.dirname(fileURLToPath(import.meta.url));
 
 test('enemy sheets expose a complete frame row for every authored clip', () => {
   for (const [type, asset] of Object.entries(ENEMY_SHEET_ASSETS)) {
@@ -28,6 +40,9 @@ test('enemy sheets expose a complete frame row for every authored clip', () => {
     for (const clip of Object.values(ENEMY_ANIMATION_CLIPS[type])) {
       assert.ok(clip.row >= 0 && clip.row < rows, `${type} clip row must exist`);
       assert.ok(clip.frameRate >= 5, `${type} clip must visibly animate`);
+      for (const column of clip.columns ?? Array.from({ length: columns }, (_, index) => index)) {
+        assert.ok(column >= 0 && column < columns, `${type} clip column must exist`);
+      }
     }
   }
 });
@@ -61,11 +76,20 @@ test('procedural enemy sheets use exact uniform cells without clipped edges', ()
 
 test('every enemy AI state resolves to a semantic visual clip', () => {
   assert.equal(getEnemyClipForState('come', 'PATROL'), 'walk');
+  assert.equal(getEnemyClipForState('come', 'WINDUP'), 'windup');
   assert.equal(getEnemyClipForState('come', 'BITE'), 'attack');
   assert.equal(getEnemyClipForState('vuela', 'DIVE'), 'dive');
   assert.equal(getEnemyClipForState('da_vueltas', 'PATROL'), 'roll');
   assert.equal(getEnemyClipForState('da_vueltas', 'SPIN'), 'roll');
   assert.equal(getEnemyClipForState('unknown', 'UNKNOWN'), 'idle');
+
+  for (const [type, definition] of Object.entries(gameData.enemies)) {
+    for (const state of definition.states) {
+      assert.ok(Object.hasOwn(ENEMY_STATE_CLIPS[type], state), `${type}.${state} needs an explicit mapping`);
+      const clip = ENEMY_STATE_CLIPS[type][state];
+      assert.ok(Object.hasOwn(ENEMY_ANIMATION_CLIPS[type], clip), `${type}.${state} points to ${clip}`);
+    }
+  }
 });
 
 test('enemy clip restarts and state telegraphs preserve their visual contracts', () => {
@@ -75,6 +99,80 @@ test('enemy clip restarts and state telegraphs preserve their visual contracts',
   assert.equal(getEnemyTintForState('come', 'WINDUP'), 0xffcf4a);
   assert.equal(getEnemyTintForState('da_vueltas', 'DIZZY'), 0x9df0ff);
   assert.equal(getEnemyTintForState('vuela', 'DIVE'), null);
+  assert.equal(ENEMY_ANIMATION_CLIPS.vuela.dive.repeat, 0);
+  assert.equal(ENEMY_ANIMATION_CLIPS.vuela.attack.repeat, 0);
+  assert.equal(ENEMY_ANIMATION_CLIPS.vuela.hurt.repeat, 0);
+  assert.equal(ENEMY_ANIMATION_CLIPS.come.hurt.repeat, 0);
+  assert.equal(ENEMY_ANIMATION_CLIPS.da_vueltas.hurt.repeat, 0);
+  assert.equal(getEnemyClipDurationMs('vuela', 'hurt'), 500);
+  assert.ok(getEnemyClipDurationMs('come', 'hurt') > 500);
+  assert.ok(Math.abs(getEnemyClipDurationMs('come', 'windup') - (3000 / 7)) < 0.001);
+  assert.ok(Math.abs(getEnemyClipDurationMs('come', 'attack') - (4000 / 15)) < 0.001);
+});
+
+test('enemy hit reactions interrupt dangerous states and flying ignores terrain', () => {
+  assert.equal(getEnemyStateAfterHit('come', 'BITE'), 'RECOVER');
+  assert.equal(getEnemyStateAfterHit('come', 'PATROL'), 'PATROL');
+  assert.equal(getEnemyStateAfterHit('vuela', 'DIVE'), 'RETURN');
+  assert.equal(getEnemyStateAfterHit('vuela', 'WINDUP'), 'RETURN');
+  assert.equal(getEnemyStateAfterHit('da_vueltas', 'DIZZY'), 'DIZZY');
+  assert.equal(enemyUsesPlatformCollision('vuela'), false);
+  assert.equal(enemyUsesPlatformCollision('come'), true);
+  assert.equal(enemyUsesPlatformCollision('da_vueltas'), true);
+});
+
+test('enemy QA presentation resolves every state and authored clip', () => {
+  for (const [type, states] of Object.entries(ENEMY_STATE_CLIPS)) {
+    for (const [state, clip] of Object.entries(states)) {
+      assert.deepEqual(resolveEnemyQaPresentation(type, state), { state, clip });
+    }
+    for (const clip of Object.keys(ENEMY_ANIMATION_CLIPS[type])) {
+      const presentation = resolveEnemyQaPresentation(type, clip);
+      assert.equal(presentation.clip, clip);
+      assert.ok(
+        presentation.state == null || ENEMY_STATE_CLIPS[type][presentation.state] === clip,
+        `${type}.${clip} must resolve to the clip or its same-named AI state`,
+      );
+    }
+  }
+  assert.equal(resolveEnemyQaPresentation('vuela', 'not-a-state'), null);
+  assert.equal(resolveEnemyQaPresentation('unknown', 'idle'), null);
+});
+
+test('patrol and wall directions point inward without frame-to-frame inversion', () => {
+  assert.equal(getEnemyPatrolDirection(181, 0, 180, 1), -1);
+  assert.equal(getEnemyPatrolDirection(181, 0, 180, -1), -1);
+  assert.equal(getEnemyPatrolDirection(-181, 0, 180, -1), 1);
+  assert.equal(getEnemyPatrolDirection(20, 0, 180, -1), -1);
+  assert.equal(getEnemyWallDirection({ right: true, left: false }, 1), -1);
+  assert.equal(getEnemyWallDirection({ right: true, left: false }, -1), -1);
+  assert.equal(getEnemyWallDirection({ right: false, left: true }, -1), 1);
+});
+
+test('VUELA production atlas has 36 opaque, padded 256px cells', () => {
+  const atlasPath = path.resolve(TEST_DIR, '../public/assets/characters/enemy-vuela-sheet-v4.png');
+  const atlas = decodeRgbaPng(atlasPath);
+  assert.deepEqual([atlas.width, atlas.height], [1536, 1536]);
+
+  for (let row = 0; row < 6; row += 1) {
+    for (let column = 0; column < 6; column += 1) {
+      let visiblePixels = 0;
+      let touchesEdge = false;
+      for (let y = 0; y < 256; y += 1) {
+        for (let x = 0; x < 256; x += 1) {
+          const alpha = atlas.pixels[
+            (((row * 256 + y) * atlas.width) + column * 256 + x) * 4 + 3
+          ];
+          assert.ok(alpha === 0 || alpha === 255, `unexpected alpha ${alpha}`);
+          if (alpha === 0) continue;
+          visiblePixels += 1;
+          if (x === 0 || x === 255 || y === 0 || y === 255) touchesEdge = true;
+        }
+      }
+      assert.ok(visiblePixels > 5000, `VUELA ${row}:${column} is empty`);
+      assert.equal(touchesEdge, false, `VUELA ${row}:${column} touches a cell edge`);
+    }
+  }
 });
 
 test('enemy defeat presentation clears transient squash, alpha and tint', () => {
@@ -82,6 +180,7 @@ test('enemy defeat presentation clears transient squash, alpha and tint', () => 
   const visual = {
     active: true,
     setScale(x, y) { calls.push(['scale', x, y]); return this; },
+    setRotation(rotation) { calls.push(['rotation', rotation]); return this; },
     setAlpha(alpha) { calls.push(['alpha', alpha]); return this; },
     clearTint() { calls.push(['tint']); return this; },
   };
@@ -89,6 +188,7 @@ test('enemy defeat presentation clears transient squash, alpha and tint', () => 
   assert.equal(resetEnemyVisualForDefeat(visual, { x: 0.5, y: 0.75 }), true);
   assert.deepEqual(calls, [
     ['scale', 0.5, 0.75],
+    ['rotation', 0],
     ['alpha', 1],
     ['tint'],
   ]);

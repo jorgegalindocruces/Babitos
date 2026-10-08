@@ -2,14 +2,19 @@ import Phaser from 'phaser';
 import gameData from '../data/game-data.json';
 import { configureTextQuality } from '../ui/textQuality.js';
 import {
+  ENEMY_ANIMATION_CLIPS,
   ENEMY_SHEET_ASSETS,
+  getEnemyClipDurationMs,
   getEnemyAnimationKey,
   getEnemyClipForState,
   getEnemyFrameName,
+  getEnemyStateAfterHit,
   getEnemyTintForState,
+  resolveEnemyQaPresentation,
   resetEnemyVisualForDefeat,
   shouldIgnoreEnemyClipIfPlaying,
 } from './EnemyAnimations.js';
+import { getEnemyPatrolDirection, getEnemyWallDirection } from './EnemyBehavior.js';
 
 const TEXTURES = {
   come: 'enemy_come',
@@ -19,7 +24,8 @@ const TEXTURES = {
 
 const VISUAL_SIZES = Object.freeze({
   come: Object.freeze({ width: 118, height: 118 }),
-  vuela: Object.freeze({ width: 82, height: 78 }),
+  // 256px atlas cells render at an exact 1/4 scale for crisp pixel edges.
+  vuela: Object.freeze({ width: 64, height: 64 }),
   da_vueltas: Object.freeze({ width: 82, height: 82 }),
 });
 
@@ -86,6 +92,7 @@ export class EnemyController {
     this.visualBaseScale = { x: this.visual.scaleX, y: this.visual.scaleY };
     this.activeClip = null;
     this.hurtUntil = 0;
+    this.qaPresentation = null;
     this.playVisualClip(getEnemyClipForState(this.type, this.state));
     this.syncVisual();
 
@@ -103,13 +110,16 @@ export class EnemyController {
   }
 
   setState(next) {
-    if (this.state === next || this.dead) return;
+    if (this.state === next || this.dead || !this.config.states.includes(next)) return false;
+    const previousClip = getEnemyClipForState(this.type, this.state);
     this.state = next;
     this.stateStartedAt = this.now;
     this.stateBadge?.setText(next);
     this.setVisualScale();
     this.applyStateTint();
-    this.updateVisualAnimation(true);
+    this.updateVisualAnimation(previousClip !== getEnemyClipForState(this.type, next));
+    if (this.type === 'vuela' && next === 'DIVE') this.startVuelaDive();
+    return true;
   }
 
   get now() {
@@ -118,6 +128,8 @@ export class EnemyController {
   }
 
   get elapsed() { return this.now - this.stateStartedAt; }
+
+  get isHurt() { return !this.dead && this.now < this.hurtUntil; }
 
   setVisualScale(x = 1, y = x) {
     this.visual?.setScale(this.visualBaseScale.x * x, this.visualBaseScale.y * y);
@@ -142,10 +154,55 @@ export class EnemyController {
   }
 
   updateVisualAnimation(restart = false) {
-    const clip = this.now < this.hurtUntil
+    const clip = this.isHurt
       ? 'hurt'
       : getEnemyClipForState(this.type, this.state);
     this.playVisualClip(clip, restart);
+  }
+
+  setQaPresentation(requestedState, requestedFrame = null) {
+    const presentation = resolveEnemyQaPresentation(this.type, requestedState);
+    if (!presentation) return false;
+    const settings = ENEMY_ANIMATION_CLIPS[this.type][presentation.clip];
+    const columns = settings.columns
+      ?? Array.from(
+        { length: ENEMY_SHEET_ASSETS[this.type].xBounds.length - 1 },
+        (_, column) => column,
+      );
+    const frameIndex = Number.isInteger(requestedFrame)
+      ? Phaser.Math.Clamp(requestedFrame, 0, columns.length - 1)
+      : null;
+
+    this.qaPresentation = {
+      ...presentation,
+      frame: frameIndex == null ? null : columns[frameIndex],
+      row: settings.row,
+    };
+    if (presentation.state) this.state = presentation.state;
+    this.stateBadge?.setText(`QA · ${presentation.state ?? presentation.clip.toUpperCase()}`);
+    this.sprite.body.allowGravity = false;
+    this.sprite.setVelocity(0, 0).setAngularVelocity(0).setAngle(0);
+    this.setVisualScale();
+    this.applyStateTint();
+    this.playVisualClip(presentation.clip, true);
+    this.applyQaPresentation();
+    return true;
+  }
+
+  applyQaPresentation() {
+    if (!this.qaPresentation) return;
+    this.sprite.setVelocity(0, 0).setAngularVelocity(0).setAngle(0);
+    if (this.qaPresentation.frame == null) {
+      this.playVisualClip(this.qaPresentation.clip);
+    } else {
+      this.visual.anims.stop();
+      this.visual.setFrame(getEnemyFrameName(
+        this.type,
+        this.qaPresentation.row,
+        this.qaPresentation.frame,
+      ));
+    }
+    this.syncVisual();
   }
 
   syncVisual() {
@@ -160,6 +217,15 @@ export class EnemyController {
     if (this.dead || !this.sprite.active) return;
     this.stateBadge?.setPosition(this.sprite.x, this.sprite.y - this.sprite.displayHeight * 0.65 - 12);
     this.stateBadge?.setFlipX(false);
+    if (this.qaPresentation) {
+      this.applyQaPresentation();
+      return;
+    }
+    if (this.isHurt) {
+      this.updateVisualAnimation();
+      this.syncVisual();
+      return;
+    }
     if (this.type === 'come') this.updateCome();
     else if (this.type === 'vuela') this.updateVuela();
     else this.updateDaVueltas();
@@ -171,8 +237,8 @@ export class EnemyController {
     const distance = this.player.x - this.sprite.x;
     const absolute = Math.abs(distance);
     if (this.state === 'PATROL') {
+      this.direction = getEnemyPatrolDirection(this.sprite.x, this.home.x, 180, this.direction);
       this.sprite.setVelocityX(this.direction * this.config.speed * 0.72);
-      if (Math.abs(this.sprite.x - this.home.x) > 180) this.direction *= -1;
       if (absolute < 330) this.setState('CHASE');
     } else if (this.state === 'CHASE') {
       this.direction = Math.sign(distance) || this.direction;
@@ -204,18 +270,19 @@ export class EnemyController {
       );
       if (absolute < 390 && this.now > this.nextDecisionAt) this.setState('TARGET');
     } else if (this.state === 'TARGET') {
+      this.direction = Math.sign(distance) || this.direction;
       this.sprite.setVelocity(0, -20);
       if (this.elapsed > 360) this.setState('WINDUP');
     } else if (this.state === 'WINDUP') {
+      this.direction = Math.sign(distance) || this.direction;
       this.sprite.setVelocity(0, -35);
       if (this.elapsed > 420) this.setState('DIVE');
     } else if (this.state === 'DIVE') {
-      const angle = Phaser.Math.Angle.Between(this.sprite.x, this.sprite.y, this.player.x, this.player.y);
-      if (this.elapsed < 100) this.sprite.setVelocity(Math.cos(angle) * 255, Math.sin(angle) * 255);
       if (this.elapsed > 900 || this.sprite.y > 465) this.setState('RETURN');
     } else if (this.state === 'RETURN') {
       this.scene.physics.moveTo(this.sprite, this.home.x, this.home.y, this.config.speed * 1.1);
       if (Phaser.Math.Distance.Between(this.sprite.x, this.sprite.y, this.home.x, this.home.y) < 24) {
+        this.sprite.setPosition(this.home.x, this.home.y).setVelocity(0, 0);
         this.nextDecisionAt = this.now + Phaser.Math.Between(900, 1600);
         this.setState('AIR_PATROL');
       }
@@ -225,10 +292,24 @@ export class EnemyController {
     }
   }
 
+  startVuelaDive() {
+    const angle = Phaser.Math.Angle.Between(
+      this.sprite.x,
+      this.sprite.y,
+      this.player.x,
+      this.player.y,
+    );
+    const speed = Math.max(255, this.config.speed * 2.45);
+    this.sprite.setVelocity(Math.cos(angle) * speed, Math.sin(angle) * speed);
+    if (Math.abs(this.sprite.body.velocity.x) > 1) {
+      this.direction = this.sprite.body.velocity.x < 0 ? -1 : 1;
+    }
+  }
+
   updateDaVueltas() {
     if (this.state === 'PATROL') {
+      this.direction = getEnemyPatrolDirection(this.sprite.x, this.home.x, 170, this.direction);
       this.sprite.setAngularVelocity(0).setVelocityX(this.direction * this.config.speed);
-      if (Math.abs(this.sprite.x - this.home.x) > 170) this.direction *= -1;
       if (this.elapsed > 1800) this.setState('WINDUP');
     } else if (this.state === 'WINDUP') {
       this.sprite.setVelocityX(0).setAngularVelocity(280);
@@ -237,8 +318,8 @@ export class EnemyController {
     } else if (this.state === 'SPIN') {
       this.setVisualScale();
       this.sprite.setAngularVelocity(880);
+      this.direction = getEnemyWallDirection(this.sprite.body.blocked, this.direction);
       this.sprite.setVelocityX(this.direction * this.config.spinSpeed);
-      if (this.sprite.body.blocked.left || this.sprite.body.blocked.right) this.direction *= -1;
       if (this.elapsed > 2100) this.setState('DIZZY');
     } else if (this.state === 'DIZZY') {
       this.sprite.setAngularVelocity(0).setVelocityX(0).setAngle(Math.sin(this.now / 75) * 9);
@@ -250,12 +331,14 @@ export class EnemyController {
   }
 
   canHurtPlayer() {
+    if (this.dead || this.qaPresentation || this.isHurt) return false;
     if (this.type === 'come') return this.state === 'BITE';
     if (this.type === 'vuela') return this.state === 'DIVE';
     return this.state === 'SPIN';
   }
 
   canTakeDamage() {
+    if (this.dead || this.qaPresentation || this.isHurt) return false;
     return this.type !== 'da_vueltas' || this.state === 'DIZZY';
   }
 
@@ -268,11 +351,25 @@ export class EnemyController {
       return false;
     }
     this.health -= amount;
-    this.hurtUntil = this.now + 360;
-    this.playVisualClip('hurt', true);
+    if (this.health <= 0) {
+      this.defeat();
+      return true;
+    }
+
+    const hurtDuration = getEnemyClipDurationMs(this.type, 'hurt');
+    this.hurtUntil = this.now + hurtDuration;
+    const recoveryState = getEnemyStateAfterHit(this.type, this.state);
+    if (recoveryState !== this.state) this.setState(recoveryState);
+    else this.updateVisualAnimation(true);
+    // State timers start after the complete one-shot hurt reaction, so an
+    // enemy cannot advance into an attack while it visibly recoils.
+    this.stateStartedAt = this.hurtUntil;
+    const knockbackDirection = Math.sign(this.sprite.x - hitX) || -this.direction;
+    if (this.type === 'vuela') this.sprite.setVelocity(knockbackDirection * 54, -68);
+    else if (this.type === 'come') this.sprite.setVelocity(knockbackDirection * 72, -90);
+    else this.sprite.setVelocity(0, 0);
     this.visual?.setTintFill(0xffffff);
     this.scene.time.delayedCall(90, () => this.visual?.active && !this.dead && this.applyStateTint());
-    if (this.health <= 0) this.defeat();
     return true;
   }
 
@@ -285,11 +382,12 @@ export class EnemyController {
     // presentation before the defeat row so its silhouette is never warped.
     resetEnemyVisualForDefeat(this.visual, this.visualBaseScale);
     this.playVisualClip('defeat', true);
+    const defeatDuration = getEnemyClipDurationMs(this.type, 'defeat');
     this.scene.tweens.add({
       targets: this.visual,
       y: this.visual.y + 8,
       alpha: 0,
-      delay: 470,
+      delay: Math.max(0, Math.round(defeatDuration - 180)),
       duration: 220,
       ease: 'Quad.easeIn',
       onComplete: () => {
