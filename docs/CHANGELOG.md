@@ -9,7 +9,7 @@ Este archivo relaciona las iteraciones entregadas con sus cambios observables, c
 
 ## Game feel, nivel y boss justos — 2026-10-08
 
-Pendiente de commit. Auditoría de jugabilidad con playtest automatizado en navegador (bots preciso y «casual» con 250 ms de reacción, con los tres poderes):
+Commit [`28e32ec`](https://github.com/jorgegalindocruces/Babitos/commit/28e32ec). Auditoría de jugabilidad con playtest automatizado en navegador (bots preciso y «casual» con 250 ms de reacción, con los tres poderes):
 
 - **Control**: nuevo modelo puro [playerMovement.js](../src/game/playerMovement.js) con tuning en `player.movement`. El salto pasa de 85 a ~133 px medidos, con gravedad de caída mayor, corte suave al soltar (antes multiplicaba la velocidad por frame y dependía de los Hz) y flotación en el vértice. El giro deja de derrapar (de 48 px/267 ms a 15 px/83 ms), la frenada pasa de 51 a 19 px y el control aéreo es propio. El retroceso bloquea el control 220 ms y hay 10 px de margen al aterrizar en bordes. Se eliminan `moveSpeed`, que no se usaba, y `jumpVelocity`.
 - **Nivel**: 5 de las 9 plataformas elevadas eran inalcanzables con el salto anterior. Ahora las 10 lo son, con el suelo continuo intacto. Se añaden 25 Babicoins colocadas de cobro único (`babilandia:coin:<id>`), una ruta alta sobre el puente y otra hacia el portal, y COME_2 se mueve junto a DA VUELTAS para crear el primer encuentro combinado. COME_2 alcanzaba con su persecución el checkpoint `boss_gate`.
