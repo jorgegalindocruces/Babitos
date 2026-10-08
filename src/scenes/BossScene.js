@@ -240,7 +240,7 @@ export class BossScene extends Phaser.Scene {
     edge.fillRect(0, FLOOR_TOP + 5, ARENA_WIDTH, 3);
 
     createLabel(this, 'BABILANDIA CORROMPIDA', 480, 116, {
-      fontSize: '11px',
+      fontSize: '13px',
       color: 0xf0bdff,
       depth: 7,
       scrollFactor: 1,
@@ -338,7 +338,7 @@ export class BossScene extends Phaser.Scene {
     });
     const power = getPower(this.save.selectedPower);
     this.powerText = createLabel(this, `${power.name.toUpperCase()} · J / X`, 160, 57, {
-      fontSize: '10px',
+      fontSize: '12px',
       color: colorNumber(power.color, 0x71e5ff),
       depth: 1002,
     });
@@ -347,13 +347,13 @@ export class BossScene extends Phaser.Scene {
     });
     this.bossBar = this.add.graphics().setDepth(1002).setScrollFactor(0);
     this.bossHealthText = createLabel(this, '', 620, 46, {
-      fontSize: '10px', color: 0xffffff, depth: 1003,
+      fontSize: '12px', color: 0xffffff, depth: 1003,
     });
     this.stateText = createLabel(this, STATE_COPY[BOSS_STATE.INTRO], 620, 66, {
-      fontSize: '9px', color: 0xffcf63, depth: 1003,
+      fontSize: '12px', color: 0xffcf63, depth: 1003,
     });
     createLabel(this, 'P / ESC · PAUSA', 881, 65, {
-      fontSize: '8px', color: 0xa9d8ef, depth: 1002,
+      fontSize: '12px', color: 0xa9d8ef, depth: 1002,
     });
     this.pauseButton = createButton(this, {
       x: 898,
@@ -361,7 +361,7 @@ export class BossScene extends Phaser.Scene {
       width: 104,
       height: 32,
       label: 'Ⅱ PAUSA',
-      fontSize: '9px',
+      fontSize: '12px',
       variant: 'ghost',
       depth: 1004,
       accessibleLabel: 'Pausar el combate',
@@ -674,7 +674,7 @@ export class BossScene extends Phaser.Scene {
       fontSize: '12px', color, depth: 801,
     }).setScrollFactor(1);
     const copy = createLabel(this, hint, 0, 12, {
-      fontSize: '8px', color: 0xffffff, depth: 801,
+      fontSize: '12px', color: 0xffffff, depth: 801,
     }).setScrollFactor(1);
     cue.add([plate, heading, copy]);
     cue.setAlpha(0).setScale(0.92);
@@ -869,7 +869,7 @@ export class BossScene extends Phaser.Scene {
       { fontSize: '17px', wordWrapWidth: 620, lineSpacing: 6, depth: 3502 },
     );
     const reward = createLabel(this, rewardCopy, 480, 410, {
-      fontSize: '11px', color: 0xffdf68, depth: 3502,
+      fontSize: '13px', color: 0xffdf68, depth: 3502,
     });
     const continueButton = createButton(this, {
       x: 480,

@@ -1,5 +1,9 @@
 import Phaser from 'phaser';
-import { configureTextQuality, fitTextToWidth } from './textQuality.js';
+import {
+  configureTextQuality,
+  fitTextToWidth,
+  getUiTextStrokeThickness,
+} from './textQuality.js';
 
 export const UI_COLORS = Object.freeze({
   ink: 0x071326,
@@ -225,14 +229,17 @@ export function createBodyText(scene, content, x, y, options = {}) {
 export function createLabel(scene, content, x, y, options = {}) {
   const args = normalizeTextArgs(scene, content, x, y, options);
   const settings = args.options;
+  const fontSize = asFontSize(settings.fontSize, 14);
   const label = scene.add.text(args.x, args.y, args.text, {
     fontFamily: settings.fontFamily ?? UI_FONTS.display,
-    fontSize: asFontSize(settings.fontSize, 14),
+    fontSize,
     fontStyle: settings.fontStyle ?? 'bold',
     color: asCssColor(settings.color ?? UI_COLORS.cyan),
     align: settings.align ?? 'center',
     stroke: asCssColor(settings.stroke ?? UI_COLORS.ink),
-    strokeThickness: Number.isFinite(settings.strokeThickness) ? settings.strokeThickness : 2,
+    strokeThickness: Number.isFinite(settings.strokeThickness)
+      ? settings.strokeThickness
+      : getUiTextStrokeThickness(fontSize),
     wordWrap: settings.wordWrapWidth
       ? { width: settings.wordWrapWidth, useAdvancedWrap: true }
       : undefined,

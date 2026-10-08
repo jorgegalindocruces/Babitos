@@ -60,7 +60,7 @@ export class CreatorScene extends Phaser.Scene {
       ease: 'Sine.InOut',
     });
 
-    createLabel(this, 'NOMBRE', 244, 347, { fontSize: 11, depth: 20 });
+    createLabel(this, 'NOMBRE', 244, 347, { fontSize: 12, depth: 20 });
     this.nameInput = this.add.dom(244, 378).createFromHTML(
       `<input class="babito-name-input" maxlength="24" aria-label="Nombre de tu Babito" value="${this.escapeHtml(this.save.name)}" />`,
     ).setDepth(40);
@@ -68,7 +68,7 @@ export class CreatorScene extends Phaser.Scene {
     input?.addEventListener('input', () => this.store.setName(input.value));
 
     createLabel(this, 'TAMAÑO · SOLO CAMBIA EL ASPECTO', 244, 420, {
-      fontSize: 9,
+      fontSize: 12,
       color: 0xbdefff,
       depth: 20,
     });
@@ -79,7 +79,7 @@ export class CreatorScene extends Phaser.Scene {
       width: 96,
       height: 34,
       label: config.label.toUpperCase(),
-      fontSize: '9px',
+      fontSize: '12px',
       variant: id === this.save.size ? 'accent' : 'ghost',
       autoFocus: false,
       onPress: (button) => this.selectSize(id, button),
@@ -120,7 +120,7 @@ export class CreatorScene extends Phaser.Scene {
       height: 32,
       label: '‹ TÍTULO',
       variant: 'ghost',
-      fontSize: '10px',
+      fontSize: '12px',
       autoFocus: false,
       onPress: () => transitionToScene(this, 'TitleScene'),
     });
@@ -143,10 +143,10 @@ export class CreatorScene extends Phaser.Scene {
     const y = 135 + index * 46;
 
     createLabel(this, CATEGORY_LABELS[category], 510, y, {
-      fontSize: '9px', originX: 0, color: 0x71e5ff, depth: 30,
+      fontSize: '12px', originX: 0, color: 0x71e5ff, depth: 30,
     });
     createButton(this, {
-      x: 670,
+      x: 660,
       y: y + 11,
       width: 34,
       height: 30,
@@ -158,7 +158,7 @@ export class CreatorScene extends Phaser.Scene {
       accessibleLabel: `Anterior opción de ${CATEGORY_LABELS[category]}`,
     });
     createButton(this, {
-      x: 876,
+      x: 886,
       y: y + 11,
       width: 34,
       height: 30,
@@ -175,7 +175,7 @@ export class CreatorScene extends Phaser.Scene {
       depth: 30,
     });
     const metaText = createLabel(this, '', 773, y + 24, {
-      fontSize: '7px', color: 0x9fc7d9, depth: 30,
+      fontSize: '12px', color: 0x9fc7d9, depth: 30,
     });
     this.rowViews.set(category, { unlocked, all: items, index: currentIndex, optionText, metaText });
     this.refreshCategoryRow(category);

@@ -99,7 +99,7 @@ export class WorldMapScene extends Phaser.Scene {
     });
     this.add.image(798, 39, TEXTURE_KEYS.coin).setScale(1.05).setDepth(45);
     createLabel(this, `${this.snapshot.coins} MONEDAS`, 878, 39, {
-      fontSize: 11,
+      fontSize: 12,
       color: UI_COLORS.yellow,
       depth: 45,
     });

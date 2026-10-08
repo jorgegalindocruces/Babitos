@@ -109,7 +109,7 @@ export class ComingSoonScene extends Phaser.Scene {
       const bullet = this.add.rectangle(535, y, 8, 8, world.accent).setDepth(35);
       bullet.setStrokeStyle(2, 0xffffff, 0.55);
       createLabel(this, feature, 553, y, {
-        fontSize: 10,
+        fontSize: 12,
         originX: 0,
         color: 0xd8f5ff,
         depth: 35,

@@ -64,7 +64,7 @@ export class ShopScene extends Phaser.Scene {
 
     createTitle(this, 'LA TIENDA BABITA', 480, 35, { fontSize: 34, depth: 30 });
     createBodyText(this, 'Compra un tesoro y el Señor Empanadilla lo equipa al instante.', 480, 70, {
-      fontSize: 14,
+      fontSize: 15,
       color: '#c9efff',
       depth: 30,
       wordWrapWidth: 700,
@@ -80,7 +80,7 @@ export class ShopScene extends Phaser.Scene {
       height: 46,
       label: 'CONTINUAR AL MAPA  ›',
       variant: 'primary',
-      fontSize: '13px',
+      fontSize: '14px',
       accessibleLabel: 'Continuar al mapa de mundos',
       onPress: () => {
         enterWorldMap(this.store);
@@ -125,7 +125,7 @@ export class ShopScene extends Phaser.Scene {
     });
     this.add.image(782, 40, TEXTURE_KEYS.coin).setScale(1.25).setDepth(36);
     this.coinText = createLabel(this, '', 870, 40, {
-      fontSize: 14,
+      fontSize: 16,
       color: UI_COLORS.yellow,
       depth: 36,
     });
@@ -138,7 +138,7 @@ export class ShopScene extends Phaser.Scene {
   }
 
   createShopCounter() {
-    createPanel(this, 158, 279, 276, 360, {
+    createPanel(this, 158, 284, 276, 370, {
       depth: 9,
       fillColor: 0x10283b,
       fillAlpha: 0.95,
@@ -174,7 +174,7 @@ export class ShopScene extends Phaser.Scene {
     stall.strokeRoundedRect(72, 106, 172, 46, 6);
 
     createLabel(this, '¡MIRA QUIÉN LLEGA\nCON MONEDAS!', 158, 128, {
-      fontSize: 11,
+      fontSize: 12,
       color: 0x402318,
       stroke: 0xf1c77e,
       strokeThickness: 0,
@@ -200,23 +200,28 @@ export class ShopScene extends Phaser.Scene {
     });
 
     const snapshot = this.store.getState();
-    this.avatarHost = this.add.container(159, 383).setScale(1.38).setDepth(22);
+    this.avatarHost = this.add.container(159, 375).setScale(1.38).setDepth(22);
     this.avatar = new BabitoAvatar(this, 0, 0, snapshot.appearance, snapshot.size);
     this.avatarHost.add(this.avatar);
-    createLabel(this, snapshot.name.toUpperCase(), 159, 429, {
-      fontSize: 10,
+    createLabel(this, snapshot.name.toUpperCase(), 159, 415, {
+      fontSize: 12,
       color: UI_COLORS.cyan,
+      depth: 23,
+    });
+    createLabel(this, 'PREMIOS DE 1.ª VICTORIA', 159, 433, {
+      fontSize: 12,
+      color: UI_COLORS.yellow,
       depth: 23,
     });
     createBodyText(
       this,
       getShopBossRewardCopy(snapshot.progress, gameData.bossData),
       158,
-      448,
+      453,
       {
-        fontSize: 9,
+        fontSize: 12,
         color: '#ffd97b',
-        lineSpacing: 1,
+        lineSpacing: 0,
         wordWrapWidth: 242,
         depth: 23,
       },
@@ -231,7 +236,7 @@ export class ShopScene extends Phaser.Scene {
       strokeColor: 0x3f7da2,
     });
     createLabel(this, `CATÁLOGO · ${this.catalogItems.length} OBJETOS`, 630, 111, {
-      fontSize: 13,
+      fontSize: 14,
       color: UI_COLORS.cyan,
       depth: 25,
     });
@@ -261,7 +266,7 @@ export class ShopScene extends Phaser.Scene {
       onPress: () => this.changePage(1),
     });
     this.pageText = createLabel(this, '', 630, 437, {
-      fontSize: 10,
+      fontSize: 12,
       color: 0xbdefff,
       depth: 25,
     });
@@ -303,7 +308,7 @@ export class ShopScene extends Phaser.Scene {
         height: 73,
         label: `${categoryName} · ${item.label}\n${status}`,
         variant,
-        fontSize: '10px',
+        fontSize: '12px',
         autoFocus: index === 0,
         accessibleLabel: `${item.label}, ${categoryName}, ${status}`,
         onPress: (_button, source) => this.selectCatalogItem(item, source),

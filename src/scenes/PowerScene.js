@@ -106,12 +106,12 @@ export class PowerScene extends Phaser.Scene {
     });
 
     createButton(this, {
-      x: 72,
+      x: 80,
       y: 42,
-      width: 110,
+      width: 132,
       height: 34,
       label: '‹ CREADOR',
-      fontSize: '9px',
+      fontSize: '12px',
       variant: 'ghost',
       autoFocus: false,
       onPress: () => transitionToScene(this, 'CreatorScene'),
@@ -127,13 +127,13 @@ export class PowerScene extends Phaser.Scene {
       shadowAlpha: 0.45,
     });
     createLabel(this, 'MÁS ADELANTE', 716, 34, {
-      fontSize: 8,
+      fontSize: 12,
       originX: 0,
       color: UI_COLORS.yellow,
       depth: 20,
     });
     createBodyText(this, 'MANZANAS = NUEVOS\nPODERES', 716, 58, {
-      fontSize: 9,
+      fontSize: 12,
       originX: 0,
       color: '#dff7ff',
       align: 'left',
@@ -187,7 +187,7 @@ export class PowerScene extends Phaser.Scene {
     });
     const outline = this.add.graphics().setDepth(13);
     const badge = createLabel(this, '✓ ELEGIDO', x, 116, {
-      fontSize: 8,
+      fontSize: 12,
       color: UI_COLORS.yellow,
       depth: 22,
     }).setVisible(false);
@@ -209,24 +209,24 @@ export class PowerScene extends Phaser.Scene {
       depth: 20,
     });
     createLabel(this, visual.tagline, x - 53, 174, {
-      fontSize: 7,
+      fontSize: 12,
       originX: 0,
       color: visual.accent,
-      wordWrapWidth: 176,
+      wordWrapWidth: 184,
       depth: 20,
     });
 
     this.createAttackShowcase(power, visual, x, index);
 
     createBodyText(this, visual.copy, x, 296, {
-      fontSize: 11,
+      fontSize: 13,
       color: '#e8f8ff',
       wordWrapWidth: 242,
       lineSpacing: 0,
       depth: 20,
     });
-    createLabel(this, powerType(power), x, 320, {
-      fontSize: 7,
+    createLabel(this, powerType(power), x, 323, {
+      fontSize: 12,
       color: visual.accentSoft,
       depth: 20,
     });
@@ -364,9 +364,9 @@ export class PowerScene extends Phaser.Scene {
     const bars = this.add.graphics().setDepth(20);
 
     rows.forEach(([label, rating], rowIndex) => {
-      const y = 341 + rowIndex * 20;
+      const y = 345 + rowIndex * 23;
       createLabel(this, label, x - 111, y, {
-        fontSize: 7,
+        fontSize: 12,
         originX: 0,
         color: '#dff7ff',
         depth: 21,

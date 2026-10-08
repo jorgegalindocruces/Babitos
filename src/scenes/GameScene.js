@@ -290,7 +290,7 @@ export class GameScene extends Phaser.Scene {
     }
 
     const label = createLabel(this, definition.text, 0, 0, {
-      fontSize: '9px',
+      fontSize: '12px',
       wordWrapWidth: TUTORIAL_SIGN_STYLE.maxBoardWidth
         - TUTORIAL_SIGN_STYLE.textPaddingX * 2,
       depth: 0,
@@ -473,7 +473,7 @@ export class GameScene extends Phaser.Scene {
     this.portal.refreshBody();
     this.portal.body.setSize(54, 74).setOffset(5, 4);
     this.portalLabel = createLabel(this, 'PORTAL SELLADO', x, y - 104, {
-      fontSize: '11px', color: 0xff779b, depth: 15, scrollFactor: 1,
+      fontSize: '13px', color: 0xff779b, depth: 15, scrollFactor: 1,
     });
   }
 
@@ -633,7 +633,7 @@ export class GameScene extends Phaser.Scene {
       fontSize: '12px', color: Number.parseInt((power?.color ?? '#71e5ff').slice(1), 16), depth: 1001,
     });
     this.progressText = createLabel(this, `ENCUENTROS  0/${this.level.enemies.length}`, 748, 31, {
-      fontSize: '10px', color: 0xbdefff, depth: 1001,
+      fontSize: '12px', color: 0xbdefff, depth: 1001,
     });
     hud.add([this.healthText, this.coinText, this.powerText, this.progressText]);
 
@@ -643,7 +643,7 @@ export class GameScene extends Phaser.Scene {
       width: 104,
       height: 34,
       label: 'Ⅱ PAUSA',
-      fontSize: '9px',
+      fontSize: '12px',
       variant: 'ghost',
       depth: 1002,
       accessibleLabel: 'Pausar el juego',
@@ -752,7 +752,7 @@ export class GameScene extends Phaser.Scene {
       `BABICOINS ESCONDIDAS  ${coinProgress.collected}/${coinProgress.total}`,
       480,
       288,
-      { fontSize: '11px', color: 0xffcf3c, depth: 3002 },
+      { fontSize: '13px', color: 0xffcf3c, depth: 3002 },
     );
     const resume = createButton(this, {
       x: 480, y: 338, width: 250, height: 48, label: 'CONTINUAR', variant: 'primary', depth: 3003,

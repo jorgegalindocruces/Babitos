@@ -10,8 +10,8 @@ test('shop reward copy names both one-time rewards with their configured amounts
   assert.equal(
     getShopBossRewardCopy({}, gameData.bossData),
     [
-      'BABITO CORRUPTO · +30 1.ª VEZ · PENDIENTE',
-      'LA OSCURIDAD · +40 1.ª VEZ · PENDIENTE',
+      'BABITO CORRUPTO +30 · PENDIENTE',
+      'LA OSCURIDAD +40 · PENDIENTE',
     ].join('\n'),
   );
 });
@@ -23,8 +23,8 @@ test('shop reward copy follows claimed rewards after either boss and from the wo
       gameData.bossData,
     ),
     [
-      'BABITO CORRUPTO · +30 1.ª VEZ · COBRADA',
-      'LA OSCURIDAD · +40 1.ª VEZ · PENDIENTE',
+      'BABITO CORRUPTO +30 · COBRADA',
+      'LA OSCURIDAD +40 · PENDIENTE',
     ].join('\n'),
   );
 
@@ -35,8 +35,8 @@ test('shop reward copy follows claimed rewards after either boss and from the wo
   assert.equal(
     mapCopy,
     [
-      'BABITO CORRUPTO · +30 1.ª VEZ · COBRADA',
-      'LA OSCURIDAD · +40 1.ª VEZ · COBRADA',
+      'BABITO CORRUPTO +30 · COBRADA',
+      'LA OSCURIDAD +40 · COBRADA',
     ].join('\n'),
   );
   assert.doesNotMatch(mapCopy, /DERROTA AL BOSS|cada vez|repetible/iu);
@@ -48,6 +48,6 @@ test('shop reward copy reads reward tuning instead of baking one shared amount',
     la_oscuridad: { rewardCoins: 47 },
   };
 
-  assert.match(getShopBossRewardCopy({}, tunedBosses), /BABITO CORRUPTO · \+31/u);
-  assert.match(getShopBossRewardCopy({}, tunedBosses), /LA OSCURIDAD · \+47/u);
+  assert.match(getShopBossRewardCopy({}, tunedBosses), /BABITO CORRUPTO \+31/u);
+  assert.match(getShopBossRewardCopy({}, tunedBosses), /LA OSCURIDAD \+47/u);
 });

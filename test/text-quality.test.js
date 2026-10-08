@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { readFile } from 'node:fs/promises';
+import { readFile, readdir } from 'node:fs/promises';
 import test from 'node:test';
 
 import {
@@ -12,9 +12,11 @@ import {
 import {
   configureTextQuality,
   fitTextToWidth,
+  getUiTextStrokeThickness,
   getUiTextResolution,
   refreshTextAfterFontLoad,
   TEXT_METRICS_REFRESH_EVENT,
+  UI_TEXT_FILTER_MODE,
 } from '../src/ui/textQuality.js';
 
 test('UI text resolution is consistent and capped on high-density displays', () => {
@@ -35,6 +37,66 @@ test('UI text resolution is consistent and capped on high-density displays', () 
   assert.deepEqual(calls, [2]);
   configureTextQuality(textObject, { resolution: false });
   assert.deepEqual(calls, [2]);
+});
+
+test('small UI labels use proportional outlines instead of muddy two-pixel strokes', () => {
+  assert.equal(getUiTextStrokeThickness('9px'), 0);
+  assert.equal(getUiTextStrokeThickness(10), 0);
+  assert.equal(getUiTextStrokeThickness('12px'), 1);
+  assert.equal(getUiTextStrokeThickness(15), 1);
+  assert.equal(getUiTextStrokeThickness('20px'), 2);
+  assert.equal(getUiTextStrokeThickness('20px', 1), 1);
+});
+
+test('authored game text never drops below the readable 12px floor', async () => {
+  const sourceDirectories = ['../src/scenes/', '../src/ui/', '../src/game/'];
+  const violations = [];
+  const undersizedFont = /fontSize:\s*(['"]?)(?:[7-9]|10|11)(?:px)?\1(?=[,\s}])/gu;
+
+  for (const sourceDirectory of sourceDirectories) {
+    const directoryUrl = new URL(sourceDirectory, import.meta.url);
+    const entries = await readdir(directoryUrl, { withFileTypes: true });
+    for (const entry of entries) {
+      if (!entry.isFile() || !entry.name.endsWith('.js')) continue;
+      const source = await readFile(new URL(entry.name, directoryUrl), 'utf8');
+      if (undersizedFont.test(source)) violations.push(`${sourceDirectory}${entry.name}`);
+      undersizedFont.lastIndex = 0;
+    }
+  }
+
+  assert.deepEqual(violations, []);
+});
+
+test('pixel-art mode keeps UI text linear after every canvas rerasterization', () => {
+  const filters = [];
+  const textObject = {
+    style: { resolution: 1 },
+    frame: { source: { resolution: 1 } },
+    texture: {
+      setFilter(value) {
+        filters.push(value);
+      },
+    },
+    updateText() {
+      // Phaser's antialias=false upload path resets Canvas textures to NEAREST.
+      filters.push(1);
+      return this;
+    },
+    setResolution(value) {
+      this.style.resolution = value;
+      this.updateText();
+      return this;
+    },
+  };
+
+  configureTextQuality(textObject, { pixelRatio: 2 });
+  assert.equal(textObject.style.resolution, 2);
+  assert.equal(textObject.frame.source.resolution, 2);
+  assert.equal(filters.at(-1), UI_TEXT_FILTER_MODE);
+
+  textObject.updateText();
+  assert.equal(filters.at(-1), UI_TEXT_FILTER_MODE);
+  assert.deepEqual(filters.filter((value) => value === UI_TEXT_FILTER_MODE).length, 3);
 });
 
 test('wide text is re-rasterized at an integer font size instead of scaled', () => {
@@ -165,12 +227,13 @@ test('late font arrival refreshes top-level and nested Phaser text', () => {
 });
 
 test('the page preserves native desktop pixels and discovers fonts before the module', async () => {
-  const [styles, main, page, button, effects] = await Promise.all([
+  const [styles, main, page, button, effects, sceneHelpers] = await Promise.all([
     readFile(new URL('../src/styles.css', import.meta.url), 'utf8'),
     readFile(new URL('../src/gameBoot.js', import.meta.url), 'utf8'),
     readFile(new URL('../index.html', import.meta.url), 'utf8'),
     readFile(new URL('../src/ui/Button.js', import.meta.url), 'utf8'),
     readFile(new URL('../src/ui/effects.js', import.meta.url), 'utf8'),
+    readFile(new URL('../src/ui/sceneHelpers.js', import.meta.url), 'utf8'),
   ]);
 
   assert.match(styles, /width:\s*min\(100%,\s*966px,/u);
@@ -181,5 +244,7 @@ test('the page preserves native desktop pixels and discovers fonts before the mo
   assert.match(page, /id="babitos-ui-fonts"[\s\S]*?media="print"/u);
   assert.ok(page.indexOf('fonts.googleapis.com/css2') < page.indexOf('/src/main.js'));
   assert.match(button, /configureTextQuality\(this\.labelText/u);
+  assert.match(button, /getUiTextStrokeThickness\(labelFontSize\)/u);
   assert.match(effects, /configureTextQuality\(text/u);
+  assert.match(sceneHelpers, /getUiTextStrokeThickness\(fontSize\)/u);
 });

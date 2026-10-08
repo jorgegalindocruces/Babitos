@@ -1,6 +1,12 @@
 export const MAX_UI_TEXT_RESOLUTION = 2;
+// Phaser's pixelArt mode correctly keeps sprites on NEAREST, but applying the
+// same filter to a high-resolution Canvas Text discards half of its glyph
+// samples. Text textures must remain LINEAR while the rest of the game stays
+// pixel-perfect. Phaser.Textures.FilterMode.LINEAR is the stable numeric 0.
+export const UI_TEXT_FILTER_MODE = 0;
 export const TEXT_METRICS_REFRESH_EVENT = 'babitos-text-metrics-refresh';
 const WIDTH_FIT_STATE = Symbol('babitos.textWidthFit');
+const TEXT_UPDATE_HOOK = Symbol('babitos.textQualityUpdateHook');
 
 function positiveNumber(value, fallback) {
   const number = Number(value);
@@ -21,22 +27,64 @@ export function getUiTextResolution(
   return Math.max(1, Math.min(maximum, Math.ceil(ratio)));
 }
 
-/** Apply the shared high-density rendering policy to a Phaser Text object. */
-export function configureTextQuality(textObject, options = {}) {
+/** Keep small pixel-font labels open instead of filling their counters with ink. */
+export function getUiTextStrokeThickness(fontSize, maxThickness = 2) {
+  const size = Number.parseFloat(fontSize);
+  const requestedMaximum = Number(maxThickness);
+  const maximum = Number.isFinite(requestedMaximum)
+    ? Math.max(0, requestedMaximum)
+    : 2;
+
+  if (!Number.isFinite(size) || size <= 10) return 0;
+  if (size <= 15) return Math.min(1, maximum);
+  return Math.min(2, maximum);
+}
+
+function syncTextTextureQuality(textObject) {
+  const resolution = Number(textObject?.style?.resolution);
+  if (textObject?.frame?.source && Number.isFinite(resolution) && resolution > 0) {
+    // Text#setResolution updates the canvas but Phaser 3.90 leaves this source
+    // value at the constructor's resolution in its Canvas renderer path.
+    textObject.frame.source.resolution = resolution;
+  }
+  textObject?.texture?.setFilter?.(UI_TEXT_FILTER_MODE);
+  return textObject;
+}
+
+function keepTextTextureQualityAfterUpdates(textObject) {
   if (
     !textObject
-    || options.resolution === false
-    || typeof textObject.setResolution !== 'function'
+    || textObject[TEXT_UPDATE_HOOK]
+    || typeof textObject.updateText !== 'function'
   ) {
     return textObject;
   }
 
-  const requestedResolution = Number(options.resolution);
-  const resolution = Number.isFinite(requestedResolution) && requestedResolution > 0
-    ? requestedResolution
-    : getUiTextResolution(options.pixelRatio, options.maxResolution);
-  textObject.setResolution(resolution);
+  const updateText = textObject.updateText;
+  textObject.updateText = function updateTextWithQuality(...args) {
+    const result = updateText.apply(this, args);
+    syncTextTextureQuality(this);
+    return result;
+  };
+  textObject[TEXT_UPDATE_HOOK] = true;
   return textObject;
+}
+
+/** Apply the shared high-density rendering policy to a Phaser Text object. */
+export function configureTextQuality(textObject, options = {}) {
+  if (!textObject) return textObject;
+
+  keepTextTextureQualityAfterUpdates(textObject);
+
+  if (options.resolution !== false && typeof textObject.setResolution === 'function') {
+    const requestedResolution = Number(options.resolution);
+    const resolution = Number.isFinite(requestedResolution) && requestedResolution > 0
+      ? requestedResolution
+      : getUiTextResolution(options.pixelRatio, options.maxResolution);
+    textObject.setResolution(resolution);
+  }
+
+  return syncTextTextureQuality(textObject);
 }
 
 /**

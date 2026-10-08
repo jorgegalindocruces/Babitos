@@ -341,22 +341,22 @@ export class DarknessBossScene extends Phaser.Scene {
     this.healthText = createLabel(this, '', 132, 29, { fontSize: '16px', color: 0xff668d, depth: 1002 });
     const power = getPower(this.save.selectedPower);
     this.powerText = createLabel(this, `${power.name.toUpperCase()} · J / X`, 160, 57, {
-      fontSize: '10px', color: colorNumber(power.color, 0x71e5ff), depth: 1002,
+      fontSize: '12px', color: colorNumber(power.color, 0x71e5ff), depth: 1002,
     });
     createLabel(this, this.bossConfig.name, 620, 20, { fontSize: '12px', color: 0xcbb8ff, depth: 1002 });
     this.bossBar = this.add.graphics().setDepth(1002).setScrollFactor(0);
-    this.bossHealthText = createLabel(this, '', 620, 46, { fontSize: '10px', color: 0xffffff, depth: 1003 });
+    this.bossHealthText = createLabel(this, '', 620, 46, { fontSize: '12px', color: 0xffffff, depth: 1003 });
     this.stateText = createLabel(this, STATE_COPY[STATE.INTRO], 620, 66, {
-      fontSize: '9px', color: 0xffcf63, depth: 1003,
+      fontSize: '12px', color: 0xffcf63, depth: 1003,
     });
-    createLabel(this, 'P / ESC · PAUSA', 881, 65, { fontSize: '8px', color: 0xa9d8ef, depth: 1002 });
+    createLabel(this, 'P / ESC · PAUSA', 881, 65, { fontSize: '12px', color: 0xa9d8ef, depth: 1002 });
     this.pauseButton = createButton(this, {
       x: 898,
       y: 91,
       width: 104,
       height: 32,
       label: 'Ⅱ PAUSA',
-      fontSize: '9px',
+      fontSize: '12px',
       variant: 'ghost',
       depth: 1004,
       accessibleLabel: 'Pausar el combate',
@@ -784,7 +784,7 @@ export class DarknessBossScene extends Phaser.Scene {
       depth: 1500, fillColor: 0x0d1424, strokeColor: 0x9c7cff, fillAlpha: 0.92, radius: 10, shadow: false,
     });
     const titleText = createLabel(this, title, 0, -11, { fontSize: '13px', color: 0xe6dcff, depth: 1501 });
-    const hintText = createLabel(this, hint, 0, 12, { fontSize: '9px', color: 0xbfe8a0, depth: 1501 });
+    const hintText = createLabel(this, hint, 0, 12, { fontSize: '12px', color: 0xbfe8a0, depth: 1501 });
     cue.add([panel, titleText, hintText]);
     this.patternCue = cue;
     this.tweens.add({
@@ -929,7 +929,7 @@ export class DarknessBossScene extends Phaser.Scene {
       357,
       { fontSize: '17px', wordWrapWidth: 620, lineSpacing: 6, depth: 3502 },
     );
-    const reward = createLabel(this, rewardCopy, 480, 410, { fontSize: '11px', color: 0xffdf68, depth: 3502 });
+    const reward = createLabel(this, rewardCopy, 480, 410, { fontSize: '13px', color: 0xffdf68, depth: 3502 });
     const continueButton = createButton(this, {
       x: 480,
       y: 469,

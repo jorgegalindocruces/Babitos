@@ -112,7 +112,7 @@ export class EnemyController {
     this.stateBadge = null;
     if (showDebugState) {
       this.stateBadge = scene.add.text(definition.x, definition.y - 48, this.state, {
-        fontFamily: 'Silkscreen, monospace', fontSize: '8px', color: '#dff8ff',
+        fontFamily: 'Silkscreen, monospace', fontSize: '12px', color: '#dff8ff',
         backgroundColor: '#071326bb', padding: { x: 4, y: 2 },
       }).setOrigin(0.5).setDepth(20).setAlpha(0.78);
       configureTextQuality(this.stateBadge);

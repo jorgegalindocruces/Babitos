@@ -22,7 +22,7 @@ export function getShopBossRewardCopy(progress = {}, bossData = {}) {
 
   return rewards
     .map(({ id, label, coins }) => (
-      `${label} · +${Math.max(0, Math.trunc(coins))} 1.ª VEZ · ${claimedRewards.has(id) ? 'COBRADA' : 'PENDIENTE'}`
+      `${label} +${Math.max(0, Math.trunc(coins))} · ${claimedRewards.has(id) ? 'COBRADA' : 'PENDIENTE'}`
     ))
     .join('\n');
 }

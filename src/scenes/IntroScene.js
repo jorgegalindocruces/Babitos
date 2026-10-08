@@ -55,7 +55,7 @@ export class IntroScene extends Phaser.Scene {
       depth: 20,
     });
     createLabel(this, 'ALGO TERRIBLE HA OCURRIDO EN BABILANDIA…', 480, 84, {
-      fontSize: 10,
+      fontSize: 12,
       color: UI_COLORS.yellow,
       depth: 20,
     });
@@ -69,7 +69,7 @@ export class IntroScene extends Phaser.Scene {
       width: 162,
       height: 34,
       label: 'SALTAR INTRO ›',
-      fontSize: '9px',
+      fontSize: '12px',
       variant: 'ghost',
       accessibleLabel: 'Saltar introducción y entrar en Babilandia',
       onPress: () => this.enterBabilandia(),
@@ -197,7 +197,7 @@ export class IntroScene extends Phaser.Scene {
       ease: 'Sine.InOut',
     });
     createLabel(this, `${this.save.name.toUpperCase()} · PODER ${power.name.toUpperCase()}`, 713, 423, {
-      fontSize: 9,
+      fontSize: 12,
       color: power.color,
       wordWrapWidth: 320,
       depth: 20,

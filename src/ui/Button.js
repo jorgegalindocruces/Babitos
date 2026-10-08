@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import { getButtonHitArea } from './buttonGeometry.js';
-import { configureTextQuality } from './textQuality.js';
+import { configureTextQuality, getUiTextStrokeThickness } from './textQuality.js';
 
 const REGISTRY_KEY = Symbol('babitos.ui.buttonRegistry');
 
@@ -334,16 +334,17 @@ export class Button extends Phaser.GameObjects.Container {
     this.activating = false;
 
     this.background = scene.add.graphics();
+    const labelFontSize = options.fontSize ?? '20px';
     this.labelText = scene.add.text(0, -1, String(options.label ?? ''), {
       fontFamily: options.fontFamily ?? "'Silkscreen', monospace",
-      fontSize: options.fontSize ?? '20px',
+      fontSize: labelFontSize,
       fontStyle: options.fontStyle ?? 'bold',
       color: this.style.text,
       align: 'center',
       stroke: options.textStroke ?? '#071326',
       strokeThickness: Number.isFinite(options.textStrokeThickness)
         ? options.textStrokeThickness
-        : 2,
+        : getUiTextStrokeThickness(labelFontSize),
       wordWrap: { width: this.buttonWidth - 28, useAdvancedWrap: true },
     }).setOrigin(0.5);
     configureTextQuality(this.labelText, { resolution: options.textResolution });

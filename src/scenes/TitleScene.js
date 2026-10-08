@@ -104,7 +104,7 @@ export class TitleScene extends Phaser.Scene {
       });
     }
     createLabel(this, 'PEQUEÑOS BABITOS · GRANDES AVENTURAS', 304, 174, {
-      fontSize: 11,
+      fontSize: 12,
       color: UI_COLORS.yellow,
       depth: 11,
     });
@@ -340,7 +340,7 @@ export class TitleScene extends Phaser.Scene {
       },
     );
     const hint = createLabel(this, 'EL TAMAÑO DEL BABITO NO CAMBIA LA HITBOX', 480, 399, {
-      fontSize: 10,
+      fontSize: 12,
       color: UI_COLORS.cyan,
       depth: 920,
     });
