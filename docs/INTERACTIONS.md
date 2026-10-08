@@ -26,10 +26,10 @@ Son jugables Babilandia con Babito Corrupto (Fase 1) y La Jungla con La Oscurida
 
 ## Landing page
 
-La portada de `babitos.es` presenta el juego antes de jugar: hero con el logo y un Babito que salta, la historia del Árbol de Poder en tres pasos, el creador y los tres poderes, los tres mundos con su estado (dos jugables y Ciudad próximamente), personajes (Bicharracos, jefes y aliados), «Del papel al píxel» con cada dibujo original junto a su sprite y una galería de láminas conceptuales que se amplían en un visor.
+La portada de `babitos.es` presenta el juego antes de jugar: hero con el logo y un Babito que salta, la historia del Árbol de Poder en tres pasos, el creador y los tres poderes, los tres mundos con su estado (dos jugables y Ciudad próximamente), personajes (Bicharracos, jefes y aliados), «Del papel al píxel» con una selección de ocho dibujos originales junto a su versión de juego y una galería de láminas conceptuales que se amplían en un visor.
 
-- Todos los botones `JUGAR` abren un diálogo modal con el juego. La primera apertura carga el motor (`Cargando BABITOS…`); las siguientes son inmediatas.
-- `Esc` dentro del diálogo pausa el juego, como siempre; solo el botón `✕` cierra el diálogo. Cerrar deja la partida en pausa, sin música y sin avanzar; al volver espera el panel `PAUSA`.
+- Todos los botones `JUGAR` abren un diálogo modal con el juego. La primera apertura carga el motor (`Cargando BABITOS…`); las siguientes son inmediatas. Si se cierra antes de terminar esa primera carga, el runtime se desactiva en cuanto queda listo y nunca avanza ni toma foco detrás de la portada.
+- `Esc` dentro del diálogo pausa el juego, como siempre; solo el botón `✕` cierra el diálogo. Cerrar congela la pantalla actual, suspende música y reloj y, si se hizo durante gameplay, al volver espera el panel `PAUSA`; en Título, Creador y otros menús reanuda esa misma pantalla.
 - `⛶` pone el juego a pantalla completa. En móvil el diálogo ocupa toda la pantalla y, en vertical, sugiere girar el teléfono.
 - Con el diálogo cerrado, flechas, Espacio y `M` vuelven a comportarse como en cualquier página. Al cerrar, el foco vuelve al botón que lo abrió.
 - Un enlace a `https://babitos.es/#jugar` abre el juego directamente.
@@ -125,7 +125,7 @@ Los cinco carteles tutoriales también se definen allí sin coordenada vertical 
 - La cámara mira unos 110 px por delante en la dirección en que se mueve el Babito y desplaza ese margen suavemente al girar.
 - Saltar y aterrizar con fuerza levantan unas motas de polvo; acertar a un enemigo congela la acción 35 ms y derrotarlo, 70 ms, con una pequeña sacudida. La preferencia de movimiento reducido elimina las partículas.
 - El ataque sale en la dirección en que mira el Babito y respeta el cooldown del poder.
-- El suelo base es completamente sólido. Las plataformas elevadas son unidireccionales: su cara inferior y sus laterales se atraviesan al ascender o al llegar desde abajo, y su cara superior sostiene al Babito, enemigos terrestres y monedas cuando descienden desde arriba. Pulsar `S`, `↓` o el pad `▼` estando de pie sobre una plataforma elevada deja caer al Babito a través de ella con un pequeño impulso hacia abajo; la plataforma se ignora solo hasta que los pies quedan claramente por debajo de su cara superior, y vuelve a sostenerlo si salta de nuevo encima. Sobre el suelo base no hace nada. La pulsación se encola como el salto, así que un toque muy breve no se pierde, y anula el *coyote time* de la plataforma abandonada. La primera vez que el Babito descansa sobre una plataforma en un nivel (pasado el aviso inicial y si aún no ha bajado nunca) aparece un aviso breve: «S/↓ para bajar de la plataforma» o «▼» en táctil. Las pausas de Babilandia y del boss lo recuerdan junto a «Mover».
+- El suelo base es completamente sólido. Las plataformas elevadas son unidireccionales en Babilandia, La Jungla y las dos arenas de jefe: su cara inferior y sus laterales se atraviesan al ascender o al llegar desde abajo, y su cara superior sostiene al Babito, enemigos terrestres y monedas cuando descienden desde arriba. Pulsar `S`, `↓` o el pad `▼` estando de pie sobre una plataforma elevada deja caer al Babito a través de ella con un pequeño impulso hacia abajo; la plataforma se ignora solo hasta que los pies quedan claramente por debajo de su cara superior, y vuelve a sostenerlo si salta de nuevo encima. Sobre el suelo base no hace nada. La pulsación se encola como el salto, así que un toque muy breve no se pierde, y anula el *coyote time* de la plataforma abandonada. La primera vez que el Babito descansa sobre una plataforma en un nivel (pasado el aviso inicial y si aún no ha bajado nunca) aparece un aviso breve: «S/↓ para bajar de la plataforma» o «▼» en táctil. Las pausas de ambas fases y de ambos bosses lo recuerdan junto a «Mover».
 - Los proyectiles desaparecen al tocar terreno. Invariante crítico: un poder nunca destruye, oculta ni desactiva suelo o plataformas; el fondo es decorativo y no tiene colisión.
 - El HUD muestra corazones, Babicoins, poder y teclas de ataque, encuentros derrotados y pausa.
 
@@ -172,7 +172,7 @@ La Fase 2 reutiliza la escena de nivel ([GameScene.js](../src/scenes/GameScene.j
 - **Setas saltarinas**: caer sobre su sombrero lanza al Babito hasta 250–270 px si se mantiene el salto; soltándolo sube al menos el 60 % y después corta el impulso como un salto normal. Caminar contra el tallo no hace nada.
 - **Pilares de ruinas**: son suelo sólido elevado; bloquean el paso lateral y hay que saltarlos.
 - **Enemigos y fosos**: COME y DA VUELTAS no salen del tramo de suelo en el que aparecen; COME espera en el borde y DA VUELTAS se da la vuelta. Ambos giran al chocar con un pilar.
-- **La luz se apaga**: a partir de la mitad del último tramo un velo oscuro crece hasta el portal y un halo cálido sigue al Babito para mantenerlo legible.
+- **La luz se apaga**: poco después del checkpoint `ruinas`, desde x = 4000, un velo oscuro crece hasta x = 6000 junto al portal y un halo cálido sigue al Babito para mantenerlo legible.
 - Ocho encuentros abren el portal hacia La Oscuridad. Hay 30 Babicoins colocadas con identificadores `jungla:coin:<id>`, independientes de las de Babilandia.
 - Ambientación: agua animada en cada foso, una cascada sobre los puentes, lianas que se mecen, ruinas al fondo y luciérnagas.
 
@@ -185,8 +185,8 @@ El combate de la Fase 2 se implementa en [DarknessBossScene.js](../src/scenes/Da
 - Si La Oscuridad cruza la luz de un farolillo encendido mientras se desliza o reaparece, queda **EXPUESTA** 2,2 s: se vuelve sólida, un anillo dorado la rodea y recibe daño. Al terminar se bebe esa luz y el farolillo se apaga. El farolillo central empieza encendido, de modo que la primera sombra rasante enseña el ciclo.
 - Patrones, en orden, siempre con un cartel de aviso:
   - `SOMBRA RASANTE`: cruza la arena a ras de suelo desde el lado contrario al Babito. Se esquiva saltando hacia ella o subiendo a una plataforma; solo daña mientras se desliza.
-  - `METEORITOS OSCUROS`: dos tandas de tres meteoritos separados 150 px; una marca en el suelo avisa 0,76 s antes de cada uno.
-  - `ZONA OSCURA`: se funde en un charco que persigue al Babito por el suelo y brota bajo él tras un aviso de 0,48 s. Si el charco atraviesa la luz de un farolillo del suelo, sale a la fuerza y queda expuesta.
+  - `METEORITOS OSCUROS`: dos tandas de tres meteoritos separados 150 px; una marca en el suelo avisa 0,76 s antes de cada uno. Cerca de un borde se desplaza la tanda completa dentro de la arena, sin comprimir el hueco entre impactos.
+  - `ZONA OSCURA`: se funde en un charco que persigue al Babito por el suelo y brota bajo él tras un aviso de 0,48 s. Si el charco atraviesa la luz de cualquier farolillo encendido, sale a la fuerza y queda expuesta.
   - Cada dos patrones, si queda algún farolillo encendido, `APAGA LA LUZ`: el más cercano al Babito parpadea 1,1 s y se apaga, salvo que se le dispare a tiempo.
 - Fuego y Rayo causan 1 punto; la Roca, 2. Recibir daño congela la acción 80 ms y acertar, 45 ms.
 - Pausa, `GAME OVER` y `REINTENTAR` funcionan como contra Babito Corrupto.
@@ -215,6 +215,7 @@ La interacción del combate se implementa en [BossScene.js](../src/scenes/BossSc
 - Las flechas cambian de página de forma circular.
 - Una opción bloqueada se compra y equipa con una sola activación si hay monedas; si faltan, se informa la cantidad necesaria.
 - Una opción desbloqueada se equipa sin coste. Cada ficha previsualiza el cosmético sobre un Babito completo.
+- El puesto muestra por separado las recompensas únicas configuradas para Babito Corrupto (+30) y La Oscuridad (+40), marcadas `PENDIENTE` o `COBRADA` según el guardado; nunca presenta ambos bosses como una recompensa repetible de 30.
 - Compra, desbloqueo, equipamiento y saldo se guardan inmediatamente. El CTA principal `CONTINUAR AL MAPA` guarda el destino antes del fundido y abre el mapa.
 
 ### Mapa y avances
@@ -231,7 +232,7 @@ La interacción del combate se implementa en [BossScene.js](../src/scenes/BossSc
 - COME tiene `idle`, `walk`, `windup`, `attack`, `hurt` y `defeat` sobre su spritesheet raster. `WINDUP` recorre la preparación y `BITE` empieza en la pose de mordisco sin reiniciar una fila ofensiva completa; todos los clips se anclan por los pies a la superficie física.
 - VUELA tiene `idle`, `fly`, `dive`, `attack`, `hurt` y `defeat` en un atlas raster de 36 poses; `dive`, `attack`, `hurt` y `defeat` no vuelven del último frame al primero. DA VUELTAS mantiene `idle`, `roll`, `windup`, `hurt` y `defeat` en su hoja procedural.
 - Babito Corrupto cambia de pose en intro, los tres patrones, `RECOVER` y su forma purificada. La Oscuridad es un sprite procedural fiel a su referencia canónica (masa negra de borde violeta, tentáculos y ojos rasgados) que ondula, se desvanece al viajar por la sombra y se ilumina con un anillo dorado al quedar expuesta.
-- Las capas del Babito se dibujan a su tamaño nativo y se escalan después sin suavizado, con píxeles totalmente opacos o transparentes: en el título (×4) y el creador (×3) se ve nítido, sin franjas ni bordes borrosos.
+- Las capas del Babito se dibujan a su tamaño nativo y se amplían después sin suavizado, con píxeles totalmente opacos o transparentes: en Título y Creador se ve nítido, sin franjas ni bordes borrosos.
 - Pausar congela también los relojes de animación.
 
 ## Persistencia
@@ -263,26 +264,29 @@ La preferencia de audio usa por separado `babitos.audio.v1`. Si `localStorage` n
 
 ## Accesos de QA en desarrollo
 
-Solo con el servidor de desarrollo, `BootScene` admite rutas para revisar pantallas sin alterar el flujo de producción:
+Solo con el servidor de desarrollo, `BootScene` admite rutas para revisar pantallas; la landing no las abre y `BootScene` no las procesa en producción:
 
-- `?qa=TitleScene`, `CreatorScene`, `PowerScene`, `IntroScene`, `GameScene`, `BossScene`, `ShopScene`, `WorldMapScene` o `ComingSoonScene`;
-- `&world=jungle` o `&world=city` para `ComingSoonScene`;
+- `?qa=TitleScene`, `CreatorScene`, `PowerScene`, `IntroScene`, `GameScene`, `BossScene`, `DarknessBossScene`, `ShopScene`, `WorldMapScene` o `ComingSoonScene`;
+- `ComingSoonScene` muestra Ciudad por defecto; `&world=jungle|jungla` solo conserva compatibilidad con enlaces antiguos y redirige a la Fase 2 jugable;
 - `&qaCoins=90` para garantizar al menos ese saldo, hasta 999; no reduce monedas existentes;
 - `&qaComplete=1` para marcar la Fase 1 como completada;
-- `&qaCombat=1` en `GameScene` para empezar en el primer checkpoint, acercar a COME, dejarlo a un golpe y forzar drops de dos monedas;
-- `&qaCheckpoint=start|market_gate|fountain|boss_gate` en `GameScene` para revisar una zona concreta y su decoración sin persistir ese punto QA en el guardado;
+- `&qaLevel=jungla` en `GameScene` para cargar La Jungla; sin él se resuelve el nivel solicitado o guardado;
+- `&qaCombat=1` en `GameScene` para empezar en el primer checkpoint, acercar al primer COME, dejarlo a un golpe y forzar drops de dos monedas;
+- `&qaCheckpoint=start|market_gate|fountain|boss_gate` para Babilandia o `start|lianas|ruinas|penumbra` para La Jungla; revisa una zona concreta sin persistir ese checkpoint ni cobrar sus monedas colocadas;
+- `&qaMotion=idle|walk|run|jump|fall|attack|hurt|dead`, `&qaFrame=<n>` y `&qaSize=small|normal|large` fijan presentación del Babito; son ayudas visuales y pueden actualizar la escena/checkpoint del guardado local de desarrollo;
 - `&qaEnemy=come|vuela|da_vueltas` para aislar una instancia, colocarla ante la cámara e inmovilizar su IA sin daño ni persistencia;
 - `&qaEnemyState=<estado-o-clip>` para fijar un estado de IA (`DIVE`, `BITE`, `DIZZY`…) o un clip (`idle`, `hurt`, `defeat`); `&qaEnemyFrame=<n>` fija su frame local y limita valores altos al último disponible;
-- `&qaOneHit=1` en `BossScene` para colocar al boss a un golpe y entrar pronto en `RECOVER`;
-- `&debugAI=1` en Babilandia para mostrar la etiqueta del estado actual de cada enemigo.
+- `&qaOneHit=1` en `BossScene` coloca a Babito Corrupto a un golpe y entra pronto en `RECOVER`; en `DarknessBossScene` coloca a La Oscuridad a un golpe y adelanta su primera exposición;
+- `&debugAI=1` en cualquiera de los dos niveles muestra la etiqueta del estado actual de cada enemigo.
 
-Ejemplos: `http://localhost:5173/?qa=ComingSoonScene&world=city` y `http://localhost:5173/?qa=GameScene&qaEnemy=vuela&qaEnemyState=DIVE&qaEnemyFrame=4&debugAI=1`.
+Ejemplos: `http://localhost:5173/?qa=GameScene&qaLevel=jungla&qaCheckpoint=ruinas`, `http://localhost:5173/?qa=DarknessBossScene&qaOneHit=1` y `http://localhost:5173/?qa=GameScene&qaEnemy=vuela&qaEnemyState=DIVE&qaEnemyFrame=4&debugAI=1`.
 
 ## Referencias de implementación
 
 | Contrato | Fuente principal |
 |---|---|
-| Configuración Phaser y audio global | [main.js](../src/main.js) |
+| Landing, diálogos y carga diferida | [main.js](../src/main.js) |
+| Configuración Phaser, audio y activación/suspensión | [gameBoot.js](../src/gameBoot.js) |
 | Carga, animaciones y rutas QA | [BootScene.js](../src/scenes/BootScene.js) |
 | Entrada y estado del jugador | [PlayerController.js](../src/game/PlayerController.js) |
 | Proyectiles y poderes | [PowerSystem.js](../src/game/PowerSystem.js) |
@@ -292,5 +296,6 @@ Ejemplos: `http://localhost:5173/?qa=ComingSoonScene&world=city` y `http://local
 | Avatar por capas | [BabitoAvatar.js](../src/game/BabitoAvatar.js) |
 | Animaciones de enemigos | [EnemyAnimations.js](../src/game/EnemyAnimations.js) |
 | Animación del boss | [BossAnimator.js](../src/game/BossAnimator.js) |
+| Combate de La Oscuridad y geometría de meteoritos | [DarknessBossScene.js](../src/scenes/DarknessBossScene.js) y [bossPatternGeometry.js](../src/game/bossPatternGeometry.js) |
 | Botones, foco y accesibilidad | [Button.js](../src/ui/Button.js) |
 | Guardado y migración | [SaveStore.js](../src/state/SaveStore.js) |

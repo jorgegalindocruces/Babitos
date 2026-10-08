@@ -17,7 +17,7 @@ Documentación vigente:
 
 ## Landing page
 
-`index.html` es la portada del juego: historia, creador y poderes, mundos, personajes, la sección «Del papel al píxel» con los dibujos originales y la galería de arte conceptual. El juego se abre en un diálogo al pulsar **JUGAR** (o con `https://babitos.es/#jugar`) y su motor solo se descarga en ese momento. Cerrar el diálogo deja la partida en pausa.
+`index.html` es la portada del juego: historia, creador y poderes, mundos, personajes, una selección «Del papel al píxel» y la galería de arte conceptual. El juego se abre en un diálogo al pulsar **JUGAR** (o con `https://babitos.es/#jugar`) y su motor solo se descarga en ese momento. Cerrar el diálogo congela la pantalla actual; si se cierra durante gameplay, al volver espera el panel de pausa.
 
 ## Recorrido jugable
 
@@ -60,9 +60,9 @@ La descripción exhaustiva, incluidas las reglas de foco, pausa, reintento y vul
 - La arena de Babito Corrupto tiene un fondo 16:9 propio: Babilandia en ruinas al atardecer, basado en el ejemplo canónico del boss y con una zona de juego limpia para conservar la lectura de ataques y plataformas.
 - Ciudad Bicharraca, el último mundo del mapa, muestra ya su paisaje industrial 16:9 como fondo y recorte interior de su pantalla de avance estática; la tarjeta del mapa mantiene un icono procedural.
 - Música ambiental y efectos para interfaz, salto, ataque, daño, monedas, checkpoints, boss y compras se sintetizan en el navegador mediante Web Audio, sin archivos ni dependencias adicionales.
-- El Babito usa un atlas por capas de 64 px y 51 poses: `idle`, caminar, correr, saltar, caer, atacar, recibir daño y KO. Cada ciclo mueve silueta, pies, brazos y expresión sin perder la personalización. COME, VUELA, DA VUELTAS y Babito Corrupto también cambian de animación o pose según su estado.
+- El Babito usa un atlas por capas de 64 px y 51 poses: `idle`, caminar, correr, saltar, caer, atacar, recibir daño y KO. Cada ciclo mueve silueta, pies, brazos y expresión sin perder la personalización. COME, VUELA, DA VUELTAS y Babito Corrupto cambian de animación o pose según su estado; La Oscuridad ondula, viaja por sombra, telegrafía cada patrón, se ilumina al quedar expuesta y se disipa en luciérnagas.
 - El Babito ocupa ahora cajas visuales de 64, 80 y 96 px en pequeño, normal y grande, manteniendo una única hitbox de 28 × 40 y la misma línea de apoyo. COME ancla sus pies al cuerpo físico para no hundirse en suelo o plataformas durante caminar, anticipar o morder.
-- El suelo base sigue siendo sólido; las plataformas elevadas de Babilandia y de la arena del boss son unidireccionales: se atraviesan al subir desde abajo, sostienen al personaje al caer y `S`/`↓` permite dejarse caer a través de ellas. Los proyectiles continúan impactando contra todo el terreno.
+- El suelo base sigue siendo sólido; las plataformas elevadas de Babilandia, La Jungla y las dos arenas de jefe son unidireccionales: se atraviesan al subir desde abajo, sostienen al personaje al caer y `S`/`↓` permite dejarse caer a través de ellas. Los proyectiles continúan impactando contra todo el terreno.
 - VUELA usa un atlas raster de 36 poses fiel al diseño canónico. Sus ciclos de vuelo, picado, anticipación, daño y derrota son independientes; un impacto interrumpe un ataque peligroso antes de reanudar la IA.
 - Los botones responden en toda su superficie visible a ratón y toque, y ofrecen foco, estado deshabilitado y activación por teclado mediante controles HTML accesibles.
 - `Espacio` queda reservado para saltar durante el gameplay; los botones del HUD siguen disponibles con ratón, toque o navegación accesible mediante `Tab`.
@@ -101,11 +101,14 @@ Antes de enviar un cambio, ejecuta al menos `npm test` y `npm run build`.
 
 ```text
 src/
+├── main.js     Landing, visor de arte y ciclo del diálogo
+├── gameBoot.js Carga diferida, Phaser, audio y activación del juego
 ├── data/       Catálogos y definición de niveles en JSON
 ├── game/       Jugador, poderes, enemigos, avatar y texturas
 ├── scenes/     Flujo de pantallas y fases de Phaser
 ├── state/      Catálogo normalizado y guardado versionado
 └── ui/         Botones, efectos y utilidades de interfaz
+public/assets/landing/ Arte web optimizado para la portada
 art/
 ├── approved/          Dirección artística canónica
 ├── original_drawings/ Dibujos originales de referencia
@@ -119,6 +122,7 @@ La configuración se mantiene fuera de las escenas siempre que es posible:
 - `src/data/cosmetics.json` contiene categorías, IDs, nombres, claves de asset, desbloqueo inicial y precios.
 - `src/data/game-data.json` define jugador, tamaños, poderes, enemigos y bosses.
 - `src/data/levels/` contiene la geometría y entidades de cada fase.
+- `src/data/levels/index.js` registra cada fase lateral, su tema, recompensas y escena de jefe.
 - `src/state/SaveStore.js` valida, migra y persiste la partida.
 - `src/game/createTextures.js` mantiene claves de textura estables mientras se sustituyen los gráficos temporales.
 - `docs/INTERACTIONS.md` es el contrato humano del comportamiento observable; los datos y el código enlazados allí son la fuente ejecutable.
@@ -150,7 +154,7 @@ Para añadir unos ojos, una boca, una skin o un accesorio:
 
 El Creador, la tienda, el guardado y `¡BABITO LOCO!` leen el catálogo automáticamente. El randomizador solo utiliza elementos desbloqueados.
 
-Para crear un nivel, añade sus datos a `src/data/levels/` y una escena que los consuma. Para un enemigo nuevo en futuras expansiones, mantén su comportamiento configurable y evita acoplarlo a un nivel concreto.
+Para crear otra fase lateral, añade su JSON a `src/data/levels/` y regístrala en `src/data/levels/index.js`; `GameScene` consume ese contrato compartido. Solo hace falta una escena dedicada si el nivel introduce una mecánica que no encaja en ese formato, como un jefe. Para un enemigo nuevo en futuras expansiones, mantén su comportamiento configurable y evita acoplarlo a un nivel concreto.
 
 ## GitHub Pages
 
@@ -161,9 +165,9 @@ Configuración inicial del repositorio:
 1. Abre **Settings → Pages** en GitHub.
 2. En **Build and deployment → Source**, selecciona **GitHub Actions**.
 3. Envía los cambios a `main` o ejecuta el workflow **Deploy BABITOS to GitHub Pages** desde la pestaña **Actions**.
-4. Cuando termine, el sitio se publica en [https://babitos.es/](https://babitos.es/). La URL técnica `https://jorgegalindocruces.github.io/Babitos/` queda como origen de GitHub Pages.
+4. Cuando termine, el sitio se publica en [https://babitos.es/](https://babitos.es/). La URL técnica `https://jorgegalindocruces.github.io/Babitos/` pertenece al origen de Pages y, mientras el dominio personalizado está activo, redirige al dominio canónico.
 
-Vite usa rutas relativas (`base: './'`), por lo que imágenes, módulos y demás recursos funcionan tanto en `/` como bajo `/Babitos/`.
+Vite usa rutas relativas (`base: './'`), por lo que imágenes, módulos y demás recursos siguen siendo compatibles con despliegues o previsualizaciones bajo una subruta aunque la URL pública actual sea el dominio raíz.
 
 ### Dominio `babitos.es`
 
@@ -185,11 +189,7 @@ Registros que debe tener el proveedor DNS:
 
 No se usan comodines. Cualquier registro `A`, `AAAA`, `ALIAS` o `ANAME` adicional en `@`, o un `CNAME` distinto en `www`, debe retirarse para no bloquear el certificado. Tras propagarse el DNS, GitHub emite el certificado y permite activar **Enforce HTTPS**. La verificación de propiedad es independiente: GitHub genera un token que debe conservarse como `TXT` en `_github-pages-challenge-jorgegalindocruces`.
 
-Estado de producción verificado el 8 de octubre de 2026: GitHub Pages guarda `babitos.es` como dominio personalizado, los registros `A`, `AAAA` y `www` anteriores ya están activos y el sitio responde desde Pages. La emisión del certificado es el último paso automático; mientras la API responda `The certificate does not exist yet`, no se deben sustituir esos DNS. En cuanto GitHub termine de emitirlo, se activa **Enforce HTTPS** con:
-
-```bash
-gh api --method PUT repos/jorgegalindocruces/Babitos/pages -F https_enforced=true
-```
+Estado de producción verificado el 8 de octubre de 2026: GitHub Pages está `built`, guarda `babitos.es` como dominio personalizado, tiene el certificado aprobado para `babitos.es` y `www.babitos.es` y **Enforce HTTPS** está activo. `https://babitos.es/` responde correctamente; `www` y la URL técnica de Pages redirigen al dominio canónico. No queda ninguna acción pendiente de DNS, certificado o HTTPS.
 
 ## Placeholders actuales
 

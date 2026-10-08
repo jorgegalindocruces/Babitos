@@ -6,7 +6,8 @@ Estos criterios validan el vertical slice 0.2 descrito en [INTERACTIONS.md](INTE
 
 - `npm ci`, `npm test` y `npm run build` terminan sin errores.
 - La compilación abre desde una ruta relativa de GitHub Pages y carga sin backend.
-- La landing carga sin Phaser (menos de 10 kB de JavaScript propio) y sin overflow horizontal a 390 px; todas sus imágenes resuelven. `JUGAR` abre el diálogo y arranca el juego; `Esc` pausa sin cerrar; `✕` cierra dejando la partida en pausa y devuelve el teclado a la página; reabrir no hace avanzar el reloj de juego.
+- La landing carga sin Phaser (menos de 10 kB de JavaScript propio) y sin overflow horizontal a 390 px; todas sus imágenes resuelven y reservan sus dimensiones reales. `JUGAR` abre el diálogo y arranca el juego; `Esc` pausa sin cerrar; `✕` congela el estado y devuelve el teclado a la página; cerrar durante la primera carga no deja el juego avanzando ni tomando foco detrás de la portada. Reabrir gameplay espera en `PAUSA`; reabrir un menú continúa ese mismo menú.
+- El visor de arte abre cada marco ampliable, actualiza imagen/caption y se cierra con `✕`, `Esc` nativo o clic en el backdrop. El control `⛶` solicita pantalla completa; en móvil el diálogo ocupa el viewport y en vertical muestra la recomendación de girar.
 - Con espacio suficiente, el canvas interno y su rectángulo CSS miden exactamente 960 × 540; no existe ampliación fraccionaria de escritorio. En una pantalla menor conserva 16:9 sin overflow horizontal o vertical.
 - Silkscreen y Nunito se solicitan antes de crear Phaser. Títulos, cuerpo, etiquetas, botones y avisos usan la política común de resolución de texto.
 - Si un fondo raster no carga, su escena conserva un fallback visible y jugable.
@@ -14,7 +15,7 @@ Estos criterios validan el vertical slice 0.2 descrito en [INTERACTIONS.md](INTE
 
 ## Flujo y persistencia
 
-- El recorrido nuevo funciona: Título → Creador → Poder → Intro → Babilandia → Babito Corrupto → Tienda → Mapa.
+- El recorrido completo funciona: Landing → diálogo → Título → Creador → Poder → Intro → Babilandia → Babito Corrupto → Tienda → Mapa → La Jungla → La Oscuridad → Tienda → Mapa.
 - `CONTINUAR` abre la última pantalla válida guardada.
 - `NUEVA AVENTURA` exige confirmación; reinicia historia, checkpoint y poder, pero conserva Babito, nombre, tamaño, monedas, cosméticos y recompensas ya cobradas.
 - La selección de poder, checkpoint, monedas, compras, equipamiento y progreso sobreviven a una recarga.
@@ -26,12 +27,13 @@ Estos criterios validan el vertical slice 0.2 descrito en [INTERACTIONS.md](INTE
 
 ## La Jungla y La Oscuridad
 
+- La Jungla conserva 6400 px de ancho, cuatro checkpoints (`start`, `lianas`, `ruinas`, `penumbra`), ocho encuentros, 30 Babicoins colocadas, dos setas, siete carteles y el portal en x = 6230; el velo crece de x = 4000 a x = 6000.
 - Todos los fosos de La Jungla se saltan (≤ 160 px) o se cruzan por puentes; caer al agua resta un corazón y devuelve al último checkpoint.
 - COME y DA VUELTAS nunca caen a un foso ni se atascan contra un pilar de ruinas; un enemigo que acabara bajo el mundo vuelve a su posición inicial.
 - Una seta saltarina lanza al Babito al caer sobre ella: unos 250–270 px manteniendo el salto y al menos el 60 % sin mantenerlo. Toda plataforma elevada es alcanzable.
 - El velo de oscuridad del último tramo nunca oculta al Babito: un halo lo acompaña.
 - La Oscuridad solo recibe daño mientras está `EXPUESTA`; en la sombra los disparos la atraviesan sin consumirse. Un farolillo encendido no bloquea disparos.
-- Cada patrón muestra un aviso previo; los meteoritos dejan al menos 90 px libres entre impactos y la zona oscura avisa antes de brotar.
+- Cada patrón muestra un aviso previo; los meteoritos conservan 150 px entre centros (al menos 90 px libres entre sus marcas) también junto a los bordes, donde se desplaza la tanda completa sin comprimirla, y la zona oscura avisa antes de brotar.
 - Un bot con 250 ms de reacción vence el combate con Fuego, Rayo y Roca, y completa La Jungla con los tres poderes.
 
 ## Menús e input
@@ -43,7 +45,7 @@ Estos criterios validan el vertical slice 0.2 descrito en [INTERACTIONS.md](INTE
 - Teclas mantenidas o usadas para cerrar/reanudar no provocan un salto, ataque o clic adicional al regresar al gameplay.
 - El campo de nombre acepta un máximo de 24 caracteres y escribir en él no activa atajos del juego.
 - `M` alterna el audio fuera de campos editables; el botón `AUDIO` refleja el mute, conserva la preferencia y muestra `AUDIO N/D` si Web Audio no está disponible.
-- En dispositivos táctiles aparecen pads de izquierda, derecha, salto y ataque. No se exigen controles de mando en esta versión.
+- En dispositivos táctiles aparecen cinco pads: izquierda, derecha, bajar (`▼`), salto y ataque. No se exigen controles de mando en esta versión.
 
 ## Creador y poder
 
@@ -83,7 +85,7 @@ Estos criterios validan el vertical slice 0.2 descrito en [INTERACTIONS.md](INTE
 
 ## Pausa
 
-- `P`, `Esc` y el botón del HUD pausan Babilandia y el boss cuando no hay muerte o transición en curso.
+- `P`, `Esc` y el botón del HUD pausan Babilandia, La Jungla y ambos combates de boss cuando no hay muerte o transición en curso.
 - Pausar congela física, tweens, temporizadores, animaciones y reloj de gameplay.
 - `CONTINUAR` reanuda el mismo estado; `TÍTULO` abandona la fase.
 - `Espacio` sigue reservado al salto en gameplay y no activa accidentalmente `PAUSA`.
@@ -106,15 +108,16 @@ Estos criterios validan el vertical slice 0.2 descrito en [INTERACTIONS.md](INTE
 - El catálogo muestra seis objetos por página, previsualiza cada uno sobre el Babito y pagina en ambas direcciones de forma circular.
 - Una opción asequible se compra y equipa en una acción; una desbloqueada se equipa sin coste; si faltan monedas se informa la cantidad exacta.
 - Comprar descuenta una sola vez y el estado persiste tras recargar.
+- El puesto muestra Babito Corrupto (+30) y La Oscuridad (+40) por separado como recompensas de primera victoria, con estado `PENDIENTE`/`COBRADA` derivado de `claimedRewards` incluso al entrar desde el Mapa.
 
 ## Animación y arte
 
 - El Babito distingue `idle`, `walk`, `run`, `jump`, `fall`, `attack`, `hurt` y `dead` mediante poses y siluetas diferentes, sin cambiar su hitbox, perder sus capas equipadas ni despegarse del suelo al cambiar de tamaño.
 - Sus siete capas permanecen sincronizadas durante los 51 frames; caminar no reutiliza las poses de correr y ataque, daño y KO terminan en un frame final legible.
-- Cada estado de COME, VUELA y DA VUELTAS tiene un mapping explícito a un clip existente. Cambiar entre estados que comparten clip no lo reinicia; `hurt` y `defeat` son one-shot, y anticipación/mordisco de COME no recorren la misma secuencia desde el principio. El boss cambia de pose entre patrones, `RECOVER` y purificación.
+- Cada estado de COME, VUELA y DA VUELTAS tiene un mapping explícito a un clip existente. Cambiar entre estados que comparten clip no lo reinicia; `hurt` y `defeat` son one-shot, y anticipación/mordisco de COME no recorren la misma secuencia desde el principio. Babito Corrupto cambia de pose entre patrones, `RECOVER` y purificación. La Oscuridad ondula en sombra, se desvanece en `SHIFT`, anticipa rasante/meteoritos/charco/apagado, muestra anillo dorado en `EXPOSED` y se disipa en luciérnagas.
 - El atlas raster de VUELA contiene 36 celdas de 256 × 256 con contenido, margen transparente y alpha 0/255; se renderiza a 64 × 64 sin escala fraccionaria ni deformación.
 - Pausar congela el frame de animación y reanudar continúa sin desincronizarlo.
-- Babilandia, arena del boss y Ciudad Bicharraca respetan el encuadre 16:9 y no dibujan falsos suelos interactivos en el primer plano.
+- Babilandia, la arena de Babito Corrupto y Ciudad Bicharraca respetan el encuadre raster 16:9; La Jungla y la arena de La Oscuridad mantienen su composición procedural. Ninguno dibuja falsos suelos interactivos en el primer plano y toda colisión procede de geometría separada.
 
 ## Límites conocidos aceptados
 

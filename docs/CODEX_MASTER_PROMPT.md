@@ -18,12 +18,13 @@ Si un texto histórico contradice la aplicación, comprueba código y datos, cor
 ## Alcance actual
 
 ```text
-Título → Creador → Fuego/Rayo/Roca → Intro → Babilandia
-       → COME/VUELA/DA VUELTAS → Babito Corrupto → Tienda → Mapa
-       → La Jungla → La Oscuridad → Tienda → Mapa
+Landing → JUGAR → diálogo → Boot → Título
+  → Creador → Fuego/Rayo/Roca → Intro → Babilandia
+  → COME/VUELA/DA VUELTAS → Babito Corrupto → Tienda → Mapa
+  → La Jungla → La Oscuridad → Tienda → Mapa
 ```
 
-Ciudad Bicharraca solo tiene un avance estático. Boss Total y el Final son roadmap, no gameplay actual.
+`src/main.js` controla la portada y sus diálogos; importa `src/gameBoot.js` solo al abrir el juego. `gameBoot.js` crea Phaser y el audio, y suspende o reactiva el runtime al cerrar o reabrir el diálogo. Ciudad Bicharraca solo tiene un avance estático; `ComingSoonScene` es exclusivo de Ciudad y cualquier llamada heredada a su antigua preview de Jungla redirige a la Fase 2 jugable. Boss Total y el Final son roadmap, no gameplay actual.
 
 ## Reglas no negociables
 
@@ -38,6 +39,7 @@ Ciudad Bicharraca solo tiene un avance estático. Boss Total y el Final son road
 - Fondos, render de plataformas y cuerpos de colisión son capas distintas. Un proyectil puede destruirse contra terreno; nunca puede destruir el terreno.
 - El suelo base es sólido. Las plataformas elevadas son unidireccionales: personajes y monedas las atraviesan al ascender desde abajo y aterrizan al descender, y el jugador puede dejarse caer con `↓`; los proyectiles siguen chocando con ellas.
 - La victoria purifica a Babito Corrupto y disipa a La Oscuridad en luciérnagas; cada recompensa de monedas es única.
+- La portada no carga Phaser hasta `JUGAR`; cerrar durante la primera carga también debe dejar el runtime suspendido y nunca ejecutándose detrás de la landing.
 
 ## Forma de trabajar
 

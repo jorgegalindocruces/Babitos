@@ -22,20 +22,30 @@ const CONTEXT_DOCUMENTS = Object.freeze([
   'docs/GAME_DESIGN.md',
   'docs/IMPLEMENTATION_SPEC.md',
   'docs/INTERACTIONS.md',
+  'art/production/landing-web-v1.md',
   'art/production/babilandia-v2.md',
   'art/production/boss-arena-v1.md',
   'art/production/ciudad-bicharraca-v1.md',
   'art/production/enemy-vuela-v4.md',
 ]);
 const ESSENTIAL_LINK_TARGETS = Object.freeze([
+  'src/main.js',
+  'src/gameBoot.js',
   'src/scenes/GameScene.js',
   'src/scenes/BossScene.js',
+  'src/scenes/DarknessBossScene.js',
+  'src/data/levels/jungla.json',
   'src/game/EnemyBehavior.js',
   'src/game/EnemyPresentation.js',
   'src/game/BabitoPresentation.js',
+  'src/game/bossPatternGeometry.js',
+  'src/game/jungleScenery.js',
   'src/game/platformCollision.js',
   'src/ui/Button.js',
+  'src/ui/touchControls.js',
   'src/state/SaveStore.js',
+  'public/assets/landing/logo.webp',
+  'public/assets/landing/concept-worlds-environment-reference-only.webp',
   'public/assets/characters/enemy-vuela-sheet-v4.png',
   'public/assets/backgrounds/babilandia-v2.webp',
   'public/assets/backgrounds/boss-arena-v1.webp',
@@ -150,6 +160,8 @@ test('the public site and deployment docs use babitos.es as the canonical domain
   assert.match(readme, /Juega en: \[https:\/\/babitos\.es\/\]/u);
   assert.match(readme, /185\.199\.108\.153[\s\S]*185\.199\.111\.153/u);
   assert.match(readme, /`www` \| `jorgegalindocruces\.github\.io`/u);
+  assert.match(readme, /Enforce HTTPS[^\n]*está activo/u);
+  assert.doesNotMatch(readme, /The certificate does not exist yet/u);
   assert.match(implementation, /dominio canónico es `https:\/\/babitos\.es\/`/u);
 });
 
@@ -193,6 +205,9 @@ test('scope and critical gameplay invariants are explicit', async () => {
   const gameDesign = await readRepositoryFile('docs/GAME_DESIGN.md');
   const interactions = await readRepositoryFile('docs/INTERACTIONS.md');
   const acceptance = await readRepositoryFile('docs/ACCEPTANCE_CRITERIA.md');
+  const artBible = await readRepositoryFile('docs/ART_BIBLE.md');
+  const implementation = await readRepositoryFile('docs/IMPLEMENTATION_SPEC.md');
+  const masterPrompt = await readRepositoryFile('docs/CODEX_MASTER_PROMPT.md');
 
   assert.match(gameDesign, /La Jungla, ocho encuentros y checkpoints \| Jugable/u);
   assert.match(gameDesign, /Ciudad Bicharraca \| Pantalla de avance estática/u);
@@ -205,7 +220,32 @@ test('scope and critical gameplay invariants are explicit', async () => {
   assert.match(interactions, /todos los clips se anclan por los pies a la superficie física/u);
   assert.match(interactions, /`idle` \(6 frames\), `walk` \(8\), `run` \(8\), `jump` \(6\), `fall` \(6\), `attack` \(6\), `hurt` \(5\) y `dead` \(6\)/u);
   assert.match(interactions, /Caminar y correr son ciclos diferentes/u);
+  assert.match(interactions, /`\?qa=TitleScene`[\s\S]*`DarknessBossScene`/u);
+  assert.match(interactions, /`&qaLevel=jungla`/u);
+  assert.match(interactions, /`&qaOneHit=1`[\s\S]*`DarknessBossScene`/u);
+  assert.match(interactions, /se desplaza la tanda completa[\s\S]*sin comprimir/u);
   assert.match(acceptance, /Ningún poder destruye, oculta, desplaza ni desactiva el suelo o las plataformas/u);
   assert.match(acceptance, /Una plataforma elevada se atraviesa desde abajo/u);
   assert.match(acceptance, /`Tab` y `Mayús \+ Tab`[\s\S]*`Enter` y `Espacio`/u);
+  assert.match(acceptance, /Landing → diálogo → Título[\s\S]*La Jungla → La Oscuridad/u);
+  assert.match(acceptance, /cinco pads: izquierda, derecha, bajar \(`▼`\), salto y ataque/u);
+  assert.match(artBible, /Landing web \| 23 derivados optimizados/u);
+  assert.match(artBible, /La Oscuridad:[\s\S]*`SHIFT`[\s\S]*`EXPOSED`[\s\S]*`DISPELLED`/u);
+  assert.match(implementation, /main\.js[^\n]*landing[\s\S]*gameBoot\.js[^\n]*Phaser/u);
+  assert.match(masterPrompt, /Landing → JUGAR → diálogo → Boot → Título/u);
+});
+
+test('visible shell and scene copy cannot regress to the pre-Phase-2 context', async () => {
+  const [main, comingSoon, shop] = await Promise.all([
+    readRepositoryFile('src/main.js'),
+    readRepositoryFile('src/scenes/ComingSoonScene.js'),
+    readRepositoryFile('src/scenes/ShopScene.js'),
+  ]);
+
+  assert.match(main, /import\.meta\.env\.DEV && params\.has\('qa'\)/u);
+  assert.match(main, /if \(!playDialog\.open\)[\s\S]*controller\.setActive\(false\)/u);
+  assert.match(comingSoon, /Las Fases 1 y 2 ya están disponibles/u);
+  assert.doesNotMatch(comingSoon, /termina en la Fase 1|createJunglePreview/u);
+  assert.match(shop, /getShopBossRewardCopy\(snapshot\.progress, gameData\.bossData\)/u);
+  assert.doesNotMatch(shop, /DERROTA AL BOSS: \+30 MONEDAS/u);
 });

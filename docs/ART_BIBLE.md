@@ -33,6 +33,7 @@ Las láminas son concept art, no spritesheets finales. No se recortan automátic
 | Boss, tenderos y Árbol | PNG raster de personaje con poses o composición runtime | `public/assets/characters/` |
 | Jungla | Nivel jugable con fondo, losetas, agua, cascada, lianas y ruinas procedurales; sin raster de producción todavía | [jungleScenery.js](../src/game/jungleScenery.js) y [createTextures.js](../src/game/createTextures.js) |
 | La Oscuridad | Sprite procedural fiel a `bosses_canonical.png`: masa negra, borde violeta, tentáculos y ojos rasgados, sin boca | [createTextures.js](../src/game/createTextures.js) |
+| Landing web | 23 derivados optimizados de láminas, dibujos, personajes y texturas; son presentación web, no spritesheets runtime | [landing-web-v1.md](../art/production/landing-web-v1.md) |
 
 Los fondos no contienen colisión. El tercio inferior debe evitar falsas plataformas, bordes transitables o salientes que compitan con el terreno real.
 
@@ -43,6 +44,7 @@ Los fondos no contienen colisión. El tercio inferior debe evitar falsas platafo
 - VUELA: `idle`, `fly`, `dive`, `attack`, `hurt` y `defeat`.
 - DA VUELTAS: `idle`, `roll`, `windup`, `hurt` y `defeat`; `DIZZY` debe leerse como vulnerable.
 - Babito Corrupto: poses diferenciadas para intro, bola de fuego, ataque superior, embestida, `RECOVER` y purificación.
+- La Oscuridad: ondulación continua en sombra, fundido y recolocación durante `SHIFT`, siluetas legibles para rasante, meteoritos, zona oscura y apagado, anillo dorado en `EXPOSED` y disipación en luciérnagas al quedar `DISPELLED`.
 
 El frame nunca modifica la hitbox. Los estados de ataque, daño, vulnerabilidad y derrota deben leerse incluso sin audio. Pausa congela el estado visual junto a la simulación.
 

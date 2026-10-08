@@ -7,14 +7,28 @@ Este archivo relaciona las iteraciones entregadas con sus cambios observables, c
 - Mantener sincronizados `README.md`, `INTERACTIONS.md`, `GAME_DESIGN.md`, `IMPLEMENTATION_SPEC.md` y `ACCEPTANCE_CRITERIA.md` cuando cambien flujo, controles, estados, persistencia o contenido jugable.
 - Añadir una entrada aquí por cada cambio observable, con el commit final y las pruebas realizadas.
 
+## Contexto integral, landing y Fase 2 reconciliados — 2026-10-08
+
+Commits [`dbe1757`](https://github.com/jorgegalindocruces/Babitos/commit/dbe1757) y [`19d6fc6`](https://github.com/jorgegalindocruces/Babitos/commit/19d6fc6), tras contrastar los cambios de game feel, Fase 2 y landing con código, datos, arte, guardado y despliegue real:
+
+- **Flujo vigente**: `ComingSoonScene` queda reservado a Ciudad. Enlaces heredados `world=jungle|jungla` entran en `GameScene(jungla)` y nunca vuelven a presentar La Jungla como futura; su copy reconoce que las Fases 1 y 2 ya son jugables.
+- **Landing fiable**: cerrar durante la primera importación de Phaser desactiva el controlador al terminar, sin juego ni foco ocultos. `?qa` solo abre el diálogo en desarrollo. Se corrigieron dimensiones intrínsecas y se añadieron regresiones de carga diferida, estructura, controles, rutas y WebP.
+- **Tienda y controles**: el puesto muestra por separado las recompensas únicas configuradas de Babito Corrupto (+30) y La Oscuridad (+40), con estado `PENDIENTE`/`COBRADA`. El panel de Controles incluye activación de menús con Espacio.
+- **Justicia de La Oscuridad**: las tandas de meteoritos se desplazan como bloque junto a los bordes y conservan siempre 150 px entre centros; una función pura impide comprimir una tanda que no quepa.
+- **Regresiones de Fase 2**: se fijan 6400 px, cuatro checkpoints, ocho enemigos, 30 monedas, dos setas, siete carteles, velo y portal; se comprueba el apoyo de todos los carteles y la persistencia Mapa → Jungla → boss2 → Tienda → Mapa con recompensa idempotente y rejuego.
+- **Contexto**: README, prompt maestro, diseño, arte, implementación, interacciones y aceptación describen el mismo recorrido. Los 23 derivados de la landing quedan inventariados en [landing-web-v1.md](../art/production/landing-web-v1.md), y las rutas QA documentan La Jungla y `DarknessBossScene` sin prometer una persistencia que el código no garantiza.
+- **Producción**: GitHub Pages está `built`, el certificado para `babitos.es`/`www.babitos.es` está aprobado y **Enforce HTTPS** activo; `www` y la URL técnica redirigen al dominio canónico.
+
+Validación: 112 pruebas automáticas, build de producción (landing 6,55 kB; chunk diferido del juego 1,47 MB) y `git diff --check`.
+
 ## Landing page con diálogo de juego — 2026-10-08
 
 Commit [`486d347`](https://github.com/jorgegalindocruces/Babitos/commit/486d347). `index.html` pasa a ser una landing page del juego:
-- **Contenido**: hero, historia del Árbol de Poder, creador y poderes, tres mundos, personajes, «Del papel al píxel» (los dibujos originales junto a su sprite) y una galería de láminas conceptuales con visor.
+- **Contenido**: hero, historia del Árbol de Poder, creador y poderes, tres mundos, personajes, ocho comparativas «Del papel al píxel» y una galería de láminas conceptuales con visor.
 - **Juego en diálogo**: `JUGAR` abre un `<dialog>`. El motor se separa en [gameBoot.js](../src/gameBoot.js) y se carga solo en ese momento: la landing usa 6.5 kB de JavaScript y el juego 1.47 MB.
 - **Cerrar el diálogo**: pausa la partida, duerme el bucle, silencia el audio y devuelve el teclado a la página. `Esc` sigue siendo la pausa del juego, y `#jugar` abre el juego directamente.
-- **Arte**: optimizado a WebP en `public/assets/landing/` (1.9 MB entre todas las imágenes, cargadas en diferido).
-- **Pruebas**: en Chrome, escritorio y móvil, sin overflow horizontal. Build de producción servida sin errores ni imágenes rotas. Ciclo abrir → jugar → `Esc` → cerrar → desplazar con teclado → reabrir en pausa.
+- **Arte**: optimizado a WebP en `public/assets/landing/` (1,9 MB); logo, hero y fondos críticos cargan de inmediato y galería/dibujos bajo el primer pliegue, en diferido.
+- **Pruebas**: 96 casos automáticos y, en Chrome, escritorio y móvil sin overflow horizontal. Build de producción servida sin errores ni imágenes rotas. Ciclo abrir → jugar → `Esc` → cerrar → desplazar con teclado → reabrir en pausa.
 
 ## Fase 2: La Jungla y La Oscuridad — 2026-10-08
 
@@ -44,7 +58,7 @@ Commit [`1b767b9`](https://github.com/jorgegalindocruces/Babitos/commit/1b767b9)
 
 Commit [`1b767b9`](https://github.com/jorgegalindocruces/Babitos/commit/1b767b9). Primera de las ideas aplazadas en la iteración anterior: los refugios dejaban al jugador sin forma de bajar sobre COME salvo caminar hasta el borde.
 
-- `S`, `↓` o el nuevo pad táctil `▼` dejan caer al Babito a través de la plataforma elevada en la que está de pie; sobre el suelo base no hacen nada. Funciona en Babilandia y en la arena del boss.
+- `S`, `↓` o el nuevo pad táctil `▼` dejan caer al Babito a través de la plataforma elevada en la que está de pie; sobre el suelo base no hacen nada. Funciona en Babilandia, La Jungla y las dos arenas de jefe.
 - [platformCollision.js](../src/game/platformCollision.js) añade `findOneWayPlatformsUnder()`, `hasClearedPlatform()` y la opción `ignore` de `shouldCollideWithTerrain()`; enemigos, monedas y boss no cambian.
 - La pulsación se encola desde `keydown`, como el salto: en el navegador, un toque de un solo frame se perdía con `JustDown`.
 - Aviso contextual único la primera vez que el Babito descansa sobre una plataforma, y la tecla aparece en Controles y en ambas pausas.
@@ -112,14 +126,14 @@ Commit [`a720de9`](https://github.com/jorgegalindocruces/Babitos/commit/a720de9)
 
 - registró `babitos.es` como dominio personalizado en la configuración de GitHub Pages;
 - añadió la URL canónica y `og:url` al documento público y actualizó los enlaces principales;
-- mantuvo `base: './'` para servir el juego desde el dominio raíz sin romper la URL técnica bajo `/Babitos/`;
+- mantuvo `base: './'` para servir el juego desde el dominio raíz y conservar compatibilidad con previews bajo subruta; con el dominio personalizado activo, la URL técnica redirige al canónico;
 - documentó los cuatro registros IPv4, los cuatro IPv6, el alias `www` y el TXT de verificación;
 - dejó explícito que los despliegues mediante GitHub Actions ignoran el archivo `CNAME` del artefacto y usan la configuración Pages del repositorio;
 - añadió una regresión documental para evitar que la URL canónica o los DNS de GitHub desaparezcan por accidente.
 
 Pruebas: 64 casos automáticos, compilación de producción y `git diff --check`.
 
-Seguimiento del 8 de octubre de 2026: los cuatro registros `A`, los cuatro `AAAA` y el alias `www` ya resuelven públicamente a GitHub Pages; el dominio raíz sirve el despliegue de `main` y `www` redirige al raíz. GitHub sigue aprovisionando el certificado (`The certificate does not exist yet`), por lo que **Enforce HTTPS** se activará cuando termine la emisión, sin modificar de nuevo los DNS correctos.
+Seguimiento documentado en [`4bfd3ce`](https://github.com/jorgegalindocruces/Babitos/commit/4bfd3ce) y verificado de nuevo el 8 de octubre de 2026: los cuatro `A`, los cuatro `AAAA` y `www` resuelven a GitHub Pages; el certificado está aprobado para `babitos.es` y `www.babitos.es`, **Enforce HTTPS** está activo, el dominio raíz responde y `www` redirige al canónico. No queda aprovisionamiento pendiente.
 
 ## Movimiento y acabado del Babito — 2026-10-08
 

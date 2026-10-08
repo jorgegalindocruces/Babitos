@@ -10,6 +10,7 @@ Este documento define la visión completa. No todo el flujo está implementado t
 
 | Contenido | Estado en 0.2 |
 |---|---|
+| Landing web y juego en diálogo | Implementado con carga diferida |
 | Título, Creador, selección de poder e Intro | Implementado |
 | Babilandia, seis encuentros y checkpoints | Jugable |
 | Babito Corrupto | Jugable |
@@ -23,7 +24,7 @@ El comportamiento implementado se documenta en [INTERACTIONS.md](INTERACTIONS.md
 
 ## Flujo actual
 
-Título → Creador → Poder → Intro → Babilandia → Babito Corrupto → Tienda → Mapa → Jungla → La Oscuridad → Tienda → Mapa. La tienda ofrece `CONTINUAR AL MAPA` como salida principal. Desde el mapa se puede rejugar Babilandia, entrar en La Jungla en cuanto la Fase 1 está completa (y rejugarla después), visitar la tienda, volver al título o ver el avance de Ciudad.
+Landing → `JUGAR` → diálogo → Título → Creador → Poder → Intro → Babilandia → Babito Corrupto → Tienda → Mapa → Jungla → La Oscuridad → Tienda → Mapa. La tienda ofrece `CONTINUAR AL MAPA` como salida principal. Desde el mapa se puede rejugar Babilandia, entrar en La Jungla en cuanto la Fase 1 está completa (y rejugarla después), visitar la tienda, volver al título o ver el avance de Ciudad.
 
 ## Flujo objetivo
 
@@ -47,7 +48,7 @@ Los poderes no se compran. Babicoins equivalen a apariencia; Manzanas de Poder e
 - VUELA: murciélago morado, menor que el Babito, aparece solo o en pareja, vuela y ataca en picado.
 - DA VUELTAS: bola verde con pinchos, rueda y después queda mareado. Solo es vulnerable durante ese estado.
 
-Cada enemigo puede soltar 0, 1 o 2 monedas. En Babilandia, solo el ataque activo de cada enemigo causa daño y el portal se abre al superar los seis encuentros. DA VUELTAS apunta su giro hacia el Babito para que el peligro sea legible.
+Cada enemigo puede soltar 0, 1 o 2 monedas. En las dos fases, solo el ataque activo de cada enemigo causa daño y el portal se abre al superar todos los encuentros: seis en Babilandia y ocho en La Jungla. DA VUELTAS apunta su giro hacia el Babito para que el peligro sea legible.
 
 ## Jefes
 
@@ -81,9 +82,9 @@ HUD: corazones, monedas, poder activo, encuentros y pausa; durante el boss añad
 
 - Daño: retroceso, breve invulnerabilidad y parpadeo.
 - Checkpoint: guarda posición y restaura la vida.
-- Caída no fatal en Babilandia o en un foso de La Jungla: intenta restar un corazón y reaparece en el último checkpoint; la invulnerabilidad evita daño repetido inmediato.
-- Game Over en Babilandia: reintenta desde el checkpoint con vida completa.
-- Game Over contra el boss: reinicia el encuentro completo.
+- Caída no fatal fuera del mundo o en un foso de La Jungla: intenta restar un corazón y reaparece en el último checkpoint; la invulnerabilidad evita daño repetido inmediato.
+- Game Over en Babilandia o La Jungla: reintenta desde el checkpoint con vida completa.
+- Game Over contra cualquiera de los dos bosses: reinicia el encuentro completo.
 - Pausa: congela simulación y animaciones; permite continuar o volver al título.
 
 El suelo y las plataformas son cuerpos de colisión independientes de los fondos. El suelo base es sólido; las plataformas elevadas son unidireccionales, se atraviesan desde abajo, sostienen al caer desde arriba y el jugador puede dejarse caer a través de ellas con `↓`, lo que convierte los refugios en posiciones de las que se sale a voluntad para castigar a COME desde abajo. Los poderes solo pueden destruir su propio proyectil al impactar; nunca eliminan terreno.
