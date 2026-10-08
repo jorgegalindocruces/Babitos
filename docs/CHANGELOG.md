@@ -9,7 +9,7 @@ Este archivo relaciona las iteraciones entregadas con sus cambios observables, c
 
 ## Fase 2: La Jungla y La Oscuridad — 2026-10-08
 
-Pendiente de commit. La Jungla deja de ser una pantalla de avance y se convierte en la Fase 2 jugable, con su jefe.
+Commit [`1b767b9`](https://github.com/jorgegalindocruces/Babitos/commit/1b767b9). La Jungla deja de ser una pantalla de avance y se convierte en la Fase 2 jugable, con su jefe.
 
 - **Motor de niveles**: `GameScene` carga cualquier nivel del nuevo registro [levels/index.js](../src/data/levels/index.js) (fondo, texturas, recompensas, anuncio y jefe de destino) y resuelve el nivel desde el progreso guardado. Babilandia no cambia.
 - **La Jungla** ([jungla.json](../src/data/levels/jungla.json)): 6400 px en tres tramos (Raíces, Puentes de cuerda, Ruinas en penumbra), cuatro checkpoints, ocho encuentros y 30 Babicoins colocadas (`jungla:coin:`). Es la primera fase con fosos: todos se saltan (≤ 160 px) o se cruzan por puentes, y caer cuesta un corazón. Añade setas saltarinas (mantener el salto lanza más alto), pilares de ruinas sólidos y una oscuridad progresiva con halo sobre el Babito. Ambientación procedural en [jungleScenery.js](../src/game/jungleScenery.js).
@@ -29,11 +29,11 @@ Pendiente de commit. La Jungla deja de ser una pantalla de avance y se convierte
 
 ## Babito nítido en menús — 2026-10-08
 
-Pendiente de commit. El Babito se veía borroso en Título y Creador. Su arte de 48 px se dibujaba con formas vectoriales bajo una escala fraccionaria: el 62 % de los píxeles quedaba semitransparente y aparecían franjas de colores mezclados, que la ampliación ×4/×3 hacía evidentes. Ahora cada capa se dibuja a tamaño nativo, se copia con muestreo *nearest* y su alfa se binariza: el cuerpo pasa de 210 colores mezclados a 6 limpios. Se comprobaron las 51 poses con accesorios en la hoja completa.
+Commit [`1b767b9`](https://github.com/jorgegalindocruces/Babitos/commit/1b767b9). El Babito se veía borroso en Título y Creador. Su arte de 48 px se dibujaba con formas vectoriales bajo una escala fraccionaria: el 62 % de los píxeles quedaba semitransparente y aparecían franjas de colores mezclados, que la ampliación ×4/×3 hacía evidentes. Ahora cada capa se dibuja a tamaño nativo, se copia con muestreo *nearest* y su alfa se binariza: el cuerpo pasa de 210 colores mezclados a 6 limpios. Se comprobaron las 51 poses con accesorios en la hoja completa.
 
 ## Bajar de plataformas con ↓ — 2026-10-08
 
-Pendiente de commit. Primera de las ideas aplazadas en la iteración anterior: los refugios dejaban al jugador sin forma de bajar sobre COME salvo caminar hasta el borde.
+Commit [`1b767b9`](https://github.com/jorgegalindocruces/Babitos/commit/1b767b9). Primera de las ideas aplazadas en la iteración anterior: los refugios dejaban al jugador sin forma de bajar sobre COME salvo caminar hasta el borde.
 
 - `S`, `↓` o el nuevo pad táctil `▼` dejan caer al Babito a través de la plataforma elevada en la que está de pie; sobre el suelo base no hacen nada. Funciona en Babilandia y en la arena del boss.
 - [platformCollision.js](../src/game/platformCollision.js) añade `findOneWayPlatformsUnder()`, `hasClearedPlatform()` y la opción `ignore` de `shouldCollideWithTerrain()`; enemigos, monedas y boss no cambian.
