@@ -45,6 +45,7 @@ const ESSENTIAL_LINK_TARGETS = Object.freeze([
   'src/game/jungleScenery.js',
   'src/game/platformCollision.js',
   'src/ui/Button.js',
+  'src/ui/textQuality.js',
   'src/ui/touchControls.js',
   'src/state/SaveStore.js',
   'public/assets/landing/logo.webp',
@@ -238,6 +239,10 @@ test('scope and critical gameplay invariants are explicit', async () => {
   assert.match(acceptance, /cinco pads: izquierda, derecha, bajar \(`▼`\), salto y ataque/u);
   assert.match(acceptance, /un ancho total no superior a 1,35 veces el cuerpo/u);
   assert.match(acceptance, /transparencia binaria y escala nearest 4×/u);
+  assert.match(acceptance, /Ningún `fontSize` visible[\s\S]*menor de 12 px/u);
+  assert.match(interactions, /texturas Canvas de texto usan filtro linear[\s\S]*cada cambio/u);
+  assert.match(implementation, /updateText\(\)[\s\S]*sprites y fondos siguen en nearest/u);
+  assert.match(artBible, /texto visible parte de 12 px[\s\S]*texturas tipográficas usan linear/u);
   assert.match(artBible, /Landing web \| 23 derivados optimizados/u);
   assert.match(artBible, /La Oscuridad:[\s\S]*`SHIFT`[\s\S]*`EXPOSED`[\s\S]*`DISPELLED`/u);
   assert.match(implementation, /main\.js[^\n]*landing[\s\S]*gameBoot\.js[^\n]*Phaser/u);

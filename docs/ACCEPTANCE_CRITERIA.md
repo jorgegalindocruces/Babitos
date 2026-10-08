@@ -9,7 +9,8 @@ Estos criterios validan el vertical slice 0.2 descrito en [INTERACTIONS.md](INTE
 - La landing carga sin Phaser (menos de 10 kB de JavaScript propio) y sin overflow horizontal a 390 px; todas sus imágenes resuelven y reservan sus dimensiones reales. `JUGAR` abre el diálogo y arranca el juego; `Esc` pausa sin cerrar; `✕` congela el estado y devuelve el teclado a la página; cerrar durante la primera carga no deja el juego avanzando ni tomando foco detrás de la portada. Reabrir gameplay espera en `PAUSA`; reabrir un menú continúa ese mismo menú.
 - El visor de arte abre cada marco ampliable, actualiza imagen/caption y se cierra con `✕`, `Esc` nativo o clic en el backdrop. El control `⛶` solicita pantalla completa; en móvil el diálogo ocupa el viewport y en vertical muestra la recomendación de girar.
 - Con espacio suficiente, el canvas interno y su rectángulo CSS miden exactamente 960 × 540; no existe ampliación fraccionaria de escritorio. En una pantalla menor conserva 16:9 sin overflow horizontal o vertical.
-- Silkscreen y Nunito se solicitan antes de crear Phaser. Títulos, cuerpo, etiquetas, botones y avisos usan la política común de resolución de texto.
+- Silkscreen y Nunito se solicitan antes de crear Phaser. Títulos, cuerpo, etiquetas, botones y avisos usan resolución interna de hasta 2× y filtro linear, incluso después de `setText`, `setColor`, `setFontSize` o la llegada tardía de una fuente; el arte conserva nearest.
+- Ningún `fontSize` visible de escenas, menús, HUD, carteles, botones o avisos es menor de 12 px. Entre 12 y 15 px el contorno automático no supera 1 px, y el texto sigue dentro de su panel al cambiar de página o estado.
 - Si un fondo raster no carga, su escena conserva un fallback visible y jugable.
 - Una partida ausente, antigua o parcialmente inválida se normaliza sin impedir el arranque.
 
@@ -108,7 +109,7 @@ Estos criterios validan el vertical slice 0.2 descrito en [INTERACTIONS.md](INTE
 - El catálogo muestra seis objetos por página, previsualiza cada uno sobre el Babito y pagina en ambas direcciones de forma circular.
 - Una opción asequible se compra y equipa en una acción; una desbloqueada se equipa sin coste; si faltan monedas se informa la cantidad exacta.
 - Comprar descuenta una sola vez y el estado persiste tras recargar.
-- El puesto muestra Babito Corrupto (+30) y La Oscuridad (+40) por separado como recompensas de primera victoria, con estado `PENDIENTE`/`COBRADA` derivado de `claimedRewards` incluso al entrar desde el Mapa.
+- El puesto muestra `PREMIOS DE 1.ª VICTORIA`, con Babito Corrupto (+30) y La Oscuridad (+40) por separado y estado `PENDIENTE`/`COBRADA` derivado de `claimedRewards` incluso al entrar desde el Mapa; las dos líneas caben dentro del panel a 12 px.
 
 ## Animación y arte
 

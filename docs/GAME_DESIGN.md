@@ -30,6 +30,10 @@ Landing → `JUGAR` → diálogo → Título → Creador → Poder → Intro →
 
 Título → Creador → Poder → Intro → Babilandia → Babito Corrupto → Tienda → Jungla → La Oscuridad → Tienda → Ciudad Bicharraca → Boss Total → Final.
 
+## Interfaz legible
+
+El pixel art pertenece a personajes, escenarios y efectos; no debe convertir la interfaz en una textura borrosa. Todo texto visible del juego parte de 12 px, conserva contraste y contorno proporcionado y sigue siendo legible cuando cambia el HUD, la página de la tienda o un estado de combate.
+
 ## Creador
 
 Capas independientes: `body`, `eyes`, `mouth`, `arms`, `headAccessory`, `glasses` y `neckAccessory`. Ojos y bocas nunca son una cara prefabricada. La opción inicial muestra al Babito base sin sombrero y conserva la identidad de [su arte aprobado](../art/production/babito-v3.md): cuerpo casi circular, cara pequeña, aletas descendentes y pies cortos; los cosméticos se superponen sin sustituir esa construcción. Los catálogos son ampliables, con opciones gratuitas y otras comprables. Pequeño, normal y grande son cosméticos: mismo hitbox, daño, velocidad y ventajas. `¡BABITO LOCO!` randomiza opciones desbloqueadas.

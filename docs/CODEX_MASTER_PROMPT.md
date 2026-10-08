@@ -41,6 +41,7 @@ Landing → JUGAR → diálogo → Boot → Título
 - El suelo base es sólido. Las plataformas elevadas son unidireccionales: personajes y monedas las atraviesan al ascender desde abajo y aterrizan al descender, y el jugador puede dejarse caer con `↓`; los proyectiles siguen chocando con ellas.
 - La victoria purifica a Babito Corrupto y disipa a La Oscuridad en luciérnagas; cada recompensa de monedas es única.
 - La portada no carga Phaser hasta `JUGAR`; cerrar durante la primera carga también debe dejar el runtime suspendido y nunca ejecutándose detrás de la landing.
+- El arte pixel usa nearest, pero las texturas de texto usan linear persistente. No introduzcas texto visible menor de 12 px ni contornos de 2 px en tipografía de 12–15 px.
 
 ## Forma de trabajar
 

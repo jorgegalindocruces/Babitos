@@ -67,7 +67,8 @@ Todos los botones de Phaser comparten el comportamiento de [Button.js](../src/ui
 
 - El juego conserva una resolución lógica de 960 × 540. En un escritorio con espacio suficiente se muestra a 960 × 540 CSS px exactos, sin ampliación fraccionaria; en pantallas menores se reduce en 16:9 sin desbordar la ventana.
 - Silkscreen y Nunito se solicitan antes de dibujar la primera escena. Si la red retrasa una fuente, la interfaz usa un fallback temporal y vuelve a rasterizar el texto cuando termina la carga.
-- Títulos, cuerpo, etiquetas, botones y avisos comparten la misma política de resolución para evitar que unos controles se vean más borrosos que otros.
+- El arte conserva nearest. Las texturas Canvas de texto usan filtro linear y resolución interna de hasta 2×; ambas propiedades se restauran después de cada cambio de contenido, color o tamaño para que paginación, HUD y contadores no vuelvan a verse borrosos.
+- Ningún texto visible de escenas, menús, HUD, carteles o avisos se configura por debajo de 12 px. Las etiquetas de 12–15 px usan como máximo 1 px de contorno y las mayores, 2 px; los cuerpos pequeños evitan contorno.
 - Limitar un nombre o título a una anchura reduce su tamaño tipográfico a un entero; no estira ni encoge la textura ya dibujada.
 
 ## Pantalla por pantalla
@@ -215,7 +216,7 @@ La interacción del combate se implementa en [BossScene.js](../src/scenes/BossSc
 - Las flechas cambian de página de forma circular.
 - Una opción bloqueada se compra y equipa con una sola activación si hay monedas; si faltan, se informa la cantidad necesaria.
 - Una opción desbloqueada se equipa sin coste. Cada ficha previsualiza el cosmético sobre un Babito completo.
-- El puesto muestra por separado las recompensas únicas configuradas para Babito Corrupto (+30) y La Oscuridad (+40), marcadas `PENDIENTE` o `COBRADA` según el guardado; nunca presenta ambos bosses como una recompensa repetible de 30.
+- El puesto muestra bajo `PREMIOS DE 1.ª VICTORIA` las recompensas únicas configuradas para Babito Corrupto (+30) y La Oscuridad (+40), marcadas `PENDIENTE` o `COBRADA` según el guardado; nunca presenta ambos bosses como una recompensa repetible de 30.
 - Compra, desbloqueo, equipamiento y saldo se guardan inmediatamente. El CTA principal `CONTINUAR AL MAPA` guarda el destino antes del fundido y abre el mapa.
 
 ### Mapa y avances

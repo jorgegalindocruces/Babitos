@@ -7,6 +7,18 @@ Este archivo relaciona las iteraciones entregadas con sus cambios observables, c
 - Mantener sincronizados `README.md`, `INTERACTIONS.md`, `GAME_DESIGN.md`, `IMPLEMENTATION_SPEC.md` y `ACCEPTANCE_CRITERIA.md` cuando cambien flujo, controles, estados, persistencia o contenido jugable.
 - Añadir una entrada aquí por cada cambio observable, con el commit final y las pruebas realizadas.
 
+## Texto nítido y legible en toda la interfaz — 2026-10-08
+
+Commit [`f58ec45`](https://github.com/jorgegalindocruces/Babitos/commit/f58ec45). La corrección se aplica a todas las rutas comunes de texto y no solo a la Tienda:
+
+- **Causa corregida**: `pixelArt: true` mantiene sprites y fondos en nearest, pero ya no degrada las texturas Canvas de `Phaser.Text`. Cada texto restaura filtro linear y sincroniza su resolución de fuente después de cualquier rerasterizado dinámico.
+- **Jerarquía tipográfica**: escenas, HUD, menús, carteles, depuración y avisos suben a un mínimo visible de 12 px. Botones y etiquetas usan contorno proporcional: 1 px entre 12 y 15 px y 2 px desde 16 px.
+- **Tienda**: catálogo, página, saldo, nombre, CTA y puesto aumentan de tamaño. Las recompensas se compactan bajo `PREMIOS DE 1.ª VICTORIA` para conservar ambas cantidades y estados sin salirse del panel.
+- **Resto del juego**: Creador, Poder, Intro, Título, Mapa, Ciudad, letreros de fases, HUD y los dos bosses eliminan sus configuraciones anteriores de 7–11 px y reajustan espacio cuando era necesario.
+- **Regresión**: las pruebas fijan el filtro tras cada `updateText()`, la sincronización 2×, los contornos y la ausencia de tamaños autorados inferiores a 12 px.
+
+Validación: 117 pruebas automáticas, build de producción, `git diff --check` y QA visual en Tienda (incluido cambio de página), Poder, Babilandia y Babito Corrupto, sin errores de consola.
+
 ## Babito alineado con el arte canónico — 2026-10-08
 
 Commit [`fa77fc2`](https://github.com/jorgegalindocruces/Babitos/commit/fa77fc2). El protagonista deja atrás la silueta ancha y rectangular del renderer anterior y adopta la construcción de la referencia aprobada:
