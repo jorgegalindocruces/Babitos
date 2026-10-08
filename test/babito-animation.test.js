@@ -20,6 +20,11 @@ import {
   getBabitoSpringHandCenterX,
   getBabitoTransformedBounds,
 } from '../src/game/createTextures.js';
+import {
+  BABITO_BASELINE,
+  BABITO_SIZE_SCALES,
+  getBabitoBaselineOffset,
+} from '../src/game/BabitoPresentation.js';
 
 const EXPECTED_CLIPS = Object.freeze({
   idle: { start: 0, frameCount: 6, fps: 6, loop: true },
@@ -167,5 +172,20 @@ test('the richer layered renderer stays crisp and keeps spring hands inside the 
     assert.ok(bounds.maxX <= BABITO_TEXTURE_SIZE, `${pose.state}:${pose.localFrame} clips on the right`);
     assert.ok(bounds.minY >= 0, `${pose.state}:${pose.localFrame} clips on the top`);
     assert.ok(bounds.maxY <= BABITO_TEXTURE_SIZE, `${pose.state}:${pose.localFrame} clips on the bottom`);
+  }
+});
+
+test('larger Babito sizes keep integer render dimensions and one shared baseline', () => {
+  assert.deepEqual(BABITO_SIZE_SCALES, {
+    small: 1,
+    normal: 1.25,
+    large: 1.5,
+  });
+  assert.ok(BABITO_SIZE_SCALES.normal > 1);
+
+  for (const scale of Object.values(BABITO_SIZE_SCALES)) {
+    assert.equal(Number.isInteger(BABITO_RENDER_SIZE * scale), true);
+    const offset = getBabitoBaselineOffset(scale);
+    assert.ok(Math.abs(scale * (offset + BABITO_BASELINE) - BABITO_BASELINE) < 1e-9);
   }
 });

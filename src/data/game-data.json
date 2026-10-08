@@ -23,9 +23,9 @@
     "babito_corrupto": { "name": "BABITO CORRUPTO", "health": 16, "patterns": ["FIREBALL", "FROM_ABOVE", "FURY_CHARGE"], "rewardCoins": 30, "vulnerableMs": 1900 }
   },
   "bodySizes": {
-    "small": { "label": "Pequeño", "renderScale": 0.75, "hitbox": "standard" },
-    "normal": { "label": "Normal", "renderScale": 1.0, "hitbox": "standard" },
-    "large": { "label": "Grande", "renderScale": 1.25, "hitbox": "standard" }
+    "small": { "label": "Pequeño", "renderScale": 1.0, "hitbox": "standard" },
+    "normal": { "label": "Normal", "renderScale": 1.25, "hitbox": "standard" },
+    "large": { "label": "Grande", "renderScale": 1.5, "hitbox": "standard" }
   },
   "creatorCategories": ["body", "eyes", "mouth", "arms", "headAccessory", "glasses", "neckAccessory"]
 }

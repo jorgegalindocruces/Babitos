@@ -19,6 +19,7 @@ import {
   shouldIgnoreEnemyClipIfPlaying,
 } from '../src/game/EnemyAnimations.js';
 import { getEnemyPatrolDirection, getEnemyWallDirection } from '../src/game/EnemyBehavior.js';
+import { getEnemyVisualAnchor, getEnemyVisualTop } from '../src/game/EnemyPresentation.js';
 import {
   BOSS_POSE_CLIPS,
   sampleBossPose,
@@ -193,6 +194,20 @@ test('enemy defeat presentation clears transient squash, alpha and tint', () => 
     ['tint'],
   ]);
   assert.equal(resetEnemyVisualForDefeat({ active: false }), false);
+});
+
+test('COME stays foot-anchored to terrain at every squash height', () => {
+  const anchor = getEnemyVisualAnchor('come', { y: 446, body: { bottom: 480 } });
+  assert.deepEqual(anchor, { originY: 1, y: 480 });
+  for (const displayHeight of [118, 118 * 0.94, 118 * 0.9]) {
+    const top = getEnemyVisualTop(anchor.y, displayHeight, anchor.originY);
+    assert.equal(top + displayHeight, 480);
+  }
+
+  assert.deepEqual(
+    getEnemyVisualAnchor('vuela', { y: 270, body: { bottom: 286 } }),
+    { originY: 0.5, y: 270 },
+  );
 });
 
 test('boss animation samples stepped poses and loops each combat state', () => {

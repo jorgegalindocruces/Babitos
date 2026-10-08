@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import gameData from '../src/data/game-data.json' with { type: 'json' };
 import cosmetics from '../src/data/cosmetics.json' with { type: 'json' };
 import babilandia from '../src/data/levels/babilandia.json' with { type: 'json' };
+import { BABITO_SIZE_SCALES } from '../src/game/BabitoPresentation.js';
 
 test('creator keeps eyes and mouth as independent complete categories', () => {
   assert.ok(gameData.creatorCategories.includes('eyes'));
@@ -55,6 +56,13 @@ test('small, normal and large change render scale but share one hitbox contract'
   const scales = new Set(Object.values(gameData.bodySizes).map((size) => size.renderScale));
   assert.deepEqual([...hitboxes], ['standard']);
   assert.equal(scales.size, 3);
+  assert.deepEqual(
+    Object.fromEntries(
+      Object.entries(gameData.bodySizes).map(([id, definition]) => [id, definition.renderScale]),
+    ),
+    BABITO_SIZE_SCALES,
+  );
+  assert.ok(gameData.bodySizes.normal.renderScale > 1);
 });
 
 test('the three initial powers preserve their canonical behavior', () => {

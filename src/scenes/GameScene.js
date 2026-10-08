@@ -5,8 +5,13 @@ import { EnemyController } from '../game/EnemyController.js';
 import { enemyUsesPlatformCollision } from '../game/EnemyAnimations.js';
 import { BABITO_ANIMATION_CLIPS } from '../game/BabitoAnimations.js';
 import { PlayerController } from '../game/PlayerController.js';
+import { shouldCollideWithTerrain } from '../game/platformCollision.js';
 import { isPowerProjectile, makeImpact } from '../game/PowerSystem.js';
-import { placeOnSurface, TUTORIAL_SIGN_STYLE } from '../game/surfaceAnchoring.js';
+import {
+  findSupportingSurface,
+  placeOnSurface,
+  TUTORIAL_SIGN_STYLE,
+} from '../game/surfaceAnchoring.js';
 import { createButton, focusGameCanvas } from '../ui/Button.js';
 import { TEXT_METRICS_REFRESH_EVENT } from '../ui/textQuality.js';
 import {
@@ -146,7 +151,16 @@ export class GameScene extends Phaser.Scene {
           enemy.stateBadge?.setVisible(false);
         }
         const qaX = 390;
-        const qaY = qaEnemy.type === 'vuela' ? 270 : 420;
+        let qaY = qaEnemy.type === 'vuela' ? 270 : qaEnemy.sprite.y;
+        if (qaEnemy.type !== 'vuela') {
+          const support = findSupportingSurface(this.level.platforms, {
+            x: qaX,
+            width: qaEnemy.sprite.body.width,
+            kinds: ['ground'],
+          });
+          const bodyBottomOffset = qaEnemy.sprite.body.bottom - qaEnemy.sprite.y;
+          if (support) qaY = support.surfaceY - bodyBottomOffset;
+        }
         qaEnemy.home.set(qaX, qaY);
         qaEnemy.sprite.setPosition(qaX, qaY);
         const applied = qaEnemy.setQaPresentation(
@@ -310,7 +324,12 @@ export class GameScene extends Phaser.Scene {
       this.enemyControllers.push(controller);
       this.enemySprites.add(controller.sprite);
       if (enemyUsesPlatformCollision(controller.type)) {
-        this.physics.add.collider(controller.sprite, this.platforms);
+        this.physics.add.collider(
+          controller.sprite,
+          this.platforms,
+          null,
+          shouldCollideWithTerrain,
+        );
       }
     }
   }
@@ -328,7 +347,12 @@ export class GameScene extends Phaser.Scene {
   }
 
   createPhysicsInteractions() {
-    this.physics.add.collider(this.coins, this.platforms);
+    this.physics.add.collider(
+      this.coins,
+      this.platforms,
+      null,
+      shouldCollideWithTerrain,
+    );
     this.physics.add.collider(this.projectiles, this.platforms, (first, second) => {
       const projectile = isPowerProjectile(first) ? first : (isPowerProjectile(second) ? second : null);
       if (!projectile?.active) return;

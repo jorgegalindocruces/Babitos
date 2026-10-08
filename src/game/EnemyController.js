@@ -15,6 +15,7 @@ import {
   shouldIgnoreEnemyClipIfPlaying,
 } from './EnemyAnimations.js';
 import { getEnemyPatrolDirection, getEnemyWallDirection } from './EnemyBehavior.js';
+import { getEnemyVisualAnchor, getEnemyVisualTop } from './EnemyPresentation.js';
 
 const TEXTURES = {
   come: 'enemy_come',
@@ -89,6 +90,8 @@ export class EnemyController {
       sheet.key,
       getEnemyFrameName(this.type, 0, 0),
     ).setDepth(10).setDisplaySize(visualSize.width, visualSize.height);
+    const visualAnchor = getEnemyVisualAnchor(this.type, this.sprite);
+    this.visual.setOrigin(0.5, visualAnchor.originY);
     this.visualBaseScale = { x: this.visual.scaleX, y: this.visual.scaleY };
     this.activeClip = null;
     this.hurtUntil = 0;
@@ -207,16 +210,20 @@ export class EnemyController {
 
   syncVisual() {
     if (!this.visual?.active || !this.sprite?.active) return;
+    const anchor = getEnemyVisualAnchor(this.type, this.sprite);
     this.visual
-      .setPosition(this.sprite.x, this.sprite.y)
+      .setPosition(this.sprite.x, anchor.y)
       .setRotation(this.sprite.rotation)
       .setFlipX(this.direction < 0);
+    this.stateBadge?.setPosition(
+      this.sprite.x,
+      getEnemyVisualTop(this.visual.y, this.visual.displayHeight, this.visual.originY) - 12,
+    );
+    this.stateBadge?.setFlipX(false);
   }
 
   update() {
     if (this.dead || !this.sprite.active) return;
-    this.stateBadge?.setPosition(this.sprite.x, this.sprite.y - this.sprite.displayHeight * 0.65 - 12);
-    this.stateBadge?.setFlipX(false);
     if (this.qaPresentation) {
       this.applyQaPresentation();
       return;

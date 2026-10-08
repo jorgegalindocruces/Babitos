@@ -6,6 +6,7 @@ import {
   selectBabitoLocomotionState,
 } from './BabitoAnimations.js';
 import { getPower, launchPower } from './PowerSystem.js';
+import { shouldCollideWithTerrain } from './platformCollision.js';
 
 const ATTACK_ANIMATION_MS = getBabitoAnimationDurationMs('attack');
 const HURT_ANIMATION_MS = getBabitoAnimationDurationMs('hurt');
@@ -69,7 +70,12 @@ export class PlayerController {
     this.body.body.setSize(this.config.hitbox.width, this.config.hitbox.height, true);
     this.body.body.setMaxVelocity(360, 760);
     this.body.setDragX(1350);
-    this.collider = scene.physics.add.collider(this.body, platforms);
+    this.collider = scene.physics.add.collider(
+      this.body,
+      platforms,
+      null,
+      shouldCollideWithTerrain,
+    );
 
     this.avatar = new BabitoAvatar(scene, x, y, save.appearance, save.size);
     this.keys = scene.input.keyboard.addKeys({

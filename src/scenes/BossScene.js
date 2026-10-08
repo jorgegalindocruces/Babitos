@@ -3,6 +3,7 @@ import gameData from '../data/game-data.json';
 import { BabitoAvatar } from '../game/BabitoAvatar.js';
 import { BossAnimator } from '../game/BossAnimator.js';
 import { PlayerController } from '../game/PlayerController.js';
+import { shouldCollideWithTerrain } from '../game/platformCollision.js';
 import { createTextures, TEXTURE_KEYS } from '../game/createTextures.js';
 import {
   getPower,
@@ -204,9 +205,9 @@ export class BossScene extends Phaser.Scene {
 
   createArena() {
     this.platformDefinitions = [
-      { x: 480, y: 511, width: 960, height: 58, texture: TEXTURE_KEYS.tileStone, floor: true },
-      { x: 288, y: 376, width: 176, height: 20, texture: TEXTURE_KEYS.tileStone },
-      { x: 666, y: 352, width: 170, height: 20, texture: TEXTURE_KEYS.tileStone },
+      { x: 480, y: 511, width: 960, height: 58, texture: TEXTURE_KEYS.tileStone, floor: true, kind: 'ground' },
+      { x: 288, y: 376, width: 176, height: 20, texture: TEXTURE_KEYS.tileStone, kind: 'platform' },
+      { x: 666, y: 352, width: 170, height: 20, texture: TEXTURE_KEYS.tileStone, kind: 'platform' },
     ];
     this.platforms = this.physics.add.staticGroup();
 
@@ -217,7 +218,7 @@ export class BossScene extends Phaser.Scene {
         definition.width,
         definition.height,
         definition.texture,
-      ).setDepth(4).setData('isPlatform', true);
+      ).setDepth(4).setData({ isPlatform: true, kind: definition.kind });
       this.platforms.add(platform);
       definition.gameObject = platform;
     }
@@ -270,7 +271,12 @@ export class BossScene extends Phaser.Scene {
 
   createPhysicsInteractions() {
     this.physicsLinks.push(
-      this.physics.add.collider(this.boss, this.platforms, () => this.handleBossLanding()),
+      this.physics.add.collider(
+        this.boss,
+        this.platforms,
+        () => this.handleBossLanding(),
+        shouldCollideWithTerrain,
+      ),
       this.physics.add.collider(this.playerProjectiles, this.platforms, (first, second) => {
         const projectile = isPowerProjectile(first) ? first : (isPowerProjectile(second) ? second : null);
         if (!projectile?.active) return;

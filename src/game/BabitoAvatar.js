@@ -7,12 +7,12 @@ import {
   createTextures,
   sampleBabitoAnimationFrame,
 } from './createTextures.js';
+import {
+  BABITO_SIZE_SCALES,
+  getBabitoBaselineOffset,
+} from './BabitoPresentation.js';
 
-export const BABITO_SIZE_SCALES = Object.freeze({
-  small: 0.75,
-  normal: 1,
-  large: 1.25,
-});
+export { BABITO_SIZE_SCALES } from './BabitoPresentation.js';
 
 export const DEFAULT_BABITO_APPEARANCE = Object.freeze({
   body: 'body_cyan',
@@ -317,9 +317,7 @@ export class BabitoAvatar extends Phaser.GameObjects.Container {
   }
 
   _alignVisualBaseline(scale = 1) {
-    const safeScale = Math.max(0.01, Number(scale) || 1);
-    const baseline = 20;
-    this.visualRoot?.setY((baseline / safeScale) - baseline);
+    this.visualRoot?.setY(getBabitoBaselineOffset(scale));
   }
 
   /**
