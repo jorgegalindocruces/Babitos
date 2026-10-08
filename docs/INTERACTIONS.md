@@ -147,11 +147,11 @@ La interacción del combate se implementa en [BossScene.js](../src/scenes/BossSc
 - Las flechas cambian de página de forma circular.
 - Una opción bloqueada se compra y equipa con una sola activación si hay monedas; si faltan, se informa la cantidad necesaria.
 - Una opción desbloqueada se equipa sin coste. Cada ficha previsualiza el cosmético sobre un Babito completo.
-- Compra, desbloqueo, equipamiento y saldo se guardan inmediatamente. `VOLVER AL MAPA` abre el mapa.
+- Compra, desbloqueo, equipamiento y saldo se guardan inmediatamente. El CTA principal `CONTINUAR AL MAPA` guarda el destino antes del fundido y abre el mapa.
 
 ### Mapa y avances
 
-- `BABILANDIA` permite rejugar la Fase 1 desde el checkpoint guardado; `NUEVA AVENTURA` es la acción que devuelve el checkpoint al inicio.
+- La tarjeta de `BABILANDIA` muestra una acción visible para jugar o rejugar la Fase 1. Al activarla guarda `babilandia`, reinicia solo el checkpoint a `start` y entra desde el principio; conserva poder, finalización, recompensas, monedas y colección.
 - `IR A LA TIENDA` vuelve al catálogo y `VOLVER AL TÍTULO` vuelve al inicio.
 - `LA JUNGLA` y `CIUDAD BICHARRACA` abren pantallas descriptivas marcadas `PRÓXIMAMENTE`; la única acción allí es `VOLVER AL MAPA`.
 - Ciudad Bicharraca usa su fondo raster también en la previsualización. La Jungla mantiene por ahora una composición procedural.

@@ -23,7 +23,7 @@ TitleScene → CreatorScene → PowerScene → IntroScene
                                                     └→ ComingSoonScene
 ```
 
-`WorldMapScene` también vuelve a Tienda, Título o `GameScene`. `ComingSoonScene` recibe `world: 'jungle' | 'city'` y solo ofrece volver al mapa. Las escenas dejan como estados estables `creator`, `power`, `intro`, `babilandia`, `boss1`, `shop`, `map`, `jungle` y `city`; el mapa escribe además `game` durante la transición a Babilandia. Título reconoce ambas variantes y aliases de compatibilidad como `boss` y `world-map`.
+`WorldMapScene` también vuelve a Tienda, Título o `GameScene`. `ComingSoonScene` recibe `world: 'jungle' | 'city'` y solo ofrece volver al mapa. Las escenas dejan como estados estables `creator`, `power`, `intro`, `babilandia`, `boss1`, `shop`, `map`, `jungle` y `city`; [progressionFlow.js](../src/state/progressionFlow.js) persiste `map` al salir de Tienda y `babilandia` con `checkpoint: 'start'` antes de iniciar una rejugada. Título conserva aliases de compatibilidad como `game`, `boss` y `world-map`.
 
 ## Datos y estado
 

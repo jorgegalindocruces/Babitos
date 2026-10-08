@@ -21,7 +21,7 @@ El comportamiento implementado se documenta en [INTERACTIONS.md](INTERACTIONS.md
 
 ## Flujo actual
 
-Título → Creador → Poder → Intro → Babilandia → Babito Corrupto → Tienda → Mapa. Desde el mapa se puede rejugar Babilandia, visitar la tienda, volver al título o ver los avances de Jungla y Ciudad.
+Título → Creador → Poder → Intro → Babilandia → Babito Corrupto → Tienda → Mapa. La tienda ofrece `CONTINUAR AL MAPA` como salida principal. Desde el mapa se puede rejugar Babilandia desde el inicio sin perder la colección ni la finalización, visitar la tienda, volver al título o ver los avances de Jungla y Ciudad.
 
 ## Flujo objetivo
 

@@ -18,7 +18,8 @@ Estos criterios validan el vertical slice 0.2 descrito en [INTERACTIONS.md](INTE
 - `NUEVA AVENTURA` exige confirmación; reinicia historia, checkpoint y poder, pero conserva Babito, nombre, tamaño, monedas, cosméticos y recompensas ya cobradas.
 - La selección de poder, checkpoint, monedas, compras, equipamiento y progreso sobreviven a una recarga.
 - La recompensa de 30 monedas de Babito Corrupto solo se puede reclamar una vez, incluso al comenzar otra aventura.
-- Mapa permite rejugar Babilandia, volver a Tienda o Título y abrir los avances estáticos de Jungla y Ciudad; cada avance permite volver al Mapa.
+- Tienda muestra `CONTINUAR AL MAPA` como CTA principal y persiste `map` antes de iniciar la transición.
+- Mapa presenta Babilandia como una acción jugable, permite rejugarla desde `start` sin borrar poder, finalización ni colección, vuelve a Tienda o Título y abre los avances estáticos de Jungla y Ciudad; cada avance permite volver al Mapa.
 
 ## Menús e input
 

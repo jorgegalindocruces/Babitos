@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { BabitoAvatar } from '../game/BabitoAvatar.js';
 import { TEXTURE_KEYS, createTextures } from '../game/createTextures.js';
 import { CREATOR_CATEGORIES, getCategoryItems } from '../state/catalog.js';
+import { enterWorldMap } from '../state/progressionFlow.js';
 import { createButton } from '../ui/Button.js';
 import {
   addPixelBackground,
@@ -69,23 +70,25 @@ export class ShopScene extends Phaser.Scene {
 
     this.createCoinHud();
     this.createShopCounter();
+
+    this.mapButton = createButton(this, {
+      x: 480,
+      y: 500,
+      width: 330,
+      height: 46,
+      label: 'CONTINUAR AL MAPA  ›',
+      variant: 'primary',
+      fontSize: '13px',
+      accessibleLabel: 'Continuar al mapa de mundos',
+      onPress: () => {
+        enterWorldMap(this.store);
+        transitionToScene(this, 'WorldMapScene', {}, {
+          announcement: 'Continuando al mapa de mundos',
+        });
+      },
+    });
     this.createCatalogPanel();
     this.renderCatalogPage();
-
-    createButton(this, {
-      x: 151,
-      y: 500,
-      width: 232,
-      height: 42,
-      label: '‹ VOLVER AL MAPA',
-      variant: 'ghost',
-      fontSize: '13px',
-      autoFocus: false,
-      accessibleLabel: 'Volver al mapa de mundos',
-      onPress: () => transitionToScene(this, 'WorldMapScene', {}, {
-        announcement: 'Volviendo al mapa de mundos',
-      }),
-    });
 
     announce(`Tienda Babita. ${this.catalogItems.length} cosméticos en ${this.pageCount} páginas.`);
     fadeIn(this);

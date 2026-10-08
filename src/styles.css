@@ -172,8 +172,10 @@ body {
   }
   .game-topline { display: none; }
   .audio-toggle {
-    top: auto;
-    bottom: 5px;
+    top: 5px;
+    bottom: auto;
+    left: 6px;
+    transform: none;
     min-width: 74px;
     padding: 5px 8px;
     font-size: 8px;

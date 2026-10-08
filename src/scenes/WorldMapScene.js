@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { BabitoAvatar } from '../game/BabitoAvatar.js';
 import { TEXTURE_KEYS, createTextures } from '../game/createTextures.js';
+import { replayPhaseOne } from '../state/progressionFlow.js';
 import { createButton } from '../ui/Button.js';
 import {
   addPixelBackground,
@@ -123,13 +124,19 @@ export class WorldMapScene extends Phaser.Scene {
       width: 250,
       height: 242,
       radius: 16,
-      label: `${this.phaseComplete ? '✓ COMPLETADO' : 'DISPONIBLE'}\nBABILANDIA\nFASE 1`,
+      label: this.phaseComplete
+        ? '✓ FASE 1 COMPLETA\nBABILANDIA\nREJUGAR DESDE EL INICIO'
+        : '▶ FASE 1 DISPONIBLE\nBABILANDIA\nJUGAR DESDE EL INICIO',
       variant: this.phaseComplete ? 'primary' : 'secondary',
-      fontSize: '16px',
-      accessibleLabel: `${this.phaseComplete ? 'Completado' : 'Disponible'}, Babilandia fase 1. Jugar de nuevo.`,
+      fontSize: '13px',
+      accessibleLabel: this.phaseComplete
+        ? 'Fase 1 completada. Rejugar Babilandia desde el inicio.'
+        : 'Fase 1 disponible. Jugar Babilandia desde el inicio.',
       onPress: () => {
-        this.store.setProgress({ scene: 'game' });
-        transitionToScene(this, 'GameScene', {}, { announcement: 'Entrando en Babilandia' });
+        replayPhaseOne(this.store);
+        transitionToScene(this, 'GameScene', {}, {
+          announcement: 'Entrando en Babilandia desde el inicio',
+        });
       },
     });
     babilandiaButton.labelText.setY(72);
