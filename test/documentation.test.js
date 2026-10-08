@@ -177,7 +177,8 @@ test('scope and critical gameplay invariants are explicit', async () => {
 
   assert.match(gameDesign, /La Jungla y Ciudad Bicharraca[\s\S]*Pantallas de avance estáticas/u);
   assert.match(interactions, /un poder nunca destruye, oculta ni desactiva suelo o plataformas/u);
-  assert.match(interactions, /`idle`, `walk`, `jump`, `fall`, `attack`, `hurt` y `dead`/u);
+  assert.match(interactions, /`idle` \(6 frames\), `walk` \(8\), `run` \(8\), `jump` \(6\), `fall` \(6\), `attack` \(6\), `hurt` \(5\) y `dead` \(6\)/u);
+  assert.match(interactions, /Caminar y correr son ciclos diferentes/u);
   assert.match(acceptance, /Ningún poder destruye, oculta, desplaza ni desactiva el suelo o las plataformas/u);
   assert.match(acceptance, /`Tab` y `Mayús \+ Tab`[\s\S]*`Enter` y `Espacio`/u);
 });

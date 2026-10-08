@@ -28,7 +28,7 @@ Las láminas son concept art, no spritesheets finales. No se recortan automátic
 | Ciudad Bicharraca | Fondo raster 16:9 y recorte dentro de su pantalla de avance, con fallback | [ciudad-bicharraca-v1.md](../art/production/ciudad-bicharraca-v1.md) |
 | COME | Spritesheet raster por estados | [enemy-come-sheet-v3.png](../public/assets/characters/enemy-come-sheet-v3.png) |
 | VUELA y DA VUELTAS | Spritesheets procedurales temporales | [EnemyAnimations.js](../src/game/EnemyAnimations.js) |
-| Babito | Capas cosméticas procedurales sincronizadas por frame | [BabitoAvatar.js](../src/game/BabitoAvatar.js) |
+| Babito | Atlas procedural de 64 px, 51 poses y capas cosméticas sincronizadas | [BabitoAnimations.js](../src/game/BabitoAnimations.js) y [BabitoAvatar.js](../src/game/BabitoAvatar.js) |
 | Boss, tenderos y Árbol | PNG raster de personaje con poses o composición runtime | `public/assets/characters/` |
 | Jungla | Composición procedural de avance | Roadmap de arte |
 
@@ -36,7 +36,7 @@ Los fondos no contienen colisión. El tercio inferior debe evitar falsas platafo
 
 ## Contrato de animación
 
-- Babito: `idle`, `walk`, `jump`, `fall`, `attack`, `hurt` y `dead`, cuatro frames por clip. Todas sus capas cosméticas usan el mismo frame.
+- Babito: `idle` (6), `walk` (8), `run` (8), `jump` (6), `fall` (6), `attack` (6), `hurt` (5) y `dead` (6), 51 frames en total. `walk` y `run` tienen ciclos y siluetas propios; todas las capas cosméticas usan exactamente el mismo frame.
 - COME: `idle`, `walk`, `attack`, `hurt` y `defeat`.
 - VUELA: `idle`, `fly`, `dive`, `attack`, `hurt` y `defeat`.
 - DA VUELTAS: `idle`, `roll`, `windup`, `hurt` y `defeat`; `DIZZY` debe leerse como vulnerable.
@@ -47,6 +47,7 @@ El frame nunca modifica la hitbox. Los estados de ataque, daño, vulnerabilidad 
 ## Color, escala y legibilidad
 
 - Mantener grupos de píxeles nítidos; no aplicar suavizado fotográfico.
+- El Babito se dibuja en celdas de 64 px con volumen, contorno y highlights más finos que el placeholder original. La animación usa cambios reales de silueta, apoyo de pies, brazos, expresión, inclinación y *squash/stretch*; no se simula con una única imagen deslizándose o con escalas fraccionarias en runtime.
 - Usar contorno azul marino u oscuro y una paleta limitada por mundo.
 - COME siempre se percibe mayor que el Babito; VUELA, menor. Los tres tamaños del Babito cambian el render, no la colisión.
 - Reservar contraste para personaje, enemigos, proyectiles, señales de peligro, monedas y plataformas reales.

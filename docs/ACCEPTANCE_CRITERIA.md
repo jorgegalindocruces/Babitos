@@ -81,7 +81,8 @@ Estos criterios validan el vertical slice 0.2 descrito en [INTERACTIONS.md](INTE
 
 ## Animación y arte
 
-- El Babito distingue `idle`, `walk`, `jump`, `fall`, `attack`, `hurt` y `dead` sin cambiar su hitbox ni perder sus capas equipadas.
+- El Babito distingue `idle`, `walk`, `run`, `jump`, `fall`, `attack`, `hurt` y `dead` mediante poses y siluetas diferentes, sin cambiar su hitbox, perder sus capas equipadas ni despegarse del suelo al cambiar de tamaño.
+- Sus siete capas permanecen sincronizadas durante los 51 frames; caminar no reutiliza las poses de correr y ataque, daño y KO terminan en un frame final legible.
 - COME, VUELA y DA VUELTAS muestran animaciones coherentes con su estado; el boss cambia de pose entre patrones, `RECOVER` y purificación.
 - Pausar congela el frame de animación y reanudar continúa sin desincronizarlo.
 - Babilandia, arena del boss y Ciudad Bicharraca respetan el encuadre 16:9 y no dibujan falsos suelos interactivos en el primer plano.

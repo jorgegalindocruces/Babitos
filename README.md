@@ -52,7 +52,7 @@ La descripción exhaustiva, incluidas las reglas de foco, pausa, reintento y vul
 - La arena de Babito Corrupto tiene un fondo 16:9 propio: Babilandia en ruinas al atardecer, basado en el ejemplo canónico del boss y con una zona de juego limpia para conservar la lectura de ataques y plataformas.
 - Ciudad Bicharraca, el último mundo del mapa, muestra ya su paisaje industrial 16:9 como fondo y recorte interior de su pantalla de avance estática; la tarjeta del mapa mantiene un icono procedural.
 - Música ambiental y efectos para interfaz, salto, ataque, daño, monedas, checkpoints, boss y compras se sintetizan en el navegador mediante Web Audio, sin archivos ni dependencias adicionales.
-- El Babito tiene clips diferenciados de `idle`, caminar, saltar, caer, atacar, recibir daño y KO. COME, VUELA, DA VUELTAS y Babito Corrupto también cambian de animación o pose según su estado.
+- El Babito usa un atlas por capas de 64 px y 51 poses: `idle`, caminar, correr, saltar, caer, atacar, recibir daño y KO. Cada ciclo mueve silueta, pies, brazos y expresión sin perder la personalización. COME, VUELA, DA VUELTAS y Babito Corrupto también cambian de animación o pose según su estado.
 - Los botones responden en toda su superficie visible a ratón y toque, y ofrecen foco, estado deshabilitado y activación por teclado mediante controles HTML accesibles.
 - `Espacio` queda reservado para saltar durante el gameplay; los botones del HUD siguen disponibles con ratón, toque o navegación accesible mediante `Tab`.
 - El canvas conserva 960 × 540 exactos en escritorio para no deformar la cuadrícula de píxel; fuentes, botones y avisos se cargan y rasterizan con una política de resolución común.

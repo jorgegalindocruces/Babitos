@@ -7,6 +7,20 @@ Este archivo relaciona las iteraciones entregadas con sus cambios observables, c
 - Mantener sincronizados `README.md`, `INTERACTIONS.md`, `GAME_DESIGN.md`, `IMPLEMENTATION_SPEC.md` y `ACCEPTANCE_CRITERIA.md` cuando cambien flujo, controles, estados, persistencia o contenido jugable.
 - Añadir una entrada aquí por cada cambio observable, con el commit final y las pruebas realizadas.
 
+## Movimiento y acabado del Babito — 2026-10-08
+
+Commit [`1795ebd`](https://github.com/jorgegalindocruces/Babitos/commit/1795ebd):
+
+- sustituyó el contrato provisional de 28 frames por 51 poses repartidas entre `idle`, `walk`, `run`, `jump`, `fall`, `attack`, `hurt` y `dead`;
+- separó caminar y correr con ciclos de ocho frames, apoyos, braceo, expresiones, inclinación y *squash/stretch* propios;
+- amplió el atlas por capas a celdas de 64 px y añadió volumen, highlights, nuevas expresiones y poses de brazos sin aplanar la personalización del Creador;
+- mantuvo sincronizadas cuerpo, ojos, boca, brazos, cabeza, gafas y cuello en todos los frames y tamaños;
+- selecciona la pose después de resolver la física para eliminar un frame de retraso visual y conserva una línea de suelo común en pequeño, normal y grande;
+- eliminó transformaciones fraccionarias en runtime que producían temblor, evitó recortes con límites transformados verificables y corrigió el KO para que no se hunda en la plataforma;
+- añadió `qaMotion`, `qaFrame` y `qaSize` para inspeccionar cualquier estado, pose y tamaño en desarrollo.
+
+QA visual: ocho estados del Babito, extremos de ataque y KO, los tres tamaños, Título, Creador, Poder, Intro, Babilandia, Boss, Tienda, Mapa y Ciudad Bicharraca; consola sin errores. Pruebas: 63 casos automáticos, compilación de producción y `git diff --check`.
+
 ## Carteles tutoriales apoyados — 2026-10-08
 
 Commit [`6f0b5b4`](https://github.com/jorgegalindocruces/Babitos/commit/6f0b5b4):

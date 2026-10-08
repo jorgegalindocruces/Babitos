@@ -155,7 +155,8 @@ La interacción del combate se implementa en [BossScene.js](../src/scenes/BossSc
 
 ## Animación y feedback
 
-- El Babito tiene clips de 4 frames para `idle`, `walk`, `jump`, `fall`, `attack`, `hurt` y `dead`. `run` se acepta internamente como alias de `walk`.
+- El Babito tiene 51 poses sincronizadas entre sus siete capas: `idle` (6 frames), `walk` (8), `run` (8), `jump` (6), `fall` (6), `attack` (6), `hurt` (5) y `dead` (6). Caminar y correr son ciclos diferentes; cada estado cambia apoyo de pies, brazos, expresión y silueta sin alterar la hitbox.
+- La animación se selecciona después de resolver movimiento y física en el mismo frame. Los tamaños pequeño, normal y grande conservan la línea de suelo y no añaden transformaciones fraccionarias que hagan temblar el pixel art.
 - COME tiene `idle`, `walk`, `attack`, `hurt` y `defeat` sobre su spritesheet raster.
 - VUELA tiene `idle`, `fly`, `dive`, `attack`, `hurt` y `defeat`; DA VUELTAS tiene `idle`, `roll`, `windup`, `hurt` y `defeat`. Sus hojas actuales son procedurales.
 - Babito Corrupto cambia de pose en intro, los tres patrones, `RECOVER` y su forma purificada.

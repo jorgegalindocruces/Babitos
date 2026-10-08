@@ -90,7 +90,8 @@ Cada escena jugable mantiene un reloj de gameplay descontando el tiempo pausado.
 
 ## Animación
 
-- [BabitoAvatar.js](../src/game/BabitoAvatar.js): clips canónicos `idle`, `walk`, `jump`, `fall`, `attack`, `hurt` y `dead`; `run` es alias de `walk`. Las siete capas muestrean el mismo frame y el cuerpo físico no cambia.
+- [BabitoAnimations.js](../src/game/BabitoAnimations.js) define el contrato puro de 51 poses: `idle`, `walk`, `run`, `jump`, `fall`, `attack`, `hurt` y `dead`, con duraciones y selección de locomoción verificables sin Phaser.
+- [BabitoAvatar.js](../src/game/BabitoAvatar.js) compone las siete capas sobre celdas de 64 px, muestrea el mismo frame para todas y alinea pequeño/normal/grande sobre una línea de suelo común. El cuerpo físico nunca cambia. `POST_UPDATE` aplica el estado después de que `PlayerController` resuelva la física para evitar un frame visual de retraso.
 - [EnemyAnimations.js](../src/game/EnemyAnimations.js): hojas y mapeo de estados para COME, VUELA y DA VUELTAS.
 - [BossAnimator.js](../src/game/BossAnimator.js): poses escalonadas para intro, tres patrones, `RECOVER` y purificación.
 
@@ -102,6 +103,6 @@ AudioSystem sintetiza música y efectos con Web Audio, desbloquea el contexto tr
 
 ## QA y extensión
 
-En desarrollo, `BootScene` acepta `?qa=<Scene>`, `qaCoins`, `qaComplete=1` y `world=jungle|city`. `GameScene` añade `qaCombat=1`, `qaCheckpoint=<id>` y `debugAI=1`; `BossScene`, `qaOneHit=1`. Estos parámetros no se procesan en producción. `globalThis.__BABITOS__` expone versión, escena y una copia del save para smoke tests y mods.
+En desarrollo, `BootScene` acepta `?qa=<Scene>`, `qaCoins`, `qaComplete=1` y `world=jungle|city`. `GameScene` añade `qaCombat=1`, `qaCheckpoint=<id>`, `debugAI=1`, `qaMotion=idle|walk|run|jump|fall|attack|hurt|dead`, `qaFrame=<n>` y `qaSize=small|normal|large`; los tres últimos permiten inspeccionar poses y tamaños sin alterar el guardado. `BossScene` añade `qaOneHit=1`. Estos parámetros no se procesan en producción. `globalThis.__BABITOS__` expone versión, escena y una copia del save para smoke tests y mods.
 
 Para extender el juego se conservan IDs estables, lógica data-driven y fallbacks. Un cambio de interacción debe actualizar [INTERACTIONS.md](INTERACTIONS.md), [ACCEPTANCE_CRITERIA.md](ACCEPTANCE_CRITERIA.md) y [CHANGELOG.md](CHANGELOG.md).
