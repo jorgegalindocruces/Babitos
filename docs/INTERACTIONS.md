@@ -120,6 +120,8 @@ Los cinco carteles tutoriales también se definen allí sin coordenada vertical 
 
 VUELA aparece una vez en solitario y después en pareja. Cada enemigo puede soltar 0, 1 o 2 Babicoins. El portal del boss permanece sellado hasta derrotar los seis encuentros; tocarlo antes informa cuántos faltan y aparta al jugador.
 
+Un impacto aceptado reproduce `hurt` completo como reacción no cíclica. Durante esa reacción el enemigo no avanza su estado, no daña al Babito y no acepta otro impacto. COME interrumpe `WINDUP`/`BITE` hacia `RECOVER`; VUELA interrumpe `TARGET`/`WINDUP`/`DIVE` hacia `RETURN`; DA VUELTAS conserva `DIZZY`. VUELA no colisiona con plataformas: las atraviesa durante picado y regreso, pero conserva límites del mundo y overlaps de combate.
+
 #### Pausa
 
 `P`, `Esc` o `PAUSA` abren la capa de pausa, salvo durante muerte o transición. Se congelan física, tweens, temporizadores, animaciones y reloj de gameplay. `CONTINUAR` restaura el mismo estado y `VOLVER AL TÍTULO` abandona la fase.
@@ -157,8 +159,8 @@ La interacción del combate se implementa en [BossScene.js](../src/scenes/BossSc
 
 - El Babito tiene 51 poses sincronizadas entre sus siete capas: `idle` (6 frames), `walk` (8), `run` (8), `jump` (6), `fall` (6), `attack` (6), `hurt` (5) y `dead` (6). Caminar y correr son ciclos diferentes; cada estado cambia apoyo de pies, brazos, expresión y silueta sin alterar la hitbox.
 - La animación se selecciona después de resolver movimiento y física en el mismo frame. Los tamaños pequeño, normal y grande conservan la línea de suelo y no añaden transformaciones fraccionarias que hagan temblar el pixel art.
-- COME tiene `idle`, `walk`, `attack`, `hurt` y `defeat` sobre su spritesheet raster.
-- VUELA tiene `idle`, `fly`, `dive`, `attack`, `hurt` y `defeat`; DA VUELTAS tiene `idle`, `roll`, `windup`, `hurt` y `defeat`. Sus hojas actuales son procedurales.
+- COME tiene `idle`, `walk`, `windup`, `attack`, `hurt` y `defeat` sobre su spritesheet raster. `WINDUP` recorre la preparación y `BITE` empieza en la pose de mordisco sin reiniciar una fila ofensiva completa.
+- VUELA tiene `idle`, `fly`, `dive`, `attack`, `hurt` y `defeat` en un atlas raster de 36 poses; `dive`, `attack`, `hurt` y `defeat` no vuelven del último frame al primero. DA VUELTAS mantiene `idle`, `roll`, `windup`, `hurt` y `defeat` en su hoja procedural.
 - Babito Corrupto cambia de pose en intro, los tres patrones, `RECOVER` y su forma purificada.
 - Pausar congela también los relojes de animación.
 
@@ -199,10 +201,12 @@ Solo con el servidor de desarrollo, `BootScene` admite rutas para revisar pantal
 - `&qaComplete=1` para marcar la Fase 1 como completada;
 - `&qaCombat=1` en `GameScene` para empezar en el primer checkpoint, acercar a COME, dejarlo a un golpe y forzar drops de dos monedas;
 - `&qaCheckpoint=start|market_gate|fountain|boss_gate` en `GameScene` para revisar una zona concreta y su decoración sin persistir ese punto QA en el guardado;
+- `&qaEnemy=come|vuela|da_vueltas` para aislar una instancia, colocarla ante la cámara e inmovilizar su IA sin daño ni persistencia;
+- `&qaEnemyState=<estado-o-clip>` para fijar un estado de IA (`DIVE`, `BITE`, `DIZZY`…) o un clip (`idle`, `hurt`, `defeat`); `&qaEnemyFrame=<n>` fija su frame local y limita valores altos al último disponible;
 - `&qaOneHit=1` en `BossScene` para colocar al boss a un golpe y entrar pronto en `RECOVER`;
 - `&debugAI=1` en Babilandia para mostrar la etiqueta del estado actual de cada enemigo.
 
-Ejemplo: `http://localhost:5173/?qa=ComingSoonScene&world=city`.
+Ejemplos: `http://localhost:5173/?qa=ComingSoonScene&world=city` y `http://localhost:5173/?qa=GameScene&qaEnemy=vuela&qaEnemyState=DIVE&qaEnemyFrame=4&debugAI=1`.
 
 ## Referencias de implementación
 
@@ -214,6 +218,7 @@ Ejemplo: `http://localhost:5173/?qa=ComingSoonScene&world=city`.
 | Proyectiles y poderes | [PowerSystem.js](../src/game/PowerSystem.js) |
 | Anclaje de carteles y decoración | [surfaceAnchoring.js](../src/game/surfaceAnchoring.js) |
 | Estados de enemigos | [EnemyController.js](../src/game/EnemyController.js) |
+| Límites, rebotes y dirección estable de enemigos | [EnemyBehavior.js](../src/game/EnemyBehavior.js) |
 | Avatar por capas | [BabitoAvatar.js](../src/game/BabitoAvatar.js) |
 | Animaciones de enemigos | [EnemyAnimations.js](../src/game/EnemyAnimations.js) |
 | Animación del boss | [BossAnimator.js](../src/game/BossAnimator.js) |

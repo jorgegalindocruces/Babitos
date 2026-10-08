@@ -7,6 +7,22 @@ Este archivo relaciona las iteraciones entregadas con sus cambios observables, c
 - Mantener sincronizados `README.md`, `INTERACTIONS.md`, `GAME_DESIGN.md`, `IMPLEMENTATION_SPEC.md` y `ACCEPTANCE_CRITERIA.md` cuando cambien flujo, controles, estados, persistencia o contenido jugable.
 - Añadir una entrada aquí por cada cambio observable, con el commit final y las pruebas realizadas.
 
+## Estados de enemigos y VUELA raster — 2026-10-08
+
+Commit [`d0466ea`](https://github.com/jorgegalindocruces/Babitos/commit/d0466ea):
+
+- sustituyó la hoja procedural de VUELA por un atlas raster de 36 poses fiel a su diseño canónico, normalizado a celdas de 256 px, alpha 0/255 y render exacto a 64 × 64;
+- separó `idle`, vuelo, picado, anticipación, daño y derrota; los clips no cíclicos sostienen su última pose en vez de saltar al inicio;
+- convirtió `hurt` en una interrupción jugable completa: pausa el estado, anula daño e impactos repetidos y saca a COME/VUELA de ataques peligrosos hacia `RECOVER`/`RETURN`;
+- eliminó la colisión de VUELA con plataformas para que el picado y el regreso no queden atrapados en geometría elevada;
+- corrigió la inversión repetida de dirección en límites y muros, la orientación de VUELA al apuntar y la rotación residual de DA VUELTAS al caer derrotado;
+- dividió la fila ofensiva de COME en anticipación y mordisco con tiempos alineados a sus ventanas reales, y evitó reiniciar `walk`/`fly` entre estados que comparten clip;
+- añadió `qaEnemy`, `qaEnemyState` y `qaEnemyFrame` para aislar cualquier monstruo y revisar de forma determinista todos sus estados y frames sin daño ni persistencia.
+
+Asset: [enemy-vuela-sheet-v4.png](../public/assets/characters/enemy-vuela-sheet-v4.png). Procedencia y prompt: [enemy-vuela-v4.md](../art/production/enemy-vuela-v4.md).
+
+QA visual: 36 celdas de VUELA; `AIR_PATROL`, `WINDUP`, `DIVE`, `hurt` y `defeat`; ciclo real `DIVE → RETURN → AIR_PATROL`; `WINDUP`/`BITE` de COME; `WINDUP`/`DIZZY` de DA VUELTAS; consola sin errores. Pruebas: 68 casos automáticos, compilación de producción y `git diff --check`.
+
 ## Dominio canónico `babitos.es` — 2026-10-08
 
 Commit [`a720de9`](https://github.com/jorgegalindocruces/Babitos/commit/a720de9):

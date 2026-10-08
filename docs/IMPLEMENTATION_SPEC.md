@@ -75,6 +75,8 @@ Invariante: ningún disparo puede destruir, desactivar o esconder terreno. Fondo
 
 Los drops se eligen entre 0, 1 o 2 monedas. Cada moneda usa overlap y suma una. El portal se habilita cuando `defeatedEnemies === level.enemies.length`.
 
+Las reacciones de daño son interrupciones temporales, no un clip decorativo superpuesto: usan la duración real de `hurt`, suspenden el reloj de estado, desactivan daño/impactos repetidos y conducen los ataques de COME y VUELA a `RECOVER`/`RETURN`. VUELA no registra collider con plataformas, de modo que un picado no puede quedar atrapado debajo de una plataforma durante `RETURN`. [EnemyBehavior.js](../src/game/EnemyBehavior.js) resuelve límites y rebotes con direcciones deterministas para evitar inversión cada frame.
+
 ## Boss
 
 Babito Corrupto tiene 16 de vida. Su ciclo es `FIREBALL → FROM_ABOVE → FURY_CHARGE`; después de cada patrón, `RECOVER` habilita daño durante 1900 ms. Fuera de esa ventana el proyectil se consume con feedback de bloqueo. La victoria llama a `claimReward('boss1_reward', 30)`, marca la fase y abre Tienda; el ID evita duplicar el premio.
@@ -92,7 +94,7 @@ Cada escena jugable mantiene un reloj de gameplay descontando el tiempo pausado.
 
 - [BabitoAnimations.js](../src/game/BabitoAnimations.js) define el contrato puro de 51 poses: `idle`, `walk`, `run`, `jump`, `fall`, `attack`, `hurt` y `dead`, con duraciones y selección de locomoción verificables sin Phaser.
 - [BabitoAvatar.js](../src/game/BabitoAvatar.js) compone las siete capas sobre celdas de 64 px, muestrea el mismo frame para todas y alinea pequeño/normal/grande sobre una línea de suelo común. El cuerpo físico nunca cambia. `POST_UPDATE` aplica el estado después de que `PlayerController` resuelva la física para evitar un frame visual de retraso.
-- [EnemyAnimations.js](../src/game/EnemyAnimations.js): hojas y mapeo de estados para COME, VUELA y DA VUELTAS.
+- [EnemyAnimations.js](../src/game/EnemyAnimations.js): hojas, subclips, duración, mapeo de estados y resolución QA para COME, VUELA y DA VUELTAS. VUELA usa [enemy-vuela-sheet-v4.png](../public/assets/characters/enemy-vuela-sheet-v4.png), 36 celdas raster de 256 px mostradas a escala exacta de 1/4.
 - [BossAnimator.js](../src/game/BossAnimator.js): poses escalonadas para intro, tres patrones, `RECOVER` y purificación.
 
 ## Arte y audio
@@ -103,6 +105,6 @@ AudioSystem sintetiza música y efectos con Web Audio, desbloquea el contexto tr
 
 ## QA y extensión
 
-En desarrollo, `BootScene` acepta `?qa=<Scene>`, `qaCoins`, `qaComplete=1` y `world=jungle|city`. `GameScene` añade `qaCombat=1`, `qaCheckpoint=<id>`, `debugAI=1`, `qaMotion=idle|walk|run|jump|fall|attack|hurt|dead`, `qaFrame=<n>` y `qaSize=small|normal|large`; los tres últimos permiten inspeccionar poses y tamaños sin alterar el guardado. `BossScene` añade `qaOneHit=1`. Estos parámetros no se procesan en producción. `globalThis.__BABITOS__` expone versión, escena y una copia del save para smoke tests y mods.
+En desarrollo, `BootScene` acepta `?qa=<Scene>`, `qaCoins`, `qaComplete=1` y `world=jungle|city`. `GameScene` añade `qaCombat=1`, `qaCheckpoint=<id>`, `debugAI=1`, `qaMotion=idle|walk|run|jump|fall|attack|hurt|dead`, `qaFrame=<n>` y `qaSize=small|normal|large`; los tres últimos permiten inspeccionar poses y tamaños sin alterar el guardado. Para enemigos, `qaEnemy=come|vuela|da_vueltas` aísla el tipo, `qaEnemyState=<estado-o-clip>` fija su presentación y `qaEnemyFrame=<n>` congela un frame local; el modo QA desactiva daño y persistencia. `BossScene` añade `qaOneHit=1`. Estos parámetros no se procesan en producción. `globalThis.__BABITOS__` expone versión, escena y una copia del save para smoke tests y mods.
 
 Para extender el juego se conservan IDs estables, lógica data-driven y fallbacks. Un cambio de interacción debe actualizar [INTERACTIONS.md](INTERACTIONS.md), [ACCEPTANCE_CRITERIA.md](ACCEPTANCE_CRITERIA.md) y [CHANGELOG.md](CHANGELOG.md).

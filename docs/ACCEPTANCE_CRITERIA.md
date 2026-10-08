@@ -50,6 +50,8 @@ Estos criterios validan el vertical slice 0.2 descrito en [INTERACTIONS.md](INTE
 - El fondo es decorativo: la colisión depende exclusivamente de plataformas físicas independientes.
 - Cada cartel tutorial tiene una superficie física bajo el poste, su base coincide exactamente con esa superficie y el texto queda dentro de la tabla. Ninguno atraviesa terreno, flota o queda oculto por DA VUELTAS/checkpoints.
 - COME es mayor que el Babito y solo daña al morder; VUELA es menor, aparece solo y en pareja y solo daña en picado; DA VUELTAS solo daña al girar y solo recibe daño mientras está mareado.
+- Un enemigo en `hurt` termina su reacción antes de reanudar la IA: no cambia a un ataque, no daña ni recibe impactos repetidos durante ese intervalo. Golpear a COME o VUELA durante una acción ofensiva conduce a `RECOVER` o `RETURN`.
+- VUELA atraviesa las plataformas durante `DIVE` y `RETURN`, conserva los límites del mundo y nunca queda bloqueado bajo geometría de terreno.
 - Cada enemigo puede soltar 0, 1 o 2 monedas y recoger una suma exactamente una.
 - El portal permanece cerrado hasta derrotar los seis encuentros e informa cuántos faltan.
 - Un checkpoint cura por completo y se guarda.
@@ -83,13 +85,14 @@ Estos criterios validan el vertical slice 0.2 descrito en [INTERACTIONS.md](INTE
 
 - El Babito distingue `idle`, `walk`, `run`, `jump`, `fall`, `attack`, `hurt` y `dead` mediante poses y siluetas diferentes, sin cambiar su hitbox, perder sus capas equipadas ni despegarse del suelo al cambiar de tamaño.
 - Sus siete capas permanecen sincronizadas durante los 51 frames; caminar no reutiliza las poses de correr y ataque, daño y KO terminan en un frame final legible.
-- COME, VUELA y DA VUELTAS muestran animaciones coherentes con su estado; el boss cambia de pose entre patrones, `RECOVER` y purificación.
+- Cada estado de COME, VUELA y DA VUELTAS tiene un mapping explícito a un clip existente. Cambiar entre estados que comparten clip no lo reinicia; `hurt` y `defeat` son one-shot, y anticipación/mordisco de COME no recorren la misma secuencia desde el principio. El boss cambia de pose entre patrones, `RECOVER` y purificación.
+- El atlas raster de VUELA contiene 36 celdas de 256 × 256 con contenido, margen transparente y alpha 0/255; se renderiza a 64 × 64 sin escala fraccionaria ni deformación.
 - Pausar congela el frame de animación y reanudar continúa sin desincronizarlo.
 - Babilandia, arena del boss y Ciudad Bicharraca respetan el encuadre 16:9 y no dibujan falsos suelos interactivos en el primer plano.
 
 ## Límites conocidos aceptados
 
 - Jungla y Ciudad son avances, no fases jugables; Boss 2, Boss 3 y final son roadmap.
-- VUELA y DA VUELTAS mantienen spritesheets procedurales; no se exige arte raster final todavía.
+- DA VUELTAS mantiene un spritesheet procedural; VUELA y COME ya usan arte raster de producción.
 - Audio se genera con Web Audio y no incluye control de volumen.
 - Los botones y anuncios principales tienen soporte de teclado/lector, pero no se declara conformidad de accesibilidad completa para todo el texto dibujado en canvas.

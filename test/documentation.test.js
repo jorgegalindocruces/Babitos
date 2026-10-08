@@ -25,12 +25,15 @@ const CONTEXT_DOCUMENTS = Object.freeze([
   'art/production/babilandia-v2.md',
   'art/production/boss-arena-v1.md',
   'art/production/ciudad-bicharraca-v1.md',
+  'art/production/enemy-vuela-v4.md',
 ]);
 const ESSENTIAL_LINK_TARGETS = Object.freeze([
   'src/scenes/GameScene.js',
   'src/scenes/BossScene.js',
+  'src/game/EnemyBehavior.js',
   'src/ui/Button.js',
   'src/state/SaveStore.js',
+  'public/assets/characters/enemy-vuela-sheet-v4.png',
   'public/assets/backgrounds/babilandia-v2.webp',
   'public/assets/backgrounds/boss-arena-v1.webp',
   'public/assets/backgrounds/ciudad-bicharraca-v1.webp',

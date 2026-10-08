@@ -53,6 +53,7 @@ La descripción exhaustiva, incluidas las reglas de foco, pausa, reintento y vul
 - Ciudad Bicharraca, el último mundo del mapa, muestra ya su paisaje industrial 16:9 como fondo y recorte interior de su pantalla de avance estática; la tarjeta del mapa mantiene un icono procedural.
 - Música ambiental y efectos para interfaz, salto, ataque, daño, monedas, checkpoints, boss y compras se sintetizan en el navegador mediante Web Audio, sin archivos ni dependencias adicionales.
 - El Babito usa un atlas por capas de 64 px y 51 poses: `idle`, caminar, correr, saltar, caer, atacar, recibir daño y KO. Cada ciclo mueve silueta, pies, brazos y expresión sin perder la personalización. COME, VUELA, DA VUELTAS y Babito Corrupto también cambian de animación o pose según su estado.
+- VUELA usa un atlas raster de 36 poses fiel al diseño canónico. Sus ciclos de vuelo, picado, anticipación, daño y derrota son independientes; un impacto interrumpe un ataque peligroso antes de reanudar la IA.
 - Los botones responden en toda su superficie visible a ratón y toque, y ofrecen foco, estado deshabilitado y activación por teclado mediante controles HTML accesibles.
 - `Espacio` queda reservado para saltar durante el gameplay; los botones del HUD siguen disponibles con ratón, toque o navegación accesible mediante `Tab`.
 - El canvas conserva 960 × 540 exactos en escritorio para no deformar la cuadrícula de píxel; fuentes, botones y avisos se cargan y rasterizan con una política de resolución común.
@@ -95,7 +96,8 @@ src/
 └── ui/         Botones, efectos y utilidades de interfaz
 art/
 ├── approved/          Dirección artística canónica
-└── original_drawings/ Dibujos originales de referencia
+├── original_drawings/ Dibujos originales de referencia
+└── production/        Procedencia, prompts y proceso de assets finales
 docs/                  Interacciones, cambios, diseño, arte, implementación y aceptación
 test/                  Pruebas automáticas sin navegador real
 ```
@@ -176,9 +178,9 @@ No se usan comodines. Cualquier registro `A`, `AAAA`, `ALIAS` o `ANAME` adiciona
 Las láminas de `art/approved/` son dirección artística, no *spritesheets* finales. El estado actual es:
 
 - Babilandia, la arena de Babito Corrupto y Ciudad Bicharraca tienen fondos raster con fallback procedural.
-- COME usa una hoja raster de producción.
+- COME y VUELA usan hojas raster de producción.
 - Logo, Babito Corrupto, tenderos y Árbol de Poder tienen PNG raster; las poses del boss se componen en runtime.
-- Las capas y cosméticos del Babito, las hojas de VUELA y DA VUELTAS, la moneda, proyectiles, plataformas, props y HUD siguen siendo pixel art generado por código con claves definitivas.
+- Las capas y cosméticos del Babito, la hoja de DA VUELTAS, la moneda, proyectiles, plataformas, props y HUD siguen siendo pixel art generado por código con claves definitivas.
 
 Los placeholders deben sustituirse gradualmente por sprites y animaciones finales sin cambiar sus IDs ni la lógica. El audio actual es procedural: funciona como primera dirección sonora, pero todavía debe sustituirse o ampliarse con música y efectos producidos. La Jungla y Ciudad Bicharraca son pantallas de avance; sus niveles y bosses completos pertenecen a iteraciones posteriores.
 
