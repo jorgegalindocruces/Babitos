@@ -23,6 +23,8 @@ const TEXTURES = {
   da_vueltas: 'enemy_da_vueltas',
 };
 
+const DA_VUELTAS_ENGAGE_RANGE = 460;
+
 const VISUAL_SIZES = Object.freeze({
   come: Object.freeze({ width: 118, height: 118 }),
   // 256px atlas cells render at an exact 1/4 scale for crisp pixel edges.
@@ -314,20 +316,25 @@ export class EnemyController {
   }
 
   updateDaVueltas() {
+    const distance = this.player.x - this.sprite.x;
     if (this.state === 'PATROL') {
       this.direction = getEnemyPatrolDirection(this.sprite.x, this.home.x, 170, this.direction);
       this.sprite.setAngularVelocity(0).setVelocityX(this.direction * this.config.speed);
-      if (this.elapsed > 1800) this.setState('WINDUP');
+      // Only wind up when the Babito is close enough to read the threat; a
+      // spin aimed at empty space off-screen teaches nothing.
+      if (this.elapsed > 1800 && Math.abs(distance) < DA_VUELTAS_ENGAGE_RANGE) this.setState('WINDUP');
     } else if (this.state === 'WINDUP') {
-      this.sprite.setVelocityX(0).setAngularVelocity(280);
+      // Face the Babito throughout the telegraph so the roll is predictable.
+      this.direction = Math.sign(distance) || this.direction;
+      this.sprite.setVelocityX(0).setAngularVelocity(280 * this.direction);
       this.setVisualScale(1.1, 0.9);
       if (this.elapsed > 650) this.setState('SPIN');
     } else if (this.state === 'SPIN') {
       this.setVisualScale();
-      this.sprite.setAngularVelocity(880);
+      this.sprite.setAngularVelocity(880 * this.direction);
       this.direction = getEnemyWallDirection(this.sprite.body.blocked, this.direction);
       this.sprite.setVelocityX(this.direction * this.config.spinSpeed);
-      if (this.elapsed > 2100) this.setState('DIZZY');
+      if (this.elapsed > 1700) this.setState('DIZZY');
     } else if (this.state === 'DIZZY') {
       this.sprite.setAngularVelocity(0).setVelocityX(0).setAngle(Math.sin(this.now / 75) * 9);
       if (this.elapsed > 1900) {
@@ -335,6 +342,26 @@ export class EnemyController {
         this.setState('PATROL');
       }
     }
+  }
+
+  /**
+   * Returns a living enemy to its spawn in a neutral state. Used when the
+   * Babito respawns nearby, so a checkpoint never drops them into an attack.
+   */
+  resetToHome() {
+    if (this.dead || !this.sprite?.active || this.qaPresentation) return;
+    this.hurtUntil = 0;
+    this.sprite.setPosition(this.home.x, this.home.y)
+      .setVelocity(0, 0)
+      .setAngularVelocity(0)
+      .setAngle(0);
+    this.setState(this.config.states[0]);
+    this.stateStartedAt = this.now;
+    this.nextDecisionAt = this.now + 1200;
+    this.setVisualScale();
+    this.applyStateTint();
+    this.updateVisualAnimation(true);
+    this.syncVisual();
   }
 
   canHurtPlayer() {

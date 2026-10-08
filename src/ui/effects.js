@@ -178,6 +178,13 @@ export function showToast(scene, message, options = {}) {
   return container;
 }
 
+/** Removes the scene's visible toast, e.g. before opening a pause overlay. */
+export function dismissToast(scene) {
+  const toast = activeToasts.get(scene);
+  toast?.dismiss?.(true);
+  return Boolean(toast);
+}
+
 function cameraFade(scene, direction, options = {}) {
   const camera = options.camera ?? scene.cameras.main;
   const reducedMotion = options.reducedMotion ?? prefersReducedMotion();
@@ -272,6 +279,45 @@ export function flashScreen(scene, options = {}) {
     options.force === true,
     options.callback,
   );
+  return true;
+}
+
+/**
+ * A few square pixels kicked up at the feet on jump and hard landings. They
+ * are small, short-lived and skipped entirely with reduced motion.
+ */
+export function spawnDust(scene, x, y, options = {}) {
+  if (!scene?.add || !scene.textures?.exists?.('particle_dot') || prefersReducedMotion()) return 0;
+  const count = Math.max(1, Math.min(10, Math.round(Number(options.count) || 4)));
+  const spread = Number(options.spread) || 10;
+  const color = options.color ?? 0xf3e6c8;
+  for (let index = 0; index < count; index += 1) {
+    const side = index % 2 === 0 ? -1 : 1;
+    const dot = scene.add.image(x + side * (2 + (index * 3) % spread), y - 2, 'particle_dot')
+      .setDepth(options.depth ?? 11)
+      .setTint(color)
+      .setAlpha(0.85)
+      .setScale(index % 3 === 0 ? 1.5 : 1);
+    scene.tweens.add({
+      targets: dot,
+      x: dot.x + side * (spread + index * 2),
+      y: dot.y - 4 - (index % 3) * 3,
+      alpha: 0,
+      duration: 220 + index * 25,
+      ease: 'Quad.easeOut',
+      onComplete: () => dot.destroy(),
+    });
+  }
+  return count;
+}
+
+/**
+ * Freezes the action for a few milliseconds to sell an impact. The scene must
+ * implement `setHitStop(ms)`; scenes without it simply skip the effect.
+ */
+export function hitStop(scene, durationMs) {
+  if (typeof scene?.setHitStop !== 'function') return false;
+  scene.setHitStop(durationMs);
   return true;
 }
 

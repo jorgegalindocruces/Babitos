@@ -45,7 +45,7 @@ Los poderes no se compran. Babicoins equivalen a apariencia; Manzanas de Poder e
 - VUELA: murciélago morado, menor que el Babito, aparece solo o en pareja, vuela y ataca en picado.
 - DA VUELTAS: bola verde con pinchos, rueda y después queda mareado. Solo es vulnerable durante ese estado.
 
-Cada enemigo puede soltar 0, 1 o 2 monedas. En Babilandia, solo el ataque activo de cada enemigo causa daño y el portal se abre al superar los seis encuentros.
+Cada enemigo puede soltar 0, 1 o 2 monedas. En Babilandia, solo el ataque activo de cada enemigo causa daño y el portal se abre al superar los seis encuentros. DA VUELTAS apunta su giro hacia el Babito para que el peligro sea legible.
 
 ## Jefes
 
@@ -59,7 +59,7 @@ Señor Empanadilla y Señor Pingüino son aliados y tenderos. Nunca son enemigos
 
 ## Mundos
 
-1. Babilandia atacada — jugable: ciudad de Babitos, luminosa pero dañada.
+1. Babilandia atacada — jugable: ciudad de Babitos, luminosa pero dañada. Funciona como tutorial en tres tramos: Mercado enseña a saltar y presenta a COME; Puente presenta a VUELA y premia el camino alto; Fuente y portal combina DA VUELTAS y COME alrededor de una plataforma refugio. El suelo base es continuo, de modo que el reto vertical procede de plataformas útiles, refugios y monedas, no de fosos.
 2. Jungla — avance/roadmap: ramas, lianas, ruinas, verticalidad y progresión hacia oscuridad.
 3. Ciudad Bicharraca — avance/roadmap: industrial, máquinas, tuberías, trampas y fortaleza final.
 
@@ -71,7 +71,7 @@ Sin poder: muy triste, copa apagada, ramas caídas, huecos vacíos, cara triste 
 
 ## Moneda
 
-Circular, basada en `coin_original.jpeg`, B central y marcas laterales. Rebota al caer y da feedback al recoger.
+Circular, basada en `coin_original.jpeg`, B central y marcas laterales. Rebota al caer y da feedback al recoger. Además de las que sueltan los enemigos, Babilandia esconde 25 Babicoins colocadas que se cobran una sola vez por guardado y que premian la exploración y los saltos arriesgados.
 
 ## HUD y estados
 
@@ -85,6 +85,10 @@ HUD: corazones, monedas, poder activo, encuentros y pausa; durante el boss añad
 - Pausa: congela simulación y animaciones; permite continuar o volver al título.
 
 El suelo y las plataformas son cuerpos de colisión independientes de los fondos. El suelo base es sólido; las plataformas elevadas son unidireccionales, se atraviesan desde abajo y sostienen al caer desde arriba. Los poderes solo pueden destruir su propio proyectil al impactar; nunca eliminan terreno.
+
+## Sensación de control
+
+El Babito debe sentirse preciso y ágil sin dejar de ser familiar: arranca y frena casi al instante, gira sin derrapar, conserva algo de inercia en el aire, salta más de tres veces su altura y permite saltos cortos soltando el botón. La caída es algo más rápida que la subida. El *coyote time*, el *jump buffer* y un pequeño margen al aterrizar en bordes perdonan errores de un frame. Los golpes se leen con retroceso, una pausa breve y parpadeo. Cada ataque enemigo y de boss tiene un aviso que deja tiempo de reacción: un golpe debe sentirse como un error propio, nunca como una trampa.
 
 ## Interacción y accesibilidad
 

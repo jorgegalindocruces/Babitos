@@ -29,7 +29,7 @@ TitleScene → CreatorScene → PowerScene → IntroScene
 
 - [game-data.json](../src/data/game-data.json): jugador, tamaños, poderes, enemigos y boss.
 - [cosmetics.json](../src/data/cosmetics.json): siete categorías, claves de asset, desbloqueo inicial y precios.
-- [babilandia.json](../src/data/levels/babilandia.json): geometría, spawn, cuatro checkpoints, seis enemigos y portal.
+- [babilandia.json](../src/data/levels/babilandia.json): geometría, spawn, cuatro checkpoints, seis enemigos, 25 Babicoins colocadas (`coins`, con `id`, `x` e `y`) y portal.
 - Los carteles tutoriales de `babilandia.json` solo guardan `id`, `x` y texto. [surfaceAnchoring.js](../src/game/surfaceAnchoring.js) obtiene la superficie física superior, y `GameScene` compone tabla, texto y poste como una sola decoración apoyada.
 - [SaveStore.js](../src/state/SaveStore.js): normalización, migración y persistencia.
 
@@ -48,14 +48,30 @@ El guardado versionado `babitos.save.v1` contiene nombre, tamaño, apariencia, p
 Implementado en [PlayerController.js](../src/game/PlayerController.js):
 
 - hitbox fija de 28 × 40 para los tres tamaños visuales;
-- 3 puntos de vida, gravedad global, velocidad máxima 360 × 760, aceleración horizontal 1450 y drag 1350;
-- salto 490, coyote time 110 ms, buffer 120 ms y corte de altura al soltar;
-- invulnerabilidad de 1050 ms tras daño y 1500 ms tras respawn;
+- 3 puntos de vida; coyote time 110 ms y buffer 130 ms;
+- invulnerabilidad de 1050 ms tras daño y 1500 ms tras respawn o al cargar un checkpoint intermedio;
 - dirección persistente y un único ataque sujeto al cooldown del poder.
+
+El modelo de movimiento es puro y está en [playerMovement.js](../src/game/playerMovement.js); el controlador le pasa el delta del reloj de gameplay y aplica el resultado. Todo el tuning vive en `player.movement` de [game-data.json](../src/data/game-data.json):
+
+| Parámetro | Valor | Efecto |
+|---|---:|---|
+| `maxRunSpeed` | 320 | Velocidad horizontal máxima |
+| `groundAcceleration` / `groundDeceleration` / `turnAcceleration` | 2600 / 3200 / 4400 | Arranque en ~0,13 s, frenada en ~19 px, giro sin derrape |
+| `airAcceleration` / `airDeceleration` / `airTurnAcceleration` | 1900 / 900 / 2800 | Control aéreo que conserva inercia |
+| `jumpHeight` / `jumpTimeToApex` | 138 px / 0,4 s | Se derivan velocidad de salto (690) y gravedad de subida (1725) |
+| `fallGravityMultiplier` | 1,55 | Caída más rápida que la subida |
+| `jumpCutGravityMultiplier` | 2,6 | Soltar el botón corta el salto con gravedad mayor, sin multiplicar la velocidad por frame |
+| `apexHangVelocity` / `apexGravityMultiplier` | 70 / 0,6 | Breve flotación en el vértice si se mantiene el botón |
+| `maxFallSpeed` | 720 | Velocidad terminal |
+| `hurtControlLockMs` | 220 | Bloqueo horizontal durante el retroceso |
+| `landingTolerancePx` | 10 | Margen de aterrizaje del Babito sobre plataformas unidireccionales (enemigos y monedas usan 4) |
+
+La gravedad del Babito se aplica como gravedad propia del cuerpo menos la global de 1350, de modo que enemigos, monedas y boss mantienen su física. El corte de salto solo actúa sobre un salto iniciado por el jugador; el retroceso usa la gravedad de subida completa para que el golpe se lea como un pequeño salto. `applyKnockback()` permite a una escena empujar al Babito sin que el control instantáneo lo anule, y `grantSpawnGrace()` replica la invulnerabilidad de respawn. [player-movement.test.js](../test/player-movement.test.js) verifica aceleración, giro, inercia aérea, corte de salto, independencia del framerate, que todas las plataformas elevadas sean alcanzables y que cada moneda colocada quede a tiro desde una superficie.
 
 [BabitoPresentation.js](../src/game/BabitoPresentation.js) es la fuente runtime de las escalas `1`, `1.25` y `1.5`, que convierten la celda de 64 px en cajas visibles de 64, 80 y 96 px. [game-data.json](../src/data/game-data.json) replica esos valores para catálogo y documentación; una regresión exige que ambos contratos coincidan. El offset de baseline compensa la escala, de modo que aumentar el render no mueve los pies ni la hitbox.
 
-`moveSpeed` sigue presente en `game-data.json`, pero el movimiento efectivo actual usa aceleración, drag y velocidad máxima definidos en el controlador. No se debe presentar todavía como tuning completamente data-driven.
+El antiguo `moveSpeed`, que no se usaba, y `jumpVelocity` se sustituyeron por el bloque `movement`: el tuning del jugador ya es completamente data-driven.
 
 ## Poderes y colisiones
 
@@ -63,9 +79,9 @@ Implementado en [PlayerController.js](../src/game/PlayerController.js):
 |---|---:|---:|---:|---:|---:|
 | Fuego | Lineal | 520 | 1 | 420 ms | 1250 ms |
 | Rayo | Lineal | 720 | 1 | 320 ms | 720 ms |
-| Roca | Arco, gravedad 680 | 390 | 2 | 650 ms | 1800 ms |
+| Roca | Arco, gravedad total 680 (≈300 px de alcance) | 390 | 2 | 650 ms | 1800 ms |
 
-[PowerSystem.js](../src/game/PowerSystem.js) marca cada proyectil con identidad positiva antes de participar en colisiones. Los callbacks de [GameScene.js](../src/scenes/GameScene.js) y [BossScene.js](../src/scenes/BossScene.js) destruyen únicamente el objeto reconocido como proyectil.
+[PowerSystem.js](../src/game/PowerSystem.js) marca cada proyectil con identidad positiva antes de participar en colisiones. La gravedad de un poder en arco es la total: se le resta la gravedad global al asignarla al cuerpo. Antes se sumaban (680 + 1350) y la Roca solo alcanzaba unos 120 px. Los callbacks de [GameScene.js](../src/scenes/GameScene.js) y [BossScene.js](../src/scenes/BossScene.js) destruyen únicamente el objeto reconocido como proyectil.
 
 Invariante: ningún disparo puede destruir, desactivar o esconder terreno. Fondos raster, plataformas visuales y cuerpos de colisión tienen responsabilidades separadas.
 
@@ -77,7 +93,9 @@ Invariante: ningún disparo puede destruir, desactivar o esconder terreno. Fondo
 - VUELA: `AIR_PATROL → TARGET → WINDUP → DIVE → RETURN`; solo `DIVE` daña y el nivel incluye una aparición individual y una pareja.
 - DA VUELTAS: `PATROL → WINDUP → SPIN → DIZZY`; solo `SPIN` daña y solo `DIZZY` acepta impactos.
 
-Los drops se eligen entre 0, 1 o 2 monedas. Cada moneda usa overlap y suma una. El portal se habilita cuando `defeatedEnemies === level.enemies.length`.
+Los drops se eligen entre 0, 1 o 2 monedas. Cada moneda usa overlap y suma una. Las monedas colocadas forman un grupo estático propio; al recogerlas se llama a `claimReward('babilandia:coin:<id>', 1)`, por lo que cada una paga una vez por guardado y `restartAdventure()` conserva su estado como el de cualquier recompensa. Las rutas QA (`qaCheckpoint`, `qaEnemy`) no las cobran. El portal se habilita cuando `defeatedEnemies === level.enemies.length`.
+
+DA VUELTAS entra en `WINDUP` solo con el Babito a menos de 460 px, se orienta hacia él durante la anticipación y gira 1,7 s. `EnemyController.resetToHome()` devuelve un enemigo vivo a su origen en el primer estado de su máquina; `GameScene` lo aplica a los enemigos a menos de 700 px del checkpoint en cada respawn.
 
 Las reacciones de daño son interrupciones temporales, no un clip decorativo superpuesto: usan la duración real de `hurt`, suspenden el reloj de estado, desactivan daño/impactos repetidos y conducen los ataques de COME y VUELA a `RECOVER`/`RETURN`. VUELA no registra collider con plataformas, de modo que un picado no puede quedar atrapado debajo de una plataforma durante `RETURN`. [EnemyBehavior.js](../src/game/EnemyBehavior.js) resuelve límites y rebotes con direcciones deterministas para evitar inversión cada frame.
 
@@ -85,13 +103,15 @@ Las reacciones de daño son interrupciones temporales, no un clip decorativo sup
 
 ## Boss
 
-Babito Corrupto tiene 16 de vida. Su ciclo es `FIREBALL → FROM_ABOVE → FURY_CHARGE`; después de cada patrón, `RECOVER` habilita daño durante 1900 ms. Fuera de esa ventana el proyectil se consume con feedback de bloqueo. La victoria llama a `claimReward('boss1_reward', 30)`, marca la fase y abre Tienda; el ID evita duplicar el premio.
+Babito Corrupto tiene 16 de vida. Su ciclo es `FIREBALL → FROM_ABOVE → FURY_CHARGE`; después de cada patrón, `RECOVER` habilita daño durante 1900 ms. `FIREBALL` usa constantes con nombre (`FIREBALL_GAP_MS`, `FIREBALL_CHARGE_MS`, `FIREBALL_FEET_OFFSET`): cada bola se telegrafía con un orbe de 300 ms, sale a la altura de los pies del boss y respeta una separación que permite aterrizar entre bolas (900 ms, o 850 ms con tres bolas en la segunda mitad). El boss no se gira mientras carga. El contacto en `FURY_CHARGE` exige al menos 120 px/s de velocidad horizontal. Fuera de esa ventana el proyectil se consume con feedback de bloqueo. La victoria llama a `claimReward('boss1_reward', 30)`, marca la fase y abre Tienda; el ID evita duplicar el premio.
 
 La arena usa cuerpos estáticos propios con `kind: ground|platform`; el suelo es sólido y las plataformas elevadas comparten el proceso unidireccional con Babilandia. La lógica completa está en [BossScene.js](../src/scenes/BossScene.js).
 
 ## Pausa, caída y reintento
 
-Cada escena jugable mantiene un reloj de gameplay descontando el tiempo pausado. Pausa detiene Arcade Physics, tweens, temporizadores y animaciones de jugador/enemigos/boss.
+Cada escena jugable mantiene un reloj de gameplay descontando el tiempo pausado. Pausa detiene Arcade Physics, tweens, temporizadores y animaciones de jugador/enemigos/boss, y retira el aviso flotante activo mediante `dismissToast()`.
+
+Ambas escenas implementan `setHitStop(ms)`, que [effects.js](../src/ui/effects.js) invoca con `hitStop()`: pausa Arcade Physics y deja de avanzar el reloj de gameplay durante unos milisegundos, sin abrir la pausa. Si el combate termina durante un hit-stop, la purificación reanuda la física. `spawnDust()` genera motas cortas en los pies o los impactos y respeta el movimiento reducido. Los pads táctiles se comparten en [touchControls.js](../src/ui/touchControls.js).
 
 - Babilandia: una caída intenta aplicar daño y respawnea en checkpoint; la invulnerabilidad puede impedir el descuento de un segundo corazón. Game Over reintenta desde allí con vida completa.
 - Boss: la arena tiene suelo continuo y límites físicos. Llegar a cero corazones abre Game Over; reintentar reconstruye el encuentro desde el principio.

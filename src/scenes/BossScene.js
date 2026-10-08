@@ -12,6 +12,7 @@ import {
   makeImpact,
 } from '../game/PowerSystem.js';
 import { createButton, focusGameCanvas } from '../ui/Button.js';
+import { createTouchControls, prefersTouchControls } from '../ui/touchControls.js';
 import {
   BACKGROUND_ASSETS,
   addPixelBackground,
@@ -23,7 +24,9 @@ import {
 } from '../ui/sceneHelpers.js';
 import {
   createAmbientMotes,
+  dismissToast,
   fadeIn,
+  hitStop,
   flashScreen,
   showToast,
   transitionToScene,
@@ -33,16 +36,20 @@ const ARENA_WIDTH = 960;
 const ARENA_HEIGHT = 540;
 const FLOOR_TOP = 482;
 
-function prefersTouchControls() {
-  if (typeof window === 'undefined' || typeof navigator === 'undefined') return false;
-  return navigator.maxTouchPoints > 0 || Boolean(window.matchMedia?.('(pointer: coarse)').matches);
-}
-
 function setWorldBodySize(sprite, width, height) {
   const scaleX = Math.max(0.001, Math.abs(sprite.scaleX));
   const scaleY = Math.max(0.001, Math.abs(sprite.scaleY));
   sprite.body.setSize(width / scaleX, height / scaleY, true);
 }
+
+// Fireballs fly level with the boss's feet: a grounded Babito must jump them.
+const FIREBALL_FEET_OFFSET = 15;
+const FIREBALL_FIRST_SHOT_MS = 720;
+const FIREBALL_CHARGE_MS = 300;
+const FIREBALL_RECOVER_DELAY_MS = 700;
+const FIREBALL_GAP_MS = Object.freeze({ firstHalf: 900, secondHalf: 850 });
+// Contact during FURY_CHARGE only hurts while the boss is really moving.
+const FURY_CONTACT_MIN_SPEED = 120;
 
 const BOSS_STATE = Object.freeze({
   INTRO: 'INTRO',
@@ -104,6 +111,7 @@ export class BossScene extends Phaser.Scene {
     this.patternIndex = 0;
     this.stateNonce = 0;
     this.encounterTimers = new Set();
+    this.fireballCharges = new Set();
     this.physicsLinks = [];
     this.nextBlockedFeedbackAt = 0;
     this.nextContactDamageAt = 0;
@@ -113,6 +121,7 @@ export class BossScene extends Phaser.Scene {
     this.transitioning = false;
     this.bossDefeated = false;
     this.gameplayTime = 0;
+    this.hitStopRemaining = 0;
     this.aboveDropping = false;
     this.furyCharging = false;
 
@@ -157,9 +166,10 @@ export class BossScene extends Phaser.Scene {
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, this.cleanup, this);
     fadeIn(this, { duration: 280 });
     announce('Combate contra Babito Corrupto. Tras cada patrón entra en RECOVER y queda vulnerable.');
+    // Gone before the first pattern cue so the two panels never overlap.
     showToast(this, 'Esquiva el patrón · Ataca solo cuando aparezca RECOVER', {
       type: 'warning',
-      duration: 3600,
+      duration: 1150,
       y: 102,
     });
 
@@ -393,30 +403,11 @@ export class BossScene extends Phaser.Scene {
   }
 
   createTouchControls() {
-    const createPad = (x, label, control) => {
-      const pad = this.add.circle(x, 444, 27, 0x071326, 0.48)
-        .setStrokeStyle(2, 0xc66cff, 0.52)
-        .setDepth(900)
-        .setScrollFactor(0)
-        .setInteractive({ useHandCursor: true });
-      const text = createLabel(this, label, x, 444, {
-        fontSize: '14px', color: 0xffffff, depth: 901,
-      });
-      const down = () => this.player?.setVirtualControl(control, true);
-      const up = () => this.player?.setVirtualControl(control, false);
-      pad.on('pointerdown', down)
-        .on('pointerup', up)
-        .on('pointerout', up)
-        .on('pointerupoutside', up);
-      this.touchControls ??= [];
-      this.touchControls.push(pad, text);
-    };
-
-    createPad(55, '◀', 'left');
-    createPad(119, '▶', 'right');
-    createPad(841, '↑', 'jump');
-    createPad(907, '✦', 'attack');
+    this.touchControls = createTouchControls(this, () => this.player, {
+      y: 444, strokeColor: 0xc66cff, fillAlpha: 0.48,
+    });
   }
+
 
   createPauseKeys() {
     this.pauseHandler = (event) => {
@@ -483,16 +474,64 @@ export class BossScene extends Phaser.Scene {
     this.boss.setVelocityX(0);
     this.showPatternCue('BOLA DE FUEGO', 'Salta sobre las bolas horizontales', 0xff7254);
 
-    const extraShot = this.bossHealth <= Math.ceil(this.bossConfig.health / 2);
-    this.scheduleForState(nonce, 620, () => this.spawnBossFireball(-7));
-    this.scheduleForState(nonce, 970, () => this.spawnBossFireball(15));
-    if (extraShot) this.scheduleForState(nonce, 1300, () => this.spawnBossFireball(-18));
-    this.scheduleForState(nonce, extraShot ? 1940 : 1650, () => this.enterRecover());
+    // Every ball travels at the boss's feet, so the answer is always "jump it"
+    // (or stand on a platform). The gap lets a full jump land before the next
+    // ball; the second half adds a faster third ball as the mastery test.
+    const secondHalf = this.bossHealth <= Math.ceil(this.bossConfig.health / 2);
+    const gap = secondHalf ? FIREBALL_GAP_MS.secondHalf : FIREBALL_GAP_MS.firstHalf;
+    const shots = secondHalf ? 3 : 2;
+    for (let index = 0; index < shots; index += 1) {
+      const launchAt = FIREBALL_FIRST_SHOT_MS + gap * index;
+      // Each ball charges visibly at the boss's mouth before launching, so
+      // even a point-blank shot leaves time to read and jump it.
+      this.scheduleForState(nonce, launchAt - FIREBALL_CHARGE_MS, () => {
+        const charge = this.showFireballCharge();
+        this.scheduleForState(nonce, FIREBALL_CHARGE_MS, () => {
+          this.destroyFireballCharge(charge);
+          this.spawnBossFireball(FIREBALL_FEET_OFFSET, charge.facing);
+        });
+      });
+    }
+    this.scheduleForState(
+      nonce,
+      FIREBALL_FIRST_SHOT_MS + gap * (shots - 1) + FIREBALL_RECOVER_DELAY_MS,
+      () => this.enterRecover(),
+    );
   }
 
-  spawnBossFireball(yOffset = 0) {
-    if (!this.boss?.active) return;
+  showFireballCharge() {
     this.faceBossTowardPlayer();
+    const facing = this.bossFacing;
+    const orb = this.add.circle(
+      this.boss.x + facing * 48,
+      this.boss.y + FIREBALL_FEET_OFFSET,
+      11,
+      0xfff3b0,
+      1,
+    ).setStrokeStyle(4, 0xff5a36, 1).setDepth(15).setScale(0.35);
+    this.tweens.add({ targets: orb, scale: 1.15, duration: FIREBALL_CHARGE_MS, ease: 'Quad.easeIn' });
+    const charge = { orb, facing };
+    this.fireballCharges.add(charge);
+    return charge;
+  }
+
+  destroyFireballCharge(charge) {
+    if (!charge) return;
+    this.fireballCharges.delete(charge);
+    if (charge.orb?.scene) {
+      this.tweens.killTweensOf(charge.orb);
+      charge.orb.destroy();
+    }
+  }
+
+  spawnBossFireball(yOffset = FIREBALL_FEET_OFFSET, lockedFacing = null) {
+    if (!this.boss?.active) return;
+    if (lockedFacing) {
+      this.bossFacing = lockedFacing;
+      this.bossAnimator?.setFacing(lockedFacing);
+    } else {
+      this.faceBossTowardPlayer();
+    }
     const facing = this.bossFacing;
     const projectile = launchPower(this, this.bossProjectiles, {
       x: this.boss.x + facing * 48,
@@ -502,7 +541,7 @@ export class BossScene extends Phaser.Scene {
       owner: 'boss',
     });
     projectile.setScale(1.28);
-    projectile.setVelocityX((this.bossHealth <= 8 ? 450 : 390) * facing);
+    projectile.setVelocityX((this.bossHealth <= Math.ceil(this.bossConfig.health / 2) ? 450 : 390) * facing);
     projectile.body.allowGravity = false;
     projectile.setData('damage', 1);
     flashScreen(this, { color: 0xff5a36, duration: 45 });
@@ -702,6 +741,7 @@ export class BossScene extends Phaser.Scene {
     makeImpact(this, impactX, impactY, 0xffffff);
     flashScreen(this, { color: 0xffffff, duration: 55 });
     this.cameras.main.shake(70, 0.004);
+    hitStop(this, 45);
     this.tweens.add({ targets: this.boss, alpha: 0.34, duration: 70, yoyo: true });
     this.drawBossBar();
 
@@ -722,6 +762,11 @@ export class BossScene extends Phaser.Scene {
       || (!this.aboveDropping && !this.furyCharging)
       || this.gameplayTime < this.nextContactDamageAt
     ) return;
+    if (
+      this.furyCharging
+      && !this.aboveDropping
+      && Math.abs(this.boss.body.velocity.x) < FURY_CONTACT_MIN_SPEED
+    ) return;
     if (this.player.takeDamage(this.boss.x, 1)) {
       this.nextContactDamageAt = this.gameplayTime + 600;
       makeImpact(this, this.player.body.x, this.player.body.y, 0xff4f86);
@@ -737,6 +782,10 @@ export class BossScene extends Phaser.Scene {
   purifyBoss() {
     if (this.bossDefeated) return;
     this.bossDefeated = true;
+    // update() stops counting hit-stop once the fight ends; release it here so
+    // the purified Babito can settle under gravity.
+    this.hitStopRemaining = 0;
+    this.physics.world.resume();
     this.registry.get('audio')?.play('checkpoint');
     this.encounterSuspended = true;
     this.bossVulnerable = false;
@@ -862,6 +911,8 @@ export class BossScene extends Phaser.Scene {
 
   showPauseOverlay() {
     if (this.pauseOverlay) return;
+    // Toast timers run on the paused scene clock; never leave one on top.
+    dismissToast(this);
     this.paused = true;
     this.player.setEnabled(false);
     this.pauseButton?.setEnabled(false);
@@ -910,6 +961,7 @@ export class BossScene extends Phaser.Scene {
 
   showGameOver() {
     if (this.gameOverShown || this.bossDefeated) return;
+    dismissToast(this);
     this.gameOverShown = true;
     this.encounterSuspended = true;
     this.pauseButton?.setEnabled(false);
@@ -966,6 +1018,7 @@ export class BossScene extends Phaser.Scene {
   }
 
   clearAttackObjects() {
+    for (const charge of [...(this.fireballCharges ?? [])]) this.destroyFireballCharge(charge);
     this.bossProjectiles?.clear(true, true);
     this.bossHazards?.clear(true, true);
   }
@@ -999,19 +1052,35 @@ export class BossScene extends Phaser.Scene {
       || this.encounterSuspended
     ) return;
 
-    this.gameplayTime += Math.max(0, Number(delta) || 0);
+    const frameDelta = Math.max(0, Number(delta) || 0);
+    if (this.hitStopRemaining > 0) {
+      this.hitStopRemaining -= frameDelta;
+      if (this.hitStopRemaining > 0) return;
+      this.hitStopRemaining = 0;
+      this.physics.world.resume();
+    }
+
+    this.gameplayTime += frameDelta;
     this.player?.update(this.gameplayTime);
     this.bossAnimator?.update(this.gameplayTime);
     if (
       this.bossState !== BOSS_STATE.FURY_CHARGE
       && this.bossState !== BOSS_STATE.FROM_ABOVE
       && this.bossState !== BOSS_STATE.RECOVER
+      && this.fireballCharges.size === 0
     ) {
       this.faceBossTowardPlayer();
     }
     if (this.furyCharging && (this.boss.body.blocked.left || this.boss.body.blocked.right)) {
       this.boss.setVelocityX(0);
     }
+  }
+
+  /** Short physics freeze on impacts; pattern timers keep their schedule. */
+  setHitStop(durationMs) {
+    if (this.paused || this.gameOverShown || this.transitioning || this.bossDefeated) return;
+    this.hitStopRemaining = Math.max(this.hitStopRemaining, Math.max(0, Number(durationMs) || 0));
+    if (this.hitStopRemaining > 0 && !this.physics.world.isPaused) this.physics.world.pause();
   }
 
   getGameplayTime() {

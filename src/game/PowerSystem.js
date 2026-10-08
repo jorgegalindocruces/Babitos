@@ -33,7 +33,10 @@ export function launchPower(scene, group, { x, y, facing = 1, powerId = 'fire', 
     bornAt: scene.time.now,
   });
   projectile.body.allowGravity = power.kind === 'arc';
-  projectile.body.setGravityY(power.gravityY ?? 0);
+  // Body gravity is added to the world's; subtract it so `gravityY` in
+  // game-data.json is the arc's real, total gravity.
+  const worldGravityY = scene.physics.world?.gravity?.y ?? 0;
+  projectile.body.setGravityY(power.kind === 'arc' ? (power.gravityY ?? 0) - worldGravityY : 0);
   projectile.setVelocityX(power.speed * facing);
   if (power.kind === 'arc') projectile.setVelocityY(-250);
   projectile.setFlipX(facing < 0);

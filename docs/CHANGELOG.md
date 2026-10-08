@@ -7,6 +7,20 @@ Este archivo relaciona las iteraciones entregadas con sus cambios observables, c
 - Mantener sincronizados `README.md`, `INTERACTIONS.md`, `GAME_DESIGN.md`, `IMPLEMENTATION_SPEC.md` y `ACCEPTANCE_CRITERIA.md` cuando cambien flujo, controles, estados, persistencia o contenido jugable.
 - Añadir una entrada aquí por cada cambio observable, con el commit final y las pruebas realizadas.
 
+## Game feel, nivel y boss justos — 2026-10-08
+
+Pendiente de commit. Auditoría de jugabilidad con playtest automatizado en navegador (bots preciso y «casual» con 250 ms de reacción, con los tres poderes):
+
+- **Control**: nuevo modelo puro [playerMovement.js](../src/game/playerMovement.js) con tuning en `player.movement`. El salto pasa de 85 a ~133 px medidos, con gravedad de caída mayor, corte suave al soltar (antes multiplicaba la velocidad por frame y dependía de los Hz) y flotación en el vértice. El giro deja de derrapar (de 48 px/267 ms a 15 px/83 ms), la frenada pasa de 51 a 19 px y el control aéreo es propio. El retroceso bloquea el control 220 ms y hay 10 px de margen al aterrizar en bordes. Se eliminan `moveSpeed`, que no se usaba, y `jumpVelocity`.
+- **Nivel**: 5 de las 9 plataformas elevadas eran inalcanzables con el salto anterior. Ahora las 10 lo son, con el suelo continuo intacto. Se añaden 25 Babicoins colocadas de cobro único (`babilandia:coin:<id>`), una ruta alta sobre el puente y otra hacia el portal, y COME_2 se mueve junto a DA VUELTAS para crear el primer encuentro combinado. COME_2 alcanzaba con su persecución el checkpoint `boss_gate`.
+- **Justicia**: al reaparecer, los enemigos cercanos vuelven a su origen; cargar un checkpoint intermedio concede invulnerabilidad de respawn. DA VUELTAS se orienta y rueda hacia el Babito y solo ataca a menos de 460 px. El portal sellado indica qué falta y dónde.
+- **Bugs**: la Roca sumaba su gravedad a la global (alcance real ~120 px en lugar de ~300). Los avisos flotantes quedaban encima de la pausa y de `GAME OVER` para siempre, porque su temporizador estaba detenido. El aviso inicial del boss tapaba el primer patrón.
+- **Boss**: `FIREBALL` mezclaba una bola que pasaba 1 px por encima de la hitbox con otra que obligaba a saltar, separadas 330 ms. Ahora todas salen a la altura de los pies, con orbe de carga de 300 ms y separación de 900/850 ms. La embestida no daña con el boss detenido.
+- **Feedback**: polvo al saltar y aterrizar, hit-stop al recibir daño (80 ms), al acertar (35/45 ms) y al derrotar (70 ms), chispas y latido del contador al recoger monedas en lugar de un destello a pantalla completa, y cámara con *look-ahead* direccional.
+- **Código**: pads táctiles compartidos en [touchControls.js](../src/ui/touchControls.js), con zona activa ampliada; `applyKnockback()`, `grantSpawnGrace()`, `resetToHome()`, `dismissToast()`, `spawnDust()` y `hitStop()`.
+
+Resultado del playtest: los bots completan Babilandia en 28–46 s con los tres poderes y vencen al boss. El bot casual ya no muere por bolas ilegibles (antes perdía siempre en `FIREBALL`). Pruebas: 86 casos automáticos (10 nuevos en [player-movement.test.js](../test/player-movement.test.js)), compilación de producción y `git diff --check`.
+
 ## Acceso al mapa y rejugada de la Fase 1 — 2026-10-08
 
 Commit [`6889c92`](https://github.com/jorgegalindocruces/Babitos/commit/6889c92):

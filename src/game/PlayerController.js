@@ -7,10 +7,17 @@ import {
 } from './BabitoAnimations.js';
 import { getPower, launchPower } from './PowerSystem.js';
 import { shouldCollideWithTerrain } from './platformCollision.js';
+import {
+  deriveJumpPhysics,
+  getPlayerGravity,
+  stepHorizontalVelocity,
+} from './playerMovement.js';
+import { hitStop, spawnDust } from '../ui/effects.js';
 
 const ATTACK_ANIMATION_MS = getBabitoAnimationDurationMs('attack');
 const HURT_ANIMATION_MS = getBabitoAnimationDurationMs('hurt');
 const DEAD_ANIMATION_MS = getBabitoAnimationDurationMs('dead');
+const RESPAWN_INVULNERABILITY_MS = 1500;
 
 function getGameplayTime(scene) {
   const value = scene?.getGameplayTime?.();
@@ -44,6 +51,8 @@ export class PlayerController {
     this.onHealth = onHealth;
     this.onGameOver = onGameOver;
     this.config = gameData.player;
+    this.movement = this.config.movement;
+    this.jumpPhysics = deriveJumpPhysics(this.movement);
     this.health = this.config.maxHealth;
     this.facing = 1;
     this.enabled = true;
@@ -54,6 +63,9 @@ export class PlayerController {
     this.nextAttackAt = 0;
     this.attackUntil = -Infinity;
     this.hurtUntil = -Infinity;
+    this.controlLockedUntil = -Infinity;
+    this.lastUpdateAt = null;
+    this.jumpHeldSinceJump = false;
     this.wasGrounded = false;
     this.previousVerticalVelocity = 0;
     this.checkpoint = { x, y };
@@ -68,13 +80,18 @@ export class PlayerController {
     this.body = scene.physics.add.sprite(x, y, 'player_hitbox').setVisible(false);
     this.body.setDepth(10).setCollideWorldBounds(true);
     this.body.body.setSize(this.config.hitbox.width, this.config.hitbox.height, true);
-    this.body.body.setMaxVelocity(360, 760);
-    this.body.setDragX(1350);
+    // Horizontal speed is shaped by playerMovement.js; the physics cap only
+    // bounds knockback impulses and terminal fall speed.
+    this.body.body.setMaxVelocity(900, this.movement.maxFallSpeed);
+    this.body.setDragX(0);
+    // A slightly larger landing window than enemies/coins forgives a jump
+    // whose feet barely miss the top edge of a one-way platform.
+    const landingTolerance = this.movement.landingTolerancePx;
     this.collider = scene.physics.add.collider(
       this.body,
       platforms,
       null,
-      shouldCollideWithTerrain,
+      (first, second) => shouldCollideWithTerrain(first, second, { tolerance: landingTolerance }),
     );
 
     this.avatar = new BabitoAvatar(scene, x, y, save.appearance, save.size);
@@ -164,11 +181,14 @@ export class PlayerController {
     if (!this.enabled) {
       this.body.setAccelerationX(0);
       this.body.setVelocityX(0);
+      this.jumpHeldSinceJump = false;
     }
   }
 
   update(time) {
     if (!this.body.active) return;
+    const dtSeconds = this.lastUpdateAt == null ? 0 : Math.max(0, (time - this.lastUpdateAt) / 1000);
+    this.lastUpdateAt = time;
     const grounded = this.body.body.blocked.down || this.body.body.touching.down;
     const landedHard = grounded && !this.wasGrounded && this.previousVerticalVelocity > 180;
     let jumpedThisFrame = false;
@@ -201,38 +221,62 @@ export class PlayerController {
 
     if (jumpPressed) this.jumpBufferedUntil = time + this.config.jumpBufferMs;
 
+    const jumpHeld = this.isPhysicalControlDown('space')
+      || this.isPhysicalControlDown('up')
+      || this.isPhysicalControlDown('w')
+      || this.virtual.jump;
+    const controlLocked = time < this.controlLockedUntil;
+    let axis = 0;
+
     if (this.enabled) {
-      const axis = Number(right) - Number(left);
-      if (axis !== 0) {
-        this.body.setAccelerationX(axis * 1450);
-        this.facing = axis;
-      } else {
-        this.body.setAccelerationX(0);
-      }
+      axis = controlLocked ? 0 : Number(right) - Number(left);
+      if (axis !== 0) this.facing = axis;
 
       const canUseCoyote = time - this.lastGroundedAt <= this.config.coyoteMs;
-      if (this.jumpBufferedUntil >= time && canUseCoyote) {
+      if (this.jumpBufferedUntil >= time && canUseCoyote && !controlLocked) {
         jumpedThisFrame = true;
-        this.body.setVelocityY(-this.config.jumpVelocity);
+        this.body.setVelocityY(-this.jumpPhysics.launchVelocity);
         this.lastGroundedAt = -Infinity;
         this.jumpBufferedUntil = -Infinity;
+        this.jumpHeldSinceJump = true;
         this.avatar.pulseJump?.();
         this.audio?.play('jump');
+        spawnDust(this.scene, this.body.x, this.body.body.bottom, { count: 4, spread: 10 });
       }
 
-      const jumpHeld = this.isPhysicalControlDown('space')
-        || this.isPhysicalControlDown('up')
-        || this.isPhysicalControlDown('w')
-        || this.virtual.jump;
-      if (!jumpHeld && this.body.body.velocity.y < -190) this.body.setVelocityY(this.body.body.velocity.y * 0.68);
-
       if (attackPressed) this.attack(time);
-    } else {
+    }
+
+    // Variable height only applies to a jump the player started: releasing the
+    // button switches to a heavier rising gravity, independent of frame rate.
+    if (!jumpHeld || this.body.body.velocity.y >= 0) this.jumpHeldSinceJump = false;
+    // Knockback keeps the full rising arc so the hit reads as a clear hop;
+    // the KO bounce keeps plain world gravity.
+    const gravity = this.isDead
+      ? (this.scene.physics.world.gravity?.y ?? 0)
+      : getPlayerGravity({
+        velocityY: this.body.body.velocity.y,
+        jumpHeld: this.jumpHeldSinceJump || controlLocked,
+        tuning: this.movement,
+      });
+    this.body.body.setGravityY(gravity - (this.scene.physics.world.gravity?.y ?? 0));
+
+    if (!controlLocked) {
       this.body.setAccelerationX(0);
+      this.body.setVelocityX(stepHorizontalVelocity({
+        velocityX: this.body.body.velocity.x,
+        axis,
+        grounded,
+        dtSeconds,
+        tuning: this.movement,
+      }));
     }
 
     if (landedHard && !jumpedThisFrame && time >= this.hurtUntil) {
       this.avatar.pulseLanding?.(this.previousVerticalVelocity);
+      if (this.previousVerticalVelocity > 420) {
+        spawnDust(this.scene, this.body.x, this.body.body.bottom, { count: 6, spread: 14 });
+      }
     }
 
     // Animation priority is intentionally independent from movement input.
@@ -297,16 +341,26 @@ export class PlayerController {
     return projectile;
   }
 
+  /** Pushes the Babito without damage, briefly overriding horizontal input. */
+  applyKnockback(velocityX, velocityY = null, lockMs = this.movement.hurtControlLockMs) {
+    this.controlLockedUntil = getGameplayTime(this.scene) + Math.max(0, lockMs);
+    this.body.setVelocityX(velocityX);
+    if (velocityY != null) this.body.setVelocityY(velocityY);
+  }
+
   takeDamage(sourceX = this.body.x, amount = 1) {
     const time = getGameplayTime(this.scene);
     if (!this.enabled || this.isDead || time < this.invulnerableUntil) return false;
     this.health = Math.max(0, this.health - amount);
     this.invulnerableUntil = time + this.config.invulnerabilityMs;
     this.hurtUntil = time + HURT_ANIMATION_MS;
+    this.controlLockedUntil = time + this.movement.hurtControlLockMs;
+    this.jumpHeldSinceJump = false;
     this.avatar.cancelMotionPulses?.();
     const knockback = this.body.x < sourceX ? -220 : 220;
     this.body.setVelocity(knockback, -265);
     this.scene.cameras.main.shake(110, 0.006);
+    hitStop(this.scene, 80);
     this.audio?.play('hit');
     this.onHealth?.(this.health, this.config.maxHealth);
     if (this.health <= 0) this.die();
@@ -326,6 +380,11 @@ export class PlayerController {
     this.scene.time.delayedCall(DEAD_ANIMATION_MS, () => this.onGameOver?.());
   }
 
+  /** Same protection as a respawn, for the first frames after entering a level. */
+  grantSpawnGrace(durationMs = RESPAWN_INVULNERABILITY_MS) {
+    this.invulnerableUntil = getGameplayTime(this.scene) + durationMs;
+  }
+
   setCheckpoint(x, y) {
     this.checkpoint = { x, y };
   }
@@ -334,9 +393,11 @@ export class PlayerController {
     if (restoreHealth) this.health = this.config.maxHealth;
     this.isDead = false;
     this.enabled = true;
-    this.invulnerableUntil = getGameplayTime(this.scene) + 1500;
+    this.invulnerableUntil = getGameplayTime(this.scene) + RESPAWN_INVULNERABILITY_MS;
     this.attackUntil = -Infinity;
     this.hurtUntil = -Infinity;
+    this.controlLockedUntil = -Infinity;
+    this.jumpHeldSinceJump = false;
     this.wasGrounded = false;
     this.previousVerticalVelocity = 0;
     this.clearPendingInput();

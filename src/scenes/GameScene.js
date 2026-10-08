@@ -13,6 +13,7 @@ import {
   TUTORIAL_SIGN_STYLE,
 } from '../game/surfaceAnchoring.js';
 import { createButton, focusGameCanvas } from '../ui/Button.js';
+import { createTouchControls, prefersTouchControls } from '../ui/touchControls.js';
 import { TEXT_METRICS_REFRESH_EVENT } from '../ui/textQuality.js';
 import {
   addPixelBackground,
@@ -23,12 +24,20 @@ import {
   createPanel,
   createTitle,
 } from '../ui/sceneHelpers.js';
-import { flashScreen, showToast, transitionToScene } from '../ui/effects.js';
+import { approach } from '../game/playerMovement.js';
+import {
+  dismissToast,
+  hitStop,
+  prefersReducedMotion,
+  showToast,
+  spawnDust,
+  transitionToScene,
+} from '../ui/effects.js';
 
-function prefersTouchControls() {
-  if (typeof window === 'undefined' || typeof navigator === 'undefined') return false;
-  return navigator.maxTouchPoints > 0 || Boolean(window.matchMedia?.('(pointer: coarse)').matches);
-}
+const CAMERA_LOOK_AHEAD = 110;
+const CAMERA_LOOK_AHEAD_SPEED = 240;
+const CAMERA_VERTICAL_OFFSET = 40;
+const PLACED_COIN_REWARD_PREFIX = 'babilandia:coin:';
 
 export class GameScene extends Phaser.Scene {
   constructor() {
@@ -96,6 +105,8 @@ export class GameScene extends Phaser.Scene {
     this.paused = false;
     this.transitioning = false;
     this.fallRecoveryPending = false;
+    this.hitStopRemaining = 0;
+    this.cameraLookAhead = CAMERA_LOOK_AHEAD;
 
     this.physics.world.setBounds(0, 0, this.level.worldWidth, 620);
     this.cameras.main.setBounds(0, 0, this.level.worldWidth, 540);
@@ -120,6 +131,7 @@ export class GameScene extends Phaser.Scene {
           ?? this.level.checkpoints[0]));
     this.projectiles = this.physics.add.group();
     this.coins = this.physics.add.group();
+    this.createPlacedCoins();
     this.enemySprites = this.physics.add.group();
 
     this.player = new PlayerController(this, {
@@ -135,9 +147,19 @@ export class GameScene extends Phaser.Scene {
       onGameOver: () => this.showGameOver(),
     });
     this.player.setCheckpoint(savedCheckpoint.x, savedCheckpoint.y - 20);
+    if (savedCheckpoint.id !== this.level.checkpoints[0].id) this.player.grantSpawnGrace();
     if (this.qaSize) this.player.avatar.setSizeVariant(this.qaSize);
-    this.cameras.main.startFollow(this.player.body, true, 0.09, 0.09, -120, 40);
-    this.cameras.main.setDeadzone(180, 100);
+    // The follow offset is driven every frame toward the facing direction so
+    // the player always sees more of the space they are moving into.
+    this.cameras.main.startFollow(
+      this.player.body,
+      true,
+      0.1,
+      0.09,
+      -this.cameraLookAhead,
+      CAMERA_VERTICAL_OFFSET,
+    );
+    this.cameras.main.setDeadzone(48, 100);
 
     this.createEnemies();
     if (this.qaEnemyType) {
@@ -187,7 +209,10 @@ export class GameScene extends Phaser.Scene {
       this.store.setProgress({ scene: 'babilandia', checkpoint: savedCheckpoint.id });
     }
     announce('Babilandia. Muévete, salta, derrota a los Bicharracos y recoge monedas.');
-    showToast(this, 'A/D o ←/→ para moverte · W/↑/ESPACIO para saltar · J/X para atacar', {
+    const controlsHint = this.touchControls
+      ? '◀ ▶ para moverte · ↑ para saltar (mantén para subir más) · ✦ para atacar'
+      : 'A/D o ←/→ para moverte · W/↑/ESPACIO para saltar · J/X para atacar';
+    showToast(this, controlsHint, {
       duration: 4200,
       y: 82,
     });
@@ -313,6 +338,44 @@ export class GameScene extends Phaser.Scene {
     });
   }
 
+  createPlacedCoins() {
+    this.placedCoins = this.physics.add.staticGroup();
+    const claimed = new Set(this.save.progress?.claimedRewards ?? []);
+    const reducedMotion = prefersReducedMotion();
+    for (const definition of this.level.coins ?? []) {
+      const rewardId = `${PLACED_COIN_REWARD_PREFIX}${definition.id}`;
+      const alreadyClaimed = claimed.has(rewardId);
+      const coin = this.placedCoins.create(definition.x, definition.y, 'coin')
+        .setDepth(12)
+        .setData({ rewardId, claimed: alreadyClaimed })
+        // A coin collected in an earlier run stays as a faint marker: the
+        // route remains readable on replay without paying out twice.
+        .setAlpha(alreadyClaimed ? 0.32 : 1);
+      coin.body.setCircle(11, -1, -1);
+      coin.refreshBody();
+      if (!reducedMotion) {
+        this.tweens.add({
+          targets: coin,
+          y: definition.y - 3,
+          duration: 520,
+          yoyo: true,
+          repeat: -1,
+          ease: 'Sine.easeInOut',
+          delay: (definition.x * 7) % 400,
+        });
+      }
+    }
+  }
+
+  getPlacedCoinProgress() {
+    const total = this.placedCoins?.getLength?.() ?? 0;
+    let collected = 0;
+    this.placedCoins?.children?.iterate((coin) => {
+      if (coin?.getData('claimed')) collected += 1;
+    });
+    return { collected, total };
+  }
+
   createEnemies() {
     for (const definition of this.level.enemies) {
       const controller = new EnemyController(
@@ -367,6 +430,7 @@ export class GameScene extends Phaser.Scene {
       const controller = enemySprite.getData('controller');
       const damaged = controller?.takeDamage(projectile.getData('damage') ?? 1, projectile.x);
       makeImpact(this, projectile.x, projectile.y, damaged ? 0xffffff : 0x83d8ff);
+      if (damaged) hitStop(this, 35);
       if (!damaged && controller?.type === 'da_vueltas') {
         showToast(this, '¡Sus pinchos lo protegen! Espera a que quede MAREADO.', {
           type: 'warning', duration: 1100, y: 92,
@@ -379,6 +443,11 @@ export class GameScene extends Phaser.Scene {
       if (controller?.canHurtPlayer()) this.player.takeDamage(enemySprite.x, controller.config.damage);
     });
     this.physics.add.overlap(this.player.body, this.coins, (_playerBody, coin) => this.collectCoin(coin));
+    this.physics.add.overlap(
+      this.player.body,
+      this.placedCoins,
+      (_playerBody, coin) => this.collectPlacedCoin(coin),
+    );
     this.physics.add.overlap(this.player.body, this.checkpointSprites, (_playerBody, flag) => {
       this.activateCheckpoint(flag.getData('checkpoint'), flag);
     });
@@ -389,6 +458,11 @@ export class GameScene extends Phaser.Scene {
     if (this.qaCombat) dropCount = 2;
     this.defeatedEnemies += 1;
     this.enemySprites.remove(enemy.sprite, false, false);
+    hitStop(this, 70);
+    this.cameras.main.shake(90, 0.003);
+    spawnDust(this, enemy.sprite.x, enemy.sprite.body?.bottom ?? enemy.sprite.y, {
+      count: 8, spread: 22, color: 0xffffff, depth: 13,
+    });
     for (let index = 0; index < dropCount; index += 1) {
       const coin = this.coins.create(enemy.sprite.x + (index - 0.5) * 12, enemy.sprite.y - 10, 'coin')
         .setDepth(12)
@@ -414,11 +488,39 @@ export class GameScene extends Phaser.Scene {
     const y = coin.y;
     coin.disableBody(true, true);
     this.store.addCoins(1);
+    this.celebrateCoin(x, y, '+1');
+  }
+
+  collectPlacedCoin(coin) {
+    if (!coin?.active) return;
+    const x = coin.x;
+    const y = coin.y;
+    const rewardId = coin.getData('rewardId');
+    const wasClaimed = coin.getData('claimed');
+    this.tweens.killTweensOf(coin);
+    coin.disableBody(true, true);
+    if (wasClaimed || this.qaCheckpointActive || this.qaEnemyType) {
+      // Replayed markers and QA routes give visual feedback only.
+      spawnDust(this, x, y + 6, { count: 3, spread: 8, color: 0xfff1a8, depth: 13 });
+      return;
+    }
+    const result = this.store.claimReward(rewardId, 1);
+    coin.setData('claimed', true);
+    this.celebrateCoin(x, y, result.claimed ? '+1' : '');
+  }
+
+  celebrateCoin(x, y, label) {
     this.registry.get('audio')?.play('coin');
     this.save = this.store.getState();
     this.updateCoinHud();
-    flashScreen(this, { color: 0xffcf3c, duration: 55 });
-    const pop = createLabel(this, '+1', x, y - 4, {
+    spawnDust(this, x, y + 6, { count: 5, spread: 10, color: 0xffe36e, depth: 13 });
+    if (this.coinText && !prefersReducedMotion()) {
+      this.tweens.killTweensOf(this.coinText);
+      this.coinText.setScale(1);
+      this.tweens.add({ targets: this.coinText, scale: 1.25, duration: 70, yoyo: true, ease: 'Quad.easeOut' });
+    }
+    if (!label) return;
+    const pop = createLabel(this, label, x, y - 4, {
       fontSize: '12px', color: 0xffe36e, scrollFactor: 1, depth: 50,
     });
     this.tweens.add({ targets: pop, y: y - 36, alpha: 0, duration: 520, onComplete: () => pop.destroy() });
@@ -485,23 +587,11 @@ export class GameScene extends Phaser.Scene {
   }
 
   createTouchControls() {
-    const createPad = (x, label, control) => {
-      const pad = this.add.circle(x, 477, 27, 0x071326, 0.44)
-        .setStrokeStyle(2, 0x71e5ff, 0.46)
-        .setDepth(900)
-        .setScrollFactor(0)
-        .setInteractive({ useHandCursor: true });
-      createLabel(this, label, x, 477, { fontSize: '14px', color: 0xffffff, depth: 901 });
-      const down = () => this.player.setVirtualControl(control, true);
-      const up = () => this.player.setVirtualControl(control, false);
-      pad.on('pointerdown', down).on('pointerup', up).on('pointerout', up).on('pointerupoutside', up);
-      return pad;
-    };
-    createPad(56, '◀', 'left');
-    createPad(120, '▶', 'right');
-    createPad(840, '↑', 'jump');
-    createPad(906, '✦', 'attack');
+    this.touchControls = createTouchControls(this, () => this.player, {
+      y: 470, strokeColor: 0x71e5ff, fillAlpha: 0.44,
+    });
   }
+
 
   createPauseKeys() {
     this.pauseHandler = (event) => {
@@ -519,11 +609,17 @@ export class GameScene extends Phaser.Scene {
   tryEnterBoss() {
     if (this.transitioning) return;
     if (this.defeatedEnemies < this.level.enemies.length) {
-      const remaining = this.level.enemies.length - this.defeatedEnemies;
-      showToast(this, `El portal sigue sellado: quedan ${remaining} Bicharracos.`, {
-        type: 'warning', duration: 1200,
-      });
-      this.player.body.setVelocityX(-180);
+      this.player.applyKnockback(-220, -160, 260);
+      if (this.gameplayTime < (this.nextPortalWarningAt ?? 0)) return;
+      this.nextPortalWarningAt = this.gameplayTime + 1400;
+      const remaining = this.enemyControllers.filter((enemy) => !enemy.dead);
+      const names = [...new Set(remaining.map((enemy) => enemy.config.name))].join(', ');
+      // Every surviving encounter lies behind the portal, so point the way back.
+      showToast(
+        this,
+        `Portal sellado: ${remaining.length === 1 ? 'queda 1 Bicharraco' : `quedan ${remaining.length} Bicharracos`} (${names}) ← atrás.`,
+        { type: 'warning', duration: 1800 },
+      );
       return;
     }
     this.transitioning = true;
@@ -561,17 +657,27 @@ export class GameScene extends Phaser.Scene {
 
   showPauseOverlay() {
     this.player.setEnabled(false);
+    // Toast timers run on the paused scene clock; never leave one on top.
+    dismissToast(this);
     this.pauseButton?.setEnabled(false);
     this.setGameplaySystemsPaused(true);
     this.pauseOverlay = this.add.container(0, 0).setDepth(3000).setScrollFactor(0);
     const shade = this.add.rectangle(480, 270, 960, 540, 0x020814, 0.76).setInteractive();
     const panel = createPanel(this, 480, 270, 520, 360, { depth: 3001 });
     const title = createTitle(this, 'PAUSA', 480, 150, { fontSize: 34, depth: 3002 });
+    const coinProgress = this.getPlacedCoinProgress();
     const controls = createBodyText(this,
-      'Mover: A/D o ←/→\nSaltar: W / ↑ / Espacio\nAtacar: J / X\nPausa: P / Esc',
+      'Mover: A/D o ←/→\nSaltar: W / ↑ / Espacio (mantén para más altura)\nAtacar: J / X · Pausa: P / Esc',
       480,
-      238,
-      { fontSize: 18, depth: 3002, lineSpacing: 9 },
+      226,
+      { fontSize: 17, depth: 3002, lineSpacing: 8 },
+    );
+    const coinSummary = createLabel(
+      this,
+      `BABICOINS ESCONDIDAS  ${coinProgress.collected}/${coinProgress.total}`,
+      480,
+      288,
+      { fontSize: '11px', color: 0xffcf3c, depth: 3002 },
     );
     const resume = createButton(this, {
       x: 480, y: 338, width: 250, height: 48, label: 'CONTINUAR', variant: 'primary', depth: 3003,
@@ -584,7 +690,7 @@ export class GameScene extends Phaser.Scene {
         transitionToScene(this, 'TitleScene');
       },
     });
-    this.pauseOverlay.add([shade, panel, title, controls, resume, titleButton]);
+    this.pauseOverlay.add([shade, panel, title, controls, coinSummary, resume, titleButton]);
     resume.focusAccessible();
     announce('Juego en pausa.');
   }
@@ -603,6 +709,7 @@ export class GameScene extends Phaser.Scene {
 
   showGameOver() {
     if (this.gameOverContainer) return;
+    dismissToast(this);
     this.fallRecoveryPending = false;
     this.pauseButton?.setEnabled(false);
     this.setGameplaySystemsPaused(true);
@@ -621,6 +728,7 @@ export class GameScene extends Phaser.Scene {
         this.fallRecoveryPending = false;
         this.setGameplaySystemsPaused(false);
         this.player.respawn();
+        this.resetEnemiesNearCheckpoint();
         this.pauseButton?.setEnabled(true);
         focusGameCanvas(this);
         announce('Reintento desde el último checkpoint.');
@@ -638,6 +746,15 @@ export class GameScene extends Phaser.Scene {
     announce('Sin corazones. Reintenta desde el último checkpoint.');
   }
 
+  resetEnemiesNearCheckpoint(radius = 700) {
+    const { x } = this.player.checkpoint;
+    for (const enemy of this.enemyControllers) {
+      if (Math.abs(enemy.sprite.x - x) < radius || Math.abs(enemy.home.x - x) < radius) {
+        enemy.resetToHome();
+      }
+    }
+  }
+
   handleFall() {
     if (this.fallRecoveryPending || this.gameOverContainer) return;
     this.fallRecoveryPending = true;
@@ -652,16 +769,43 @@ export class GameScene extends Phaser.Scene {
           return;
         }
         this.player.respawn({ restoreHealth: false });
+        this.resetEnemiesNearCheckpoint();
         this.fallRecoveryPending = false;
         this.pauseButton?.setEnabled(true);
       });
     }
   }
 
+  setHitStop(durationMs) {
+    if (this.paused || this.gameOverContainer || this.transitioning) return;
+    this.hitStopRemaining = Math.max(this.hitStopRemaining, Math.max(0, Number(durationMs) || 0));
+    if (this.hitStopRemaining > 0 && !this.physics.world.isPaused) this.physics.world.pause();
+  }
+
+  updateCameraLookAhead(deltaMs) {
+    if (!this.player?.body?.active) return;
+    const moving = Math.abs(this.player.body.body.velocity.x) > 40;
+    const target = moving ? this.player.facing * CAMERA_LOOK_AHEAD : this.cameraLookAhead;
+    this.cameraLookAhead = approach(
+      this.cameraLookAhead,
+      target,
+      CAMERA_LOOK_AHEAD_SPEED * (deltaMs / 1000),
+    );
+    this.cameras.main.setFollowOffset(-this.cameraLookAhead, CAMERA_VERTICAL_OFFSET);
+  }
+
   update(_time, delta) {
     if (this.paused || this.gameOverContainer || this.transitioning) return;
 
-    this.gameplayTime += Math.max(0, Number(delta) || 0);
+    const frameDelta = Math.max(0, Number(delta) || 0);
+    if (this.hitStopRemaining > 0) {
+      this.hitStopRemaining -= frameDelta;
+      if (this.hitStopRemaining > 0) return;
+      this.hitStopRemaining = 0;
+      this.physics.world.resume();
+    }
+
+    this.gameplayTime += frameDelta;
 
     this.player?.update(this.gameplayTime);
     if (this.qaMotion) {
@@ -678,6 +822,7 @@ export class GameScene extends Phaser.Scene {
       }
     }
     this.enemyControllers.forEach((enemy) => enemy.update());
+    this.updateCameraLookAhead(frameDelta);
     if (this.player?.body.y > 575) this.handleFall();
     this.progressText?.setText(`ENCUENTROS  ${this.defeatedEnemies}/${this.level.enemies.length}`);
   }

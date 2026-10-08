@@ -60,6 +60,8 @@ La descripción exhaustiva, incluidas las reglas de foco, pausa, reintento y vul
 - `Espacio` queda reservado para saltar durante el gameplay; los botones del HUD siguen disponibles con ratón, toque o navegación accesible mediante `Tab`.
 - El canvas conserva 960 × 540 exactos en escritorio para no deformar la cuadrícula de píxel; fuentes, botones y avisos se cargan y rasterizan con una política de resolución común.
 - Los carteles tutoriales de Babilandia forman una sola pieza de tabla, texto y poste, y se anclan a plataformas reales en lugar de usar alturas decorativas manuales.
+- El control del Babito se ha reajustado: arranque y frenada inmediatos, giros sin derrape, salto más alto con corte suave al soltar y caída más rápida, todo independiente del framerate y configurable en `player.movement` de `src/data/game-data.json`. Todas las plataformas de Babilandia son alcanzables y 25 Babicoins colocadas, cobrables una sola vez, premian la exploración.
+- Babilandia avanza en tres tramos (Mercado, Puente y Fuente) que enseñan, combinan y ponen a prueba las mecánicas. Babito Corrupto telegrafía cada bola de fuego para que todos sus ataques se puedan leer.
 
 ## Ejecutar en local
 

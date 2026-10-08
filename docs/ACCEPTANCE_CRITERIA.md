@@ -45,7 +45,10 @@ Estos criterios validan el vertical slice 0.2 descrito en [INTERACTIONS.md](INTE
 ## Babilandia
 
 - `A`/`D` o flechas mueven; `W`, `↑` o `Espacio` saltan; `J` o `X` atacan.
-- El salto conserva coyote time, buffer y altura variable; el daño aplica retroceso, parpadeo e invulnerabilidad temporal.
+- El salto conserva coyote time (110 ms), buffer (130 ms) y altura variable: el salto completo sube unos 138 px, un toque aproximadamente la mitad y la caída es más rápida que la subida. Cambiar de dirección no produce derrape y soltar la dirección en el suelo frena en menos de 24 px.
+- Movimiento y salto miden lo mismo a 60 y a 144 Hz.
+- Todas las plataformas elevadas de Babilandia son alcanzables desde el suelo o desde otra plataforma, con al menos un 10 % de margen de altura.
+- El daño aplica retroceso con un pequeño salto, una breve congelación, bloqueo horizontal de 220 ms, parpadeo e invulnerabilidad temporal.
 - El HUD muestra 3 corazones máximos, Babicoins, poder y teclas, encuentros y pausa.
 - El suelo base permanece sólido al saltar, caer o aproximarse de lado.
 - Una plataforma elevada se atraviesa desde abajo durante el ascenso, no bloquea lateralmente a un cuerpo que ya está debajo y sostiene al Babito al descender desde arriba o permanecer quieto sobre ella.
@@ -57,7 +60,12 @@ Estos criterios validan el vertical slice 0.2 descrito en [INTERACTIONS.md](INTE
 - VUELA atraviesa las plataformas durante `DIVE` y `RETURN`, conserva los límites del mundo y nunca queda bloqueado bajo geometría de terreno.
 - Cada enemigo puede soltar 0, 1 o 2 monedas y recoger una suma exactamente una.
 - El portal permanece cerrado hasta derrotar los seis encuentros e informa cuántos faltan.
+- Abrir la pausa o `GAME OVER` retira cualquier aviso flotante que pudiera quedar encima del panel.
 - Un checkpoint cura por completo y se guarda.
+- Reaparecer en un checkpoint devuelve a su origen a los enemigos vivos cercanos; ningún checkpoint está dentro de la patrulla más el rango de persecución de un COME.
+- Las 25 Babicoins colocadas suman una vez por guardado; en una rejugada aparecen translúcidas y no suman. La pausa muestra cuántas se han encontrado.
+- DA VUELTAS se orienta hacia el Babito durante su anticipación y solo la inicia a menos de 460 px.
+- Tocar el portal sellado indica cuántos enemigos faltan, de qué tipo y que están detrás.
 - Una caída fuera de invulnerabilidad resta un corazón y reaparece en el checkpoint con la vida restante. Durante la invulnerabilidad de respawn no resta otro; llegar a cero abre Game Over y `REINTENTAR` reaparece con vida completa.
 
 ## Pausa
@@ -71,6 +79,8 @@ Estos criterios validan el vertical slice 0.2 descrito en [INTERACTIONS.md](INTE
 
 - La arena conserva suelo y plataformas estables antes, durante y después de disparar; su suelo es sólido y las plataformas elevadas se atraviesan al ascender y sostienen al caer.
 - El boss se llama Babito Corrupto, tiene 16 de vida y ejecuta `FIREBALL`, `FROM_ABOVE` y `FURY_CHARGE` con avisos previos legibles.
+- Cada bola de `FIREBALL` se carga 300 ms de forma visible, viaja a la altura de los pies del boss y deja tiempo para aterrizar antes de la siguiente; ninguna bola castiga un salto pedido por el aviso.
+- La embestida no daña por contacto cuando el boss ya está detenido.
 - Al terminar cada patrón entra 1,9 s en `RECOVER`. Solo entonces recibe daño; fuera de esa ventana el impacto se bloquea con feedback.
 - Fuego y Rayo restan 1; Roca resta 2.
 - El HUD muestra corazones, poder, barra/vida, estado actual del boss y pausa.

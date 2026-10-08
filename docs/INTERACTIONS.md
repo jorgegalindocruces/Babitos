@@ -34,7 +34,7 @@ Solo Babilandia y Babito Corrupto son contenido jugable. La Jungla y Ciudad Bich
 | Recorrer botones | `Tab` / `Mayús + Tab` | Apuntar o tocar |
 | Activar el botón enfocado | `Enter` o `Espacio` | Clic principal o toque |
 
-Los pads virtuales solo aparecen cuando el navegador comunica capacidad táctil o un puntero grueso. Durante el gameplay, `Espacio` pertenece al salto: el botón `PAUSA` del HUD no captura ese atajo. `Enter` y `Espacio` respetan el control HTML enfocado; salto, ataque y `M` también ignoran eventos nacidos en campos o botones. El movimiento y `P`/`Esc` siguen siendo atajos globales en una escena jugable.
+Los pads virtuales solo aparecen cuando el navegador comunica capacidad táctil o un puntero grueso. Su zona activa es mayor que el círculo dibujado (radio 42 frente a 30), de modo que un pulgar que se desliza un poco no suelta el control, y el aviso inicial de Babilandia muestra los pads en lugar de las teclas. Durante el gameplay, `Espacio` pertenece al salto: el botón `PAUSA` del HUD no captura ese atajo. `Enter` y `Espacio` respetan el control HTML enfocado; salto, ataque y `M` también ignoran eventos nacidos en campos o botones. El movimiento y `P`/`Esc` siguen siendo atajos globales en una escena jugable.
 
 ## Contrato de botones y menús
 
@@ -91,14 +91,25 @@ Todos los botones de Phaser comparten el comportamiento de [Button.js](../src/ui
 
 ### Babilandia
 
-El nivel, sus seis encuentros, plataformas, checkpoints y portal se definen en [babilandia.json](../src/data/levels/babilandia.json); la orquestación está en [GameScene.js](../src/scenes/GameScene.js).
+El nivel, sus seis encuentros, plataformas, Babicoins colocadas, checkpoints y portal se definen en [babilandia.json](../src/data/levels/babilandia.json); la orquestación está en [GameScene.js](../src/scenes/GameScene.js).
+
+Babilandia se recorre en tres tramos separados por checkpoints, con dificultad creciente:
+
+1. **Mercado** (`start` → `market_gate`): enseña a saltar con monedas sobre una plataforma baja y en arco, presenta a COME y ofrece una plataforma refugio sobre su zona de mordisco.
+2. **Puente** (`market_gate` → `fountain`): presenta a VUELA en solitario y en pareja; un camino alto de dos plataformas premia con monedas y deja disparar a un VUELA que flota a esa altura.
+3. **Fuente y portal** (`fountain` → portal): combina DA VUELTAS y COME alrededor de una plataforma refugio, de modo que hay que esquivar el giro mientras COME persigue, y termina con una ruta alta de tres plataformas antes del portal.
 
 Los cinco carteles tutoriales también se definen allí sin coordenada vertical manual. Cada poste se apoya exactamente en la superficie física más alta bajo su posición y el texto queda contenido dentro de su tabla de madera; si no existe soporte, el cartel no se dibuja en el aire. El aviso de DA VUELTAS está separado tanto del enemigo como del checkpoint.
 
 #### Movimiento, vida y ataque
 
-- El Babito tiene 3 corazones, aceleración y frenado, salto de altura variable, 110 ms de *coyote time* y 120 ms de *jump buffer*.
-- Un golpe quita un corazón, aplica retroceso y concede 1050 ms de invulnerabilidad con parpadeo.
+- El Babito tiene 3 corazones. Alcanza su velocidad máxima de 320 px/s en unos 0,13 s, frena en unos 19 px y gira sin derrapar; en el aire conserva más inercia, pero puede corregir la trayectoria.
+- El salto máximo sube unos 138 px (algo más de tres veces la hitbox) en 0,4 s. Soltar el botón antes corta el salto de forma suave (un toque sube aproximadamente la mitad), el vértice flota un instante y la caída es más rápida que la subida. Se conservan 110 ms de *coyote time* y 130 ms de *jump buffer*. Al aterrizar sobre una plataforma unidireccional, el Babito admite 10 px de margen bajo el borde superior.
+- El movimiento horizontal y la gravedad del Babito se calculan con el tiempo real de cada frame, por lo que se sienten igual a 60, 120 o 144 Hz. El tuning vive en `player.movement` de [game-data.json](../src/data/game-data.json).
+- Todas las plataformas elevadas de Babilandia son alcanzables desde el suelo o desde otra plataforma con ese salto.
+- Un golpe quita un corazón, aplica retroceso con un pequeño salto, congela la acción 80 ms para que se lea el impacto, bloquea el control horizontal 220 ms y concede 1050 ms de invulnerabilidad con parpadeo.
+- La cámara mira unos 110 px por delante en la dirección en que se mueve el Babito y desplaza ese margen suavemente al girar.
+- Saltar y aterrizar con fuerza levantan unas motas de polvo; acertar a un enemigo congela la acción 35 ms y derrotarlo, 70 ms, con una pequeña sacudida. La preferencia de movimiento reducido elimina las partículas.
 - El ataque sale en la dirección en que mira el Babito y respeta el cooldown del poder.
 - El suelo base es completamente sólido. Las plataformas elevadas son unidireccionales: su cara inferior y sus laterales se atraviesan al ascender o al llegar desde abajo, y su cara superior sostiene al Babito, enemigos terrestres y monedas cuando descienden desde arriba. No existe todavía un comando para dejarse caer con `↓`.
 - Los proyectiles desaparecen al tocar terreno. Invariante crítico: un poder nunca destruye, oculta ni desactiva suelo o plataformas; el fondo es decorativo y no tiene colisión.
@@ -109,7 +120,15 @@ Los cinco carteles tutoriales también se definen allí sin coordenada vertical 
 - Activar un checkpoint lo guarda y restaura toda la vida.
 - Caer intenta quitar un corazón y devuelve al último checkpoint conservando la vida restante. Durante la invulnerabilidad del respawn no aplica un segundo daño.
 - Llegar a cero abre `GAME OVER`. `REINTENTAR` devuelve al último checkpoint con la vida completa; `TÍTULO` sale de la fase.
+- Al reaparecer, los enemigos vivos a menos de 700 px del checkpoint vuelven a su posición inicial en estado neutro: un checkpoint nunca deja al Babito dentro de un ataque. Cargar la partida en un checkpoint intermedio concede la misma invulnerabilidad de 1500 ms que un respawn.
 - Las monedas recogidas y el checkpoint quedan persistidos.
+
+#### Babicoins colocadas
+
+- Babilandia contiene 25 Babicoins flotantes sobre plataformas, arcos de salto y rutas altas, además de las que sueltan los enemigos.
+- Cada una se cobra una sola vez por guardado mediante su identificador de recompensa (`babilandia:coin:<id>`). En una rejugada, o tras `NUEVA AVENTURA`, las ya cobradas aparecen translúcidas, marcan la ruta y no vuelven a sumar.
+- Recoger una moneda suena, levanta unas chispas doradas, muestra `+1` y hace latir el contador del HUD; ya no destella toda la pantalla.
+- La pausa muestra `BABICOINS ESCONDIDAS x/25`.
 
 #### Enemigos y portal
 
@@ -119,13 +138,13 @@ Los cinco carteles tutoriales también se definen allí sin coordenada vertical 
 | VUELA | Patrulla aérea, apunta, anticipa, cae en picado y vuelve | Solo durante `DIVE` | Siempre |
 | DA VUELTAS | Patrulla, anticipa, rueda y queda mareado | Solo durante `SPIN` | Solo durante `DIZZY`; fuera de ella bloquea el disparo |
 
-VUELA aparece una vez en solitario y después en pareja. Cada enemigo puede soltar 0, 1 o 2 Babicoins. El portal del boss permanece sellado hasta derrotar los seis encuentros; tocarlo antes informa cuántos faltan y aparta al jugador.
+VUELA aparece una vez en solitario y después en pareja. DA VUELTAS solo prepara el giro cuando el Babito está a menos de 460 px; durante los 650 ms de anticipación se orienta hacia él y después rueda 1,7 s en esa dirección, por lo que el ataque se lee y se esquiva saltando o subiendo a una plataforma. Cada enemigo puede soltar 0, 1 o 2 Babicoins. El portal del boss permanece sellado hasta derrotar los seis encuentros; tocarlo antes aparta al jugador e informa cuántos faltan, de qué tipo y que están detrás.
 
 Un impacto aceptado reproduce `hurt` completo como reacción no cíclica. Durante esa reacción el enemigo no avanza su estado, no daña al Babito y no acepta otro impacto. COME interrumpe `WINDUP`/`BITE` hacia `RECOVER`; VUELA interrumpe `TARGET`/`WINDUP`/`DIVE` hacia `RETURN`; DA VUELTAS conserva `DIZZY`. COME ancla el borde inferior de cada frame al borde inferior de su cuerpo físico, por lo que sus pies permanecen sobre suelo o plataforma también durante `WINDUP` y `BITE`. VUELA no colisiona con plataformas: las atraviesa durante picado y regreso, pero conserva límites del mundo y overlaps de combate.
 
 #### Pausa
 
-`P`, `Esc` o `PAUSA` abren la capa de pausa, salvo durante muerte o transición. Se congelan física, tweens, temporizadores, animaciones y reloj de gameplay. `CONTINUAR` restaura el mismo estado y `VOLVER AL TÍTULO` abandona la fase.
+`P`, `Esc` o `PAUSA` abren la capa de pausa, salvo durante muerte o transición. Se congelan física, tweens, temporizadores, animaciones y reloj de gameplay. `CONTINUAR` restaura el mismo estado y `VOLVER AL TÍTULO` abandona la fase. Al abrir la pausa o `GAME OVER` se retira el aviso flotante activo, para que no quede encima del panel mientras el reloj está detenido.
 
 ### Babito Corrupto
 
@@ -133,6 +152,9 @@ La interacción del combate se implementa en [BossScene.js](../src/scenes/BossSc
 
 - El boss tiene 16 puntos de vida y repite `FIREBALL` → `FROM_ABOVE` → `FURY_CHARGE`.
 - Cada patrón muestra una señal previa y un mensaje: saltar la bola de fuego, atender a la marca superior o apartarse de la embestida.
+- `FIREBALL` lanza bolas a la altura de los pies del boss: desde el suelo siempre se saltan, y las plataformas sirven de refugio. Cada bola se carga 300 ms como un orbe visible antes de salir, con la dirección fijada. En la primera mitad son dos bolas separadas 900 ms; con la mitad de vida o menos, tres bolas más rápidas separadas 850 ms.
+- La embestida solo daña mientras el boss se desplaza de verdad; detenido contra un muro ya no hace daño por contacto.
+- Recibir daño congela la acción 80 ms y acertar en `RECOVER`, 45 ms.
 - Tras cada patrón entra 1,9 segundos en `RECOVER`. Solo durante esa ventana recibe daño; fuera de ella la corrupción bloquea el disparo y muestra feedback.
 - La Roca causa 2 puntos por impacto; Fuego y Rayo causan 1.
 - El HUD muestra corazones, poder, nombre, barra y vida del boss, patrón actual y pausa.
