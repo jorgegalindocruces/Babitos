@@ -7,6 +7,12 @@ Este archivo relaciona las iteraciones entregadas con sus cambios observables, c
 - Mantener sincronizados `README.md`, `INTERACTIONS.md`, `GAME_DESIGN.md`, `IMPLEMENTATION_SPEC.md` y `ACCEPTANCE_CRITERIA.md` cuando cambien flujo, controles, estados, persistencia o contenido jugable.
 - Añadir una entrada aquí por cada cambio observable, con el commit final y las pruebas realizadas.
 
+## Babito sin banda inferior de sombra — 2026-10-08
+
+Commit pendiente. Se elimina la lectura accidental de pantalón en el Babito base: vientre e interior de los pies comparten ahora el color principal de forma continua, mientras la sombra de volumen queda limitada al lateral lejano del cuerpo. El ajuste conserva silueta, paletas desbloqueables, 51 frames, siete capas, tamaños, baseline, hitbox y guardados.
+
+Validación: 117 pruebas automáticas, build de producción, `git diff --check` y QA visual en Creador y `GameScene` (caminar), con el Babito cian y rosa, sin banda inferior ni errores de consola.
+
 ## Babito v4 más redondo y con mayor detalle — 2026-10-08
 
 Commit [`0e760a1`](https://github.com/jorgegalindocruces/Babitos/commit/0e760a1). El protagonista se vuelve a contrastar con el recorte «BABITO BASE» y corrige la silueta todavía estrecha y puntiaguda de v3:

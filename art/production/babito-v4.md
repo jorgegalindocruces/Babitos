@@ -25,6 +25,7 @@ El rediseño se dibujó con primitivas Canvas deterministas en [`createTextures.
 - Aletas de reposo más largas y caídas que en v3. El ancho total de la silueta con ambas aletas no supera 1,4 veces el ancho del cuerpo.
 - Pies cortos pero visibles, integrados en la curva inferior y anclados a la misma línea de apoyo en todos los tamaños.
 - Paleta cian: cuerpo `#7CDBF9`, luz `#A8EDFF`, sombra `#2BBFE5`, rubor `#FF7196` y contorno `#07111E`.
+- El vientre y el interior de ambos pies conservan `palette.main` de forma continua. `palette.shade` se reserva al lateral lejano del cuerpo: nunca cruza el bajo ni forma una banda que pueda leerse como pantalón.
 - La opción base no equipa sombrero; las selecciones y guardados existentes se conservan.
 
 ## Animación e integración

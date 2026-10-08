@@ -459,10 +459,8 @@ function drawBabitoBody(ctx, palette, pose = {}) {
   // They still move independently, preserving every contact and airborne pose.
   rect(ctx, 14 + leftFootX, 37 + leftFootY, 10, 7, COLORS.ink);
   rect(ctx, 27 + rightFootX, 37 + rightFootY, 9, 7, COLORS.ink);
-  rect(ctx, 15 + leftFootX, 38 + leftFootY, 8, 3, palette.shade);
-  rect(ctx, 28 + rightFootX, 38 + rightFootY, 7, 3, palette.shade);
-  rect(ctx, 15 + leftFootX, 41 + leftFootY, 8, 2, palette.main);
-  rect(ctx, 28 + rightFootX, 41 + rightFootY, 7, 2, palette.main);
+  rect(ctx, 15 + leftFootX, 38 + leftFootY, 8, 5, palette.main);
+  rect(ctx, 28 + rightFootX, 38 + rightFootY, 7, 5, palette.main);
 
   // A broad, tip-trimmed scanline body follows the approved base: flat crown,
   // stepped shoulders and one continuous cheek-to-belly curve.
@@ -470,10 +468,8 @@ function drawBabitoBody(ctx, palette, pose = {}) {
   rect(ctx, 13, 11, 8, 2, palette.light);
   rect(ctx, 11, 14, 3, 8, palette.light);
   rect(ctx, 15, 12, 4, 1, '#ffffff');
-  rect(ctx, 11, 33, 26, 1, palette.shade);
-  rect(ctx, 13, 34, 22, 1, palette.shade);
-  rect(ctx, 15, 35, 18, 1, palette.shade);
-  rect(ctx, 18, 36, 12, 1, palette.shade);
+  // Keep depth on the far side only. A darker horizontal lower band reads as
+  // trousers at gameplay scale, so belly and feet share the body colour.
   rect(ctx, 38, 22, 2, 4, palette.shade);
   rect(ctx, 37, 26, 2, 5, palette.shade);
   rect(ctx, 12, 26, 3, 2, COLORS.blush);

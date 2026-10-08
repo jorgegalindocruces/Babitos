@@ -179,12 +179,17 @@ test('the landing Babito is a crisp export of the canonical game palette', () =>
   assert.deepEqual([asset.width, asset.height], [320, 320]);
 
   const colors = new Set();
+  const shadePixels = [];
   for (let y = 0; y < asset.height; y += 1) {
     for (let x = 0; x < asset.width; x += 1) {
       const offset = (y * asset.width + x) * 4;
       const pixel = [...asset.pixels.subarray(offset, offset + 4)];
       assert.ok(pixel[3] === 0 || pixel[3] === 255, `unexpected alpha at ${x},${y}`);
-      if (pixel[3]) colors.add(pixel.join(','));
+      if (pixel[3]) {
+        const rgba = pixel.join(',');
+        colors.add(rgba);
+        if (rgba === '43,191,229,255') shadePixels.push({ x, y });
+      }
 
       // The 80 px canonical source is enlarged exactly 4× with nearest pixels.
       if (x % 4 === 0 && y % 4 === 0) {
@@ -211,4 +216,10 @@ test('the landing Babito is a crisp export of the canonical game palette', () =>
   ]) {
     assert.ok(colors.has(canonicalColor), `missing canonical color ${canonicalColor}`);
   }
+
+  assert.ok(shadePixels.length > 0, 'the far-side volume shade must remain present');
+  assert.ok(
+    shadePixels.every(({ y }) => y < 200),
+    'the volume shade must stay lateral and never form trousers across the belly or feet',
+  );
 });
