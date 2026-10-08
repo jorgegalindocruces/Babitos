@@ -7,6 +7,22 @@ Este archivo relaciona las iteraciones entregadas con sus cambios observables, c
 - Mantener sincronizados `README.md`, `INTERACTIONS.md`, `GAME_DESIGN.md`, `IMPLEMENTATION_SPEC.md` y `ACCEPTANCE_CRITERIA.md` cuando cambien flujo, controles, estados, persistencia o contenido jugable.
 - Añadir una entrada aquí por cada cambio observable, con el commit final y las pruebas realizadas.
 
+## Carteles tutoriales apoyados — 2026-10-08
+
+Commit [`6f0b5b4`](https://github.com/jorgegalindocruces/Babitos/commit/6f0b5b4):
+
+- movió los cinco carteles de Babilandia a la definición data-driven del nivel, sin alturas manuales;
+- ancló cada poste a la superficie física superior que soporta toda su base;
+- sustituyó captions y sprites desconectados por una composición pixel art única de tabla, texto y poste;
+- desplazó el aviso de DA VUELTAS para que no quede detrás del enemigo, el checkpoint o el jugador;
+- añadió `qaCheckpoint=<id>` para revisar las cuatro zonas directamente sin modificar el progreso guardado;
+- conserva tabla y texto sincronizados si la fuente pixel art termina de cargar después de iniciar la escena;
+- añadió regresiones puras de superficie, bordes, origen, huecos y los cinco carteles reales.
+
+QA visual: inicio, `market_gate`, `fountain` y `boss_gate`; todos los postes tocan su soporte y todas las frases quedan dentro de la tabla.
+
+Pruebas: 59 tests automáticos, compilación de producción y `git diff --check`.
+
 ## Texto nítido y escala pixel-perfect — 2026-10-08
 
 Commit [`def542c`](https://github.com/jorgegalindocruces/Babitos/commit/def542c):
