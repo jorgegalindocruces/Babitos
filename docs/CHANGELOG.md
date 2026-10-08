@@ -9,7 +9,7 @@ Este archivo relaciona las iteraciones entregadas con sus cambios observables, c
 
 ## Landing page con diálogo de juego — 2026-10-08
 
-Pendiente de commit. `index.html` pasa a ser una landing page del juego:
+Commit [`486d347`](https://github.com/jorgegalindocruces/Babitos/commit/486d347). `index.html` pasa a ser una landing page del juego:
 - **Contenido**: hero, historia del Árbol de Poder, creador y poderes, tres mundos, personajes, «Del papel al píxel» (los dibujos originales junto a su sprite) y una galería de láminas conceptuales con visor.
 - **Juego en diálogo**: `JUGAR` abre un `<dialog>`. El motor se separa en [gameBoot.js](../src/gameBoot.js) y se carga solo en ese momento: la landing usa 6.5 kB de JavaScript y el juego 1.47 MB.
 - **Cerrar el diálogo**: pausa la partida, duerme el bucle, silencia el audio y devuelve el teclado a la página. `Esc` sigue siendo la pausa del juego, y `#jugar` abre el juego directamente.
