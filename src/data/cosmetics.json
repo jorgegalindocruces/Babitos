@@ -1,6 +1,6 @@
 {
   "body": [
-    { "id": "body_cyan", "label": "Cian clásico", "assetKey": "body_cyan", "color": "#35d6ee", "unlocked": true, "price": 0 },
+    { "id": "body_cyan", "label": "Cian clásico", "assetKey": "body_cyan", "color": "#7cdbf9", "unlocked": true, "price": 0 },
     { "id": "body_pink", "label": "Rosa chicle", "assetKey": "body_pink", "color": "#ff7aa8", "unlocked": true, "price": 0 },
     { "id": "body_yellow", "label": "Amarillo solar", "assetKey": "body_yellow", "color": "#ffc52d", "unlocked": true, "price": 0 },
     { "id": "body_cream", "label": "Crema suave", "assetKey": "body_cream", "color": "#f4ecdc", "unlocked": true, "price": 0 },

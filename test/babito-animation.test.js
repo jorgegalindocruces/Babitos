@@ -14,6 +14,8 @@ import {
 } from '../src/game/BabitoAnimations.js';
 import {
   BABITO_AUTHORED_ART_BOUNDS,
+  BABITO_CANONICAL_GEOMETRY,
+  BABITO_PALETTES,
   BABITO_RENDER_SIZE,
   BABITO_SPRING_HAND_RADIUS,
   BABITO_TEXTURE_SIZE,
@@ -173,6 +175,26 @@ test('the richer layered renderer stays crisp and keeps spring hands inside the 
     assert.ok(bounds.minY >= 0, `${pose.state}:${pose.localFrame} clips on the top`);
     assert.ok(bounds.maxY <= BABITO_TEXTURE_SIZE, `${pose.state}:${pose.localFrame} clips on the bottom`);
   }
+});
+
+test('the base silhouette keeps the approved round Babito proportions', () => {
+  const { body, normalEyes, feet, restingFin } = BABITO_CANONICAL_GEOMETRY;
+  const bodyWidth = body.radiusX * 2 + 1;
+  const bodyHeight = body.radiusY * 2 + 1;
+  const totalRestingWidth = (48 - restingFin.minX) - restingFin.minX + 1;
+
+  assert.equal(bodyWidth, 31);
+  assert.equal(bodyHeight, 33);
+  assert.ok(bodyWidth / bodyHeight >= 0.9 && bodyWidth / bodyHeight <= 1.05);
+  assert.ok(totalRestingWidth / bodyWidth <= 1.35, 'resting fins must stay compact');
+  assert.deepEqual(normalEyes, { width: 3, height: 7, gap: 8 });
+  assert.deepEqual(feet, { maxWidth: 10, authoredHeight: 7, exposedHeight: 4 });
+  assert.deepEqual(BABITO_PALETTES.cyan, {
+    main: '#7cdbf9',
+    light: '#a8edff',
+    shade: '#2bbfe5',
+    tint: 0x7cdbf9,
+  });
 });
 
 test('larger Babito sizes keep integer render dimensions and one shared baseline', () => {

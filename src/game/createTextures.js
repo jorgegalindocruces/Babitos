@@ -23,10 +23,20 @@ export const BABITO_RENDER_SIZE = 64;
 const BABITO_ART_SIZE = 48;
 const BABITO_ART_SCALE = 1.15;
 export const BABITO_SPRING_HAND_RADIUS = 3;
+/**
+ * Measurable anchors for the approved 32 px Babito translated to our 48 px
+ * composable grid. Keeping these public makes art regressions testable without
+ * coupling tests to every individual canvas primitive.
+ */
+export const BABITO_CANONICAL_GEOMETRY = Object.freeze({
+  body: Object.freeze({ centerX: 24, centerY: 23, radiusX: 15, radiusY: 16 }),
+  normalEyes: Object.freeze({ width: 3, height: 7, gap: 8 }),
+  feet: Object.freeze({ maxWidth: 10, authoredHeight: 7, exposedHeight: 4 }),
+  restingFin: Object.freeze({ minX: 4, maxX: 14, minY: 21, maxY: 34 }),
+});
 export const BABITO_AUTHORED_ART_BOUNDS = Object.freeze({
-  minX: 1,
-  // Canvas primitives that draw through x=47 occupy the half-open edge at 48.
-  maxX: 48,
+  minX: 3,
+  maxX: 47,
   minY: 2,
   maxY: 45,
 });
@@ -93,7 +103,7 @@ export function getBabitoTransformedBounds(
  * its neutral arm layer. The numeric `tint` value is Phaser-ready.
  */
 export const BABITO_PALETTES = Object.freeze({
-  cyan: Object.freeze({ main: '#35d6ee', light: '#87efff', shade: '#069fc4', tint: 0x35d6ee }),
+  cyan: Object.freeze({ main: '#7cdbf9', light: '#a8edff', shade: '#2bbfe5', tint: 0x7cdbf9 }),
   pink: Object.freeze({ main: '#ff7aa8', light: '#ffb7ce', shade: '#c64f7a', tint: 0xff7aa8 }),
   lime: Object.freeze({ main: '#7ee35a', light: '#b9ff8e', shade: '#43b940', tint: 0x7ee35a }),
   yellow: Object.freeze({ main: '#ffc52d', light: '#ffe978', shade: '#e18a1d', tint: 0xffc52d }),
@@ -302,161 +312,165 @@ function drawBabitoBody(ctx, palette, pose = {}) {
   const rightFootX = Number(pose.feet?.right?.x) || 0;
   const leftFootY = Number(pose.feet?.left?.y) || 0;
   const rightFootY = Number(pose.feet?.right?.y) || 0;
-  // Feet are authored independently so contact, passing and airborne poses
-  // change the silhouette instead of sliding an unchanged body over the floor.
-  rect(ctx, 12 + leftFootX, 35 + leftFootY, 12, 7, COLORS.ink);
-  rect(ctx, 27 + rightFootX, 35 + rightFootY, 10, 7, COLORS.ink);
-  rect(ctx, 14 + leftFootX, 35 + leftFootY, 9, 4, palette.shade);
-  rect(ctx, 28 + rightFootX, 35 + rightFootY, 8, 4, palette.shade);
-  rect(ctx, 13 + leftFootX, 39 + leftFootY, 11, 2, palette.main);
-  rect(ctx, 27 + rightFootX, 39 + rightFootY, 10, 2, palette.main);
+  const { centerX, centerY, radiusX, radiusY } = BABITO_CANONICAL_GEOMETRY.body;
 
-  outlinedEllipse(ctx, 24, 25, 17, 15, COLORS.ink, palette.main, 2);
-  // A broader stepped highlight and a two-level lower shade match the richer
-  // volume used by COME/VUELA/DA VUELTAS without flattening custom colours.
-  rect(ctx, 13, 14, 9, 2, palette.light);
-  rect(ctx, 11, 17, 4, 8, palette.light);
-  rect(ctx, 14, 16, 4, 2, '#ffffff');
-  rect(ctx, 12, 34, 24, 3, palette.shade);
-  rect(ctx, 16, 37, 17, 2, palette.shade);
-  rect(ctx, 34, 22, 3, 10, palette.shade);
-  rect(ctx, 13, 27, 4, 3, COLORS.blush);
-  rect(ctx, 32, 27, 4, 3, COLORS.blush);
+  // Short feet sit behind the lower curve like the approved 32 px sprite.
+  // They still move independently, preserving every contact and airborne pose.
+  rect(ctx, 14 + leftFootX, 35 + leftFootY, 10, 7, COLORS.ink);
+  rect(ctx, 27 + rightFootX, 35 + rightFootY, 9, 7, COLORS.ink);
+  rect(ctx, 15 + leftFootX, 36 + leftFootY, 8, 3, palette.shade);
+  rect(ctx, 28 + rightFootX, 36 + rightFootY, 7, 3, palette.shade);
+  rect(ctx, 15 + leftFootX, 39 + leftFootY, 8, 2, palette.main);
+  rect(ctx, 28 + rightFootX, 39 + rightFootY, 7, 2, palette.main);
+
+  // The approved Babito is a compact, almost circular drop rather than a wide
+  // torso. Its stepped volume remains readable without introducing a flat belt.
+  outlinedEllipse(ctx, centerX, centerY, radiusX, radiusY, COLORS.ink, palette.main, 2);
+  rect(ctx, 14, 12, 7, 2, palette.light);
+  rect(ctx, 12, 15, 3, 7, palette.light);
+  rect(ctx, 15, 13, 3, 1, '#ffffff');
+  rect(ctx, 13, 33, 22, 2, palette.shade);
+  rect(ctx, 15, 35, 18, 2, palette.shade);
+  rect(ctx, 18, 37, 12, 2, palette.shade);
+  rect(ctx, 35, 23, 2, 8, palette.shade);
+  rect(ctx, 13, 26, 3, 2, COLORS.blush);
+  rect(ctx, 34, 26, 3, 2, COLORS.blush);
 }
 
 function drawBabitoEyes(ctx, style, pose = {}) {
   if (pose.expression === 'blink') {
-    rect(ctx, 16, 24, 7, 2, COLORS.ink);
-    rect(ctx, 27, 24, 7, 2, COLORS.ink);
+    rect(ctx, 17, 23, 5, 2, COLORS.ink);
+    rect(ctx, 29, 23, 5, 2, COLORS.ink);
     return;
   }
 
   if (pose.expression === 'hurt' || pose.expression === 'knocked-out') {
-    pixelLine(ctx, 16, 21, 22, 27, COLORS.ink, 2);
-    pixelLine(ctx, 22, 21, 16, 27, COLORS.ink, 2);
-    pixelLine(ctx, 28, 21, 34, 27, COLORS.ink, 2);
-    pixelLine(ctx, 34, 21, 28, 27, COLORS.ink, 2);
+    pixelLine(ctx, 17, 20, 22, 25, COLORS.ink, 2);
+    pixelLine(ctx, 22, 20, 17, 25, COLORS.ink, 2);
+    pixelLine(ctx, 29, 20, 34, 25, COLORS.ink, 2);
+    pixelLine(ctx, 34, 20, 29, 25, COLORS.ink, 2);
     return;
   }
 
   if (pose.expression === 'dazed') {
-    rect(ctx, 16, 24, 7, 2, COLORS.ink);
-    rect(ctx, 27, 24, 7, 2, COLORS.ink);
-    rect(ctx, 18, 22, 3, 1, COLORS.ink);
-    rect(ctx, 29, 22, 3, 1, COLORS.ink);
+    rect(ctx, 17, 23, 5, 2, COLORS.ink);
+    rect(ctx, 29, 23, 5, 2, COLORS.ink);
+    rect(ctx, 18, 21, 3, 1, COLORS.ink);
+    rect(ctx, 30, 21, 3, 1, COLORS.ink);
     return;
   }
 
   if (pose.expression === 'surprised') {
-    outlinedEllipse(ctx, 19, 23, 5, 6, COLORS.ink, COLORS.white, 1);
-    outlinedEllipse(ctx, 31, 23, 5, 6, COLORS.ink, COLORS.white, 1);
-    rect(ctx, 20, 22, 3, 4, COLORS.ink);
-    rect(ctx, 32, 22, 3, 4, COLORS.ink);
-    rect(ctx, 20, 21, 1, 1, COLORS.white);
-    rect(ctx, 32, 21, 1, 1, COLORS.white);
+    outlinedEllipse(ctx, 19, 22, 4, 5, COLORS.ink, COLORS.white, 1);
+    outlinedEllipse(ctx, 31, 22, 4, 5, COLORS.ink, COLORS.white, 1);
+    rect(ctx, 20, 21, 2, 4, COLORS.ink);
+    rect(ctx, 32, 21, 2, 4, COLORS.ink);
+    rect(ctx, 20, 20, 1, 1, COLORS.white);
+    rect(ctx, 32, 20, 1, 1, COLORS.white);
     return;
   }
 
   if (['focus', 'determined', 'attack'].includes(pose.expression)) {
     const pupilOffset = pose.expression === 'attack' ? 1 : 0;
-    rect(ctx, 17, 21, 6, 8, COLORS.ink);
-    rect(ctx, 28, 21, 6, 8, COLORS.ink);
-    rect(ctx, 19 + pupilOffset, 22, 2, 3, COLORS.white);
-    rect(ctx, 30 + pupilOffset, 22, 2, 3, COLORS.white);
-    pixelLine(ctx, 16, 20, 22, pose.expression === 'attack' ? 22 : 21, COLORS.ink, 2);
-    pixelLine(ctx, 28, pose.expression === 'attack' ? 22 : 21, 35, 20, COLORS.ink, 2);
+    rect(ctx, 18, 20, 4, 7, COLORS.ink);
+    rect(ctx, 29, 20, 4, 7, COLORS.ink);
+    rect(ctx, 19 + pupilOffset, 21, 1, 2, COLORS.white);
+    rect(ctx, 30 + pupilOffset, 21, 1, 2, COLORS.white);
+    pixelLine(ctx, 17, 19, 22, pose.expression === 'attack' ? 21 : 20, COLORS.ink, 2);
+    pixelLine(ctx, 29, pose.expression === 'attack' ? 21 : 20, 34, 19, COLORS.ink, 2);
     return;
   }
 
   if (style === 'big') {
-    rect(ctx, 16, 20, 7, 9, COLORS.ink);
-    rect(ctx, 27, 20, 7, 9, COLORS.ink);
-    rect(ctx, 18, 21, 2, 3, COLORS.white);
-    rect(ctx, 29, 21, 2, 3, COLORS.white);
+    rect(ctx, 16, 19, 6, 8, COLORS.ink);
+    rect(ctx, 29, 19, 6, 8, COLORS.ink);
+    rect(ctx, 18, 20, 2, 2, COLORS.white);
+    rect(ctx, 31, 20, 2, 2, COLORS.white);
     return;
   }
 
   if (style === 'cute') {
-    rect(ctx, 17, 21, 5, 6, COLORS.ink);
-    rect(ctx, 28, 21, 5, 6, COLORS.ink);
-    rect(ctx, 18, 21, 2, 2, COLORS.white);
-    rect(ctx, 29, 21, 2, 2, COLORS.white);
-    rect(ctx, 15, 20, 2, 1, COLORS.ink);
-    rect(ctx, 33, 20, 2, 1, COLORS.ink);
+    rect(ctx, 18, 20, 4, 6, COLORS.ink);
+    rect(ctx, 29, 20, 4, 6, COLORS.ink);
+    rect(ctx, 19, 20, 1, 2, COLORS.white);
+    rect(ctx, 30, 20, 1, 2, COLORS.white);
+    rect(ctx, 16, 19, 2, 1, COLORS.ink);
+    rect(ctx, 33, 19, 2, 1, COLORS.ink);
     return;
   }
 
   if (style === 'crazy') {
     // Canonical star eyes: unmistakable at the creator's smallest preview.
-    polygon(ctx, [[19, 18], [21, 22], [25, 22], [22, 25], [23, 29], [19, 27], [15, 29], [16, 25], [13, 22], [17, 22]], COLORS.ink);
-    polygon(ctx, [[31, 18], [33, 22], [37, 22], [34, 25], [35, 29], [31, 27], [27, 29], [28, 25], [25, 22], [29, 22]], COLORS.ink);
-    rect(ctx, 18, 21, 2, 2, COLORS.white);
-    rect(ctx, 30, 21, 2, 2, COLORS.white);
+    polygon(ctx, [[19, 18], [21, 21], [24, 21], [22, 24], [23, 27], [19, 25], [16, 27], [17, 24], [14, 21], [18, 21]], COLORS.ink);
+    polygon(ctx, [[32, 18], [34, 21], [37, 21], [35, 24], [36, 27], [32, 25], [29, 27], [30, 24], [27, 21], [31, 21]], COLORS.ink);
+    rect(ctx, 18, 20, 1, 2, COLORS.white);
+    rect(ctx, 31, 20, 1, 2, COLORS.white);
     return;
   }
 
-  rect(ctx, 18, 20, 4, 8, COLORS.ink);
-  rect(ctx, 28, 20, 4, 8, COLORS.ink);
+  const { width, height, gap } = BABITO_CANONICAL_GEOMETRY.normalEyes;
+  rect(ctx, 18, 19, width, height, COLORS.ink);
+  rect(ctx, 18 + width + gap, 19, width, height, COLORS.ink);
 }
 
 function drawBabitoMouth(ctx, style, pose = {}) {
   if (pose.expression === 'attack') {
-    outlinedEllipse(ctx, 25, 31, 5, 4, COLORS.ink, '#691b3b', 1);
-    rect(ctx, 22, 29, 6, 1, COLORS.white);
+    outlinedEllipse(ctx, 25, 29, 4, 3, COLORS.ink, '#691b3b', 1);
+    rect(ctx, 23, 27, 5, 1, COLORS.white);
     return;
   }
 
   if (pose.expression === 'hurt') {
-    pixelLine(ctx, 20, 34, 24, 31, COLORS.ink, 2);
-    pixelLine(ctx, 24, 31, 30, 34, COLORS.ink, 2);
+    pixelLine(ctx, 21, 31, 25, 28, COLORS.ink, 2);
+    pixelLine(ctx, 25, 28, 30, 31, COLORS.ink, 2);
     return;
   }
 
   if (pose.expression === 'dazed' || pose.expression === 'knocked-out') {
-    rect(ctx, 21, 32, 9, 2, COLORS.ink);
+    rect(ctx, 22, 29, 7, 2, COLORS.ink);
     return;
   }
 
   if (pose.expression === 'surprised') {
-    outlinedEllipse(ctx, 25, 32, 4, 5, COLORS.ink, '#691b3b', 1);
-    rect(ctx, 23, 34, 4, 1, COLORS.blush);
+    outlinedEllipse(ctx, 25, 29, 3, 4, COLORS.ink, '#691b3b', 1);
+    rect(ctx, 24, 31, 3, 1, COLORS.blush);
     return;
   }
 
   if (pose.expression === 'determined' || pose.expression === 'focus') {
-    pixelLine(ctx, 20, 33, 25, 31, COLORS.ink, 2);
-    pixelLine(ctx, 25, 31, 31, 33, COLORS.ink, 2);
+    pixelLine(ctx, 21, 30, 25, 28, COLORS.ink, 2);
+    pixelLine(ctx, 25, 28, 30, 30, COLORS.ink, 2);
     return;
   }
 
   if (style === 'open') {
-    outlinedEllipse(ctx, 25, 31, 6, 5, COLORS.ink, '#691b3b', 1);
-    rect(ctx, 22, 33, 6, 2, COLORS.blush);
-    rect(ctx, 21, 28, 8, 2, COLORS.white);
+    outlinedEllipse(ctx, 25, 29, 5, 4, COLORS.ink, '#691b3b', 1);
+    rect(ctx, 23, 31, 5, 1, COLORS.blush);
+    rect(ctx, 22, 27, 7, 1, COLORS.white);
     return;
   }
 
   if (style === 'cute') {
     // A small open smile with a clearly visible tongue, matching its label.
-    rect(ctx, 20, 29, 10, 5, COLORS.ink);
-    rect(ctx, 22, 32, 6, 3, COLORS.blush);
-    rect(ctx, 24, 31, 4, 1, COLORS.white);
+    rect(ctx, 21, 27, 9, 5, COLORS.ink);
+    rect(ctx, 23, 30, 5, 2, COLORS.blush);
+    rect(ctx, 24, 29, 3, 1, COLORS.white);
     return;
   }
 
   if (style === 'epic') {
-    rect(ctx, 18, 29, 14, 6, COLORS.ink);
-    rect(ctx, 20, 29, 10, 2, COLORS.white);
-    rect(ctx, 21, 33, 8, 1, COLORS.blush);
-    rect(ctx, 19, 29, 1, 2, COLORS.ink);
-    rect(ctx, 30, 29, 1, 2, COLORS.ink);
+    rect(ctx, 19, 27, 13, 5, COLORS.ink);
+    rect(ctx, 21, 27, 9, 1, COLORS.white);
+    rect(ctx, 22, 30, 7, 1, COLORS.blush);
+    rect(ctx, 20, 27, 1, 2, COLORS.ink);
+    rect(ctx, 30, 27, 1, 2, COLORS.ink);
     return;
   }
 
   // Canonical small U-shaped smile.
-  rect(ctx, 21, 29, 2, 3, COLORS.ink);
-  rect(ctx, 28, 29, 2, 3, COLORS.ink);
-  rect(ctx, 23, 31, 5, 2, COLORS.ink);
+  rect(ctx, 22, 27, 1, 3, COLORS.ink);
+  rect(ctx, 28, 27, 1, 3, COLORS.ink);
+  rect(ctx, 23, 29, 5, 1, COLORS.ink);
 }
 
 function drawArm(ctx, x0, y0, x1, y1) {
@@ -466,29 +480,48 @@ function drawArm(ctx, x0, y0, x1, y1) {
   ellipse(ctx, x1, y1, 2, 2, '#ffffff');
 }
 
-function drawBabitoFin(ctx, side, pose = 'rest') {
+function drawBabitoFin(ctx, side, pose = 'rest', fillColor = '#ffffff') {
   const mirror = (x) => (side < 0 ? x : 48 - x);
+  const mirroredRect = (x, y, width, height, color) => {
+    rect(ctx, side < 0 ? x : 48 - x - width, y, width, height, color);
+  };
+
+  if (pose === 'rest') {
+    // Hand-authored scanlines reproduce the short downward fin of the approved
+    // 32 px base without polygon antialiasing turning it into a round earmuff.
+    mirroredRect(9, 21, 4, 2, COLORS.ink);
+    mirroredRect(7, 23, 6, 2, COLORS.ink);
+    mirroredRect(4, 25, 9, 5, COLORS.ink);
+    mirroredRect(6, 30, 7, 3, COLORS.ink);
+    mirroredRect(8, 33, 4, 1, COLORS.ink);
+    mirroredRect(9, 23, 3, 1, fillColor);
+    mirroredRect(7, 24, 5, 2, fillColor);
+    mirroredRect(6, 26, 6, 4, fillColor);
+    mirroredRect(8, 30, 4, 2, fillColor);
+    return;
+  }
+
   const pointsByPose = {
-    rest: [[15, 22], [8, 21], [3, 27], [7, 34], [15, 31]],
-    raised: [[17, 27], [8, 22], [6, 13], [11, 10], [16, 20]],
-    attack: [[15, 22], [7, 19], [1, 22], [7, 27], [15, 29]],
-    down: [[15, 23], [9, 27], [7, 38], [12, 40], [17, 30]],
-    wide: [[15, 23], [8, 18], [2, 16], [4, 25], [15, 31]],
-    flat: [[15, 27], [9, 31], [3, 36], [9, 38], [17, 32]],
+    rest: [[13, 21], [8, 22], [4, 27], [5, 33], [9, 34], [14, 29]],
+    raised: [[14, 27], [9, 22], [7, 14], [10, 11], [14, 20]],
+    attack: [[14, 21], [8, 20], [4, 23], [8, 27], [14, 28]],
+    down: [[14, 24], [10, 27], [8, 37], [11, 39], [15, 30]],
+    wide: [[14, 23], [9, 19], [4, 17], [6, 25], [14, 30]],
+    flat: [[15, 28], [10, 31], [5, 35], [9, 37], [15, 32]],
   };
   const insetByPose = {
-    rest: [[14, 24], [9, 24], [6, 27], [9, 31], [14, 29]],
-    raised: [[15, 25], [10, 21], [9, 15], [11, 14], [14, 21]],
-    attack: [[14, 24], [8, 22], [5, 22], [8, 25], [14, 27]],
-    down: [[14, 25], [11, 28], [10, 36], [12, 37], [15, 29]],
-    wide: [[14, 24], [9, 21], [5, 19], [7, 24], [14, 29]],
-    flat: [[14, 28], [10, 32], [7, 35], [10, 35], [15, 31]],
+    rest: [[12, 23], [9, 24], [6, 27], [7, 31], [9, 32], [12, 28]],
+    raised: [[13, 25], [10, 21], [9, 16], [10, 14], [12, 21]],
+    attack: [[13, 23], [9, 22], [7, 23], [9, 25], [13, 26]],
+    down: [[13, 26], [11, 28], [10, 35], [11, 37], [13, 29]],
+    wide: [[13, 24], [10, 21], [7, 20], [8, 24], [13, 28]],
+    flat: [[14, 29], [11, 32], [8, 34], [10, 35], [14, 31]],
   };
   polygon(ctx, pointsByPose[pose].map(([x, y]) => [mirror(x), y]), COLORS.ink);
-  polygon(ctx, insetByPose[pose].map(([x, y]) => [mirror(x), y]), '#ffffff');
+  polygon(ctx, insetByPose[pose].map(([x, y]) => [mirror(x), y]), fillColor);
 }
 
-function drawBabitoArms(ctx, style, framePose = {}) {
+function drawBabitoArms(ctx, style, framePose = {}, fillColor = '#ffffff') {
   const motion = framePose.state ?? 'idle';
   const phase = framePose.localFrame ?? 0;
 
@@ -507,7 +540,7 @@ function drawBabitoArms(ctx, style, framePose = {}) {
     }
     if (descriptor.includes('flail')) return side < 0 ? 'raised' : 'wide';
     if (descriptor.includes('counter') || descriptor.includes('recover')) return 'raised';
-    if (descriptor.includes('soft-out')) return 'wide';
+    if (descriptor.includes('soft-out')) return 'rest';
     return 'rest';
   };
 
@@ -515,22 +548,22 @@ function drawBabitoArms(ctx, style, framePose = {}) {
     // Keep the unmistakable zig-zag silhouette while the shared frame offsets
     // still give it the same timing as every other cosmetic arm choice.
     const handX = getBabitoSpringHandCenterX(motion, phase);
-    pixelLine(ctx, 12, 27, 8, 24, COLORS.ink, 6);
-    pixelLine(ctx, 8, 24, 12, 20, COLORS.ink, 6);
-    pixelLine(ctx, 12, 20, 6, 16, COLORS.ink, 6);
-    pixelLine(ctx, 37, 27, 41, 24, COLORS.ink, 6);
-    pixelLine(ctx, 41, 24, 37, 20, COLORS.ink, 6);
-    pixelLine(ctx, 37, 20, handX, 16, COLORS.ink, 6);
-    pixelLine(ctx, 12, 27, 8, 24, '#ffffff', 2);
-    pixelLine(ctx, 8, 24, 12, 20, '#ffffff', 2);
-    pixelLine(ctx, 12, 20, 6, 16, '#ffffff', 2);
-    pixelLine(ctx, 37, 27, 41, 24, '#ffffff', 2);
-    pixelLine(ctx, 41, 24, 37, 20, '#ffffff', 2);
-    pixelLine(ctx, 37, 20, handX, 16, '#ffffff', 2);
-    ellipse(ctx, 6, 16, BABITO_SPRING_HAND_RADIUS, BABITO_SPRING_HAND_RADIUS, COLORS.ink);
-    ellipse(ctx, handX, 16, BABITO_SPRING_HAND_RADIUS, BABITO_SPRING_HAND_RADIUS, COLORS.ink);
-    ellipse(ctx, 6, 16, 2, 2, '#ffffff');
-    ellipse(ctx, handX, 16, 2, 2, '#ffffff');
+    pixelLine(ctx, 13, 27, 9, 24, COLORS.ink, 5);
+    pixelLine(ctx, 9, 24, 12, 21, COLORS.ink, 5);
+    pixelLine(ctx, 12, 21, 6, 17, COLORS.ink, 5);
+    pixelLine(ctx, 35, 27, 39, 24, COLORS.ink, 5);
+    pixelLine(ctx, 39, 24, 36, 21, COLORS.ink, 5);
+    pixelLine(ctx, 36, 21, handX, 17, COLORS.ink, 5);
+    pixelLine(ctx, 13, 27, 9, 24, fillColor, 2);
+    pixelLine(ctx, 9, 24, 12, 21, fillColor, 2);
+    pixelLine(ctx, 12, 21, 6, 17, fillColor, 2);
+    pixelLine(ctx, 35, 27, 39, 24, fillColor, 2);
+    pixelLine(ctx, 39, 24, 36, 21, fillColor, 2);
+    pixelLine(ctx, 36, 21, handX, 17, fillColor, 2);
+    ellipse(ctx, 6, 17, BABITO_SPRING_HAND_RADIUS, BABITO_SPRING_HAND_RADIUS, COLORS.ink);
+    ellipse(ctx, handX, 17, BABITO_SPRING_HAND_RADIUS, BABITO_SPRING_HAND_RADIUS, COLORS.ink);
+    ellipse(ctx, 6, 17, 2, 2, fillColor);
+    ellipse(ctx, handX, 17, 2, 2, fillColor);
     return;
   }
 
@@ -542,25 +575,25 @@ function drawBabitoArms(ctx, style, framePose = {}) {
     if (leftPose === 'rest') leftPose = 'raised';
     if (rightPose === 'rest') rightPose = 'raised';
   }
-  drawBabitoFin(ctx, -1, leftPose);
-  drawBabitoFin(ctx, 1, rightPose);
+  drawBabitoFin(ctx, -1, leftPose, fillColor);
+  drawBabitoFin(ctx, 1, rightPose, fillColor);
 }
 
 function drawStrawHat(ctx) {
-  rect(ctx, 10, 12, 30, 5, COLORS.ink);
-  rect(ctx, 12, 11, 26, 5, COLORS.yellow);
-  rect(ctx, 16, 4, 18, 10, COLORS.ink);
-  rect(ctx, 18, 5, 14, 8, COLORS.yellow);
-  rect(ctx, 16, 10, 18, 4, COLORS.red);
-  rect(ctx, 18, 6, 6, 2, COLORS.yellowLight);
+  rect(ctx, 10, 11, 29, 5, COLORS.ink);
+  rect(ctx, 12, 10, 25, 5, COLORS.yellow);
+  rect(ctx, 16, 3, 17, 10, COLORS.ink);
+  rect(ctx, 18, 4, 13, 8, COLORS.yellow);
+  rect(ctx, 16, 9, 17, 4, COLORS.red);
+  rect(ctx, 18, 5, 5, 2, COLORS.yellowLight);
 }
 
 function drawCowboyHat(ctx) {
-  rect(ctx, 8, 13, 34, 5, COLORS.ink);
-  rect(ctx, 11, 12, 28, 4, '#9c5730');
-  polygon(ctx, [[15, 13], [17, 4], [22, 7], [30, 5], [35, 13]], COLORS.ink);
-  polygon(ctx, [[18, 12], [19, 6], [23, 9], [29, 7], [32, 12]], '#b96b36');
-  rect(ctx, 16, 11, 19, 3, '#5b2d23');
+  rect(ctx, 9, 12, 32, 5, COLORS.ink);
+  rect(ctx, 12, 11, 26, 4, '#9c5730');
+  polygon(ctx, [[15, 12], [17, 3], [22, 6], [30, 4], [35, 12]], COLORS.ink);
+  polygon(ctx, [[18, 11], [19, 5], [23, 8], [29, 6], [32, 11]], '#b96b36');
+  rect(ctx, 16, 10, 19, 3, '#5b2d23');
 }
 
 function drawCrown(ctx) {
@@ -572,15 +605,15 @@ function drawCrown(ctx) {
 }
 
 function drawSunglasses(ctx) {
-  rect(ctx, 14, 20, 11, 8, COLORS.ink);
-  rect(ctx, 27, 20, 11, 8, COLORS.ink);
-  rect(ctx, 24, 22, 4, 2, COLORS.ink);
-  rect(ctx, 15, 19, 9, 2, COLORS.ink);
-  rect(ctx, 28, 19, 9, 2, COLORS.ink);
-  rect(ctx, 16, 21, 7, 4, '#163f5c');
-  rect(ctx, 29, 21, 7, 4, '#163f5c');
-  rect(ctx, 17, 21, 3, 1, COLORS.cyanLight);
-  rect(ctx, 30, 21, 3, 1, COLORS.cyanLight);
+  rect(ctx, 15, 19, 10, 7, COLORS.ink);
+  rect(ctx, 27, 19, 10, 7, COLORS.ink);
+  rect(ctx, 24, 21, 4, 2, COLORS.ink);
+  rect(ctx, 16, 18, 8, 2, COLORS.ink);
+  rect(ctx, 28, 18, 8, 2, COLORS.ink);
+  rect(ctx, 17, 20, 6, 3, '#163f5c');
+  rect(ctx, 29, 20, 6, 3, '#163f5c');
+  rect(ctx, 18, 20, 2, 1, COLORS.cyanLight);
+  rect(ctx, 30, 20, 2, 1, COLORS.cyanLight);
 }
 
 function drawBowtie(ctx) {
@@ -599,6 +632,57 @@ function drawHeroCape(ctx) {
   polygon(ctx, [[38, 27], [42, 30], [42, 39], [36, 36], [33, 29]], COLORS.red);
   rect(ctx, 17, 31, 16, 5, COLORS.ink);
   rect(ctx, 19, 32, 12, 3, COLORS.yellow);
+}
+
+/**
+ * Draws one fully composited Babito frame onto a 64 × 64 canvas context.
+ * Phaser normally keeps every cosmetic in a separate atlas; this deterministic
+ * export path lets the landing reuse the exact same authored renderer.
+ */
+export function drawBabitoCompositeFrame(ctx, {
+  body = 'cyan',
+  eyes = 'normal',
+  mouth = 'smile',
+  arms = 'round',
+  headAccessory = 'none',
+  frame = 0,
+} = {}) {
+  if (!ctx || typeof ctx.save !== 'function') {
+    throw new TypeError('drawBabitoCompositeFrame requires a 2D canvas context.');
+  }
+
+  const bodyId = String(body).replace(/^body_/, '');
+  const palette = BABITO_PALETTES[bodyId] ?? BABITO_PALETTES.cyan;
+  const safeFrame = Number.isInteger(Number(frame))
+    ? Math.max(0, Math.min(BABITO_ANIMATION_FRAME_COUNT - 1, Number(frame)))
+    : 0;
+  const pose = BABITO_FRAME_POSES[safeFrame] ?? BABITO_FRAME_POSES[0];
+  const transform = getBabitoPoseTransform(pose);
+  const eyeStyle = String(eyes).replace(/^eyes_/, '');
+  const mouthStyle = String(mouth).replace(/^mouth_/, '');
+  const armStyle = String(arms).replace(/^arms_/, '');
+  const headStyle = String(headAccessory).replace(/^head_/, '');
+
+  ctx.clearRect(0, 0, BABITO_TEXTURE_SIZE, BABITO_TEXTURE_SIZE);
+  ctx.imageSmoothingEnabled = false;
+  ctx.save();
+  ctx.translate(
+    BABITO_TEXTURE_SIZE / 2 + transform.offsetX,
+    BABITO_TEXTURE_SIZE / 2 + transform.offsetY,
+  );
+  ctx.rotate(transform.rotation);
+  ctx.scale(transform.scaleX, transform.scaleY);
+  ctx.translate(-BABITO_ART_SIZE / 2, -BABITO_ART_SIZE / 2);
+  drawBabitoArms(ctx, armStyle, pose, palette.main);
+  drawBabitoBody(ctx, palette, pose);
+  drawBabitoEyes(ctx, eyeStyle, pose);
+  drawBabitoMouth(ctx, mouthStyle, pose);
+  if (headStyle === 'straw_hat' || headStyle === 'strawhat') drawStrawHat(ctx);
+  else if (headStyle === 'cowboy_hat' || headStyle === 'cowboyhat') drawCowboyHat(ctx);
+  else if (headStyle === 'crown') drawCrown(ctx);
+  ctx.restore();
+  snapCanvasAlpha(ctx, BABITO_TEXTURE_SIZE, BABITO_TEXTURE_SIZE);
+  return ctx;
 }
 
 function drawCome(ctx) {

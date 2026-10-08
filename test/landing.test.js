@@ -3,6 +3,7 @@ import { readFile, stat } from 'node:fs/promises';
 import test from 'node:test';
 import { relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { decodeRgbaPng } from '../scripts/normalize-vuela-atlas.mjs';
 
 const REPOSITORY_ROOT = fileURLToPath(new URL('../', import.meta.url));
 
@@ -168,4 +169,46 @@ test('declared WEBP dimensions match their intrinsic files', async () => {
   }
 
   assert.ok(checkedImages >= 10, 'dimension regression must cover the landing WEBP set');
+});
+
+test('the landing Babito is a crisp export of the canonical game palette', () => {
+  const asset = decodeRgbaPng(resolve(
+    REPOSITORY_ROOT,
+    'public/assets/landing/babito.png',
+  ));
+  assert.deepEqual([asset.width, asset.height], [256, 256]);
+
+  const colors = new Set();
+  for (let y = 0; y < asset.height; y += 1) {
+    for (let x = 0; x < asset.width; x += 1) {
+      const offset = (y * asset.width + x) * 4;
+      const pixel = [...asset.pixels.subarray(offset, offset + 4)];
+      assert.ok(pixel[3] === 0 || pixel[3] === 255, `unexpected alpha at ${x},${y}`);
+      if (pixel[3]) colors.add(pixel.join(','));
+
+      // The 64 px authored export is enlarged exactly 4× with nearest pixels.
+      if (x % 4 === 0 && y % 4 === 0) {
+        for (let blockY = y; blockY < y + 4; blockY += 1) {
+          for (let blockX = x; blockX < x + 4; blockX += 1) {
+            const blockOffset = (blockY * asset.width + blockX) * 4;
+            assert.deepEqual(
+              [...asset.pixels.subarray(blockOffset, blockOffset + 4)],
+              pixel,
+              `non-crisp 4× block at ${x},${y}`,
+            );
+          }
+        }
+      }
+    }
+  }
+
+  for (const canonicalColor of [
+    '124,219,249,255', // body
+    '168,237,255,255', // highlight
+    '43,191,229,255', // shade
+    '255,113,150,255', // cheeks
+    '7,17,30,255', // outline
+  ]) {
+    assert.ok(colors.has(canonicalColor), `missing canonical color ${canonicalColor}`);
+  }
 });

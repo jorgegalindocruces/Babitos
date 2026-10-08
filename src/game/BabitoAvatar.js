@@ -19,7 +19,7 @@ export const DEFAULT_BABITO_APPEARANCE = Object.freeze({
   eyes: 'eyes_normal',
   mouth: 'mouth_smile',
   arms: 'arms_round',
-  headAccessory: 'straw_hat',
+  headAccessory: 'none',
   glasses: 'none',
   neckAccessory: 'none',
 });
