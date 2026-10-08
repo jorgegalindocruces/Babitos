@@ -7,6 +7,19 @@ Este archivo relaciona las iteraciones entregadas con sus cambios observables, c
 - Mantener sincronizados `README.md`, `INTERACTIONS.md`, `GAME_DESIGN.md`, `IMPLEMENTATION_SPEC.md` y `ACCEPTANCE_CRITERIA.md` cuando cambien flujo, controles, estados, persistencia o contenido jugable.
 - Añadir una entrada aquí por cada cambio observable, con el commit final y las pruebas realizadas.
 
+## Dominio canónico `babitos.es` — 2026-10-08
+
+Commit [`a720de9`](https://github.com/jorgegalindocruces/Babitos/commit/a720de9):
+
+- registró `babitos.es` como dominio personalizado en la configuración de GitHub Pages;
+- añadió la URL canónica y `og:url` al documento público y actualizó los enlaces principales;
+- mantuvo `base: './'` para servir el juego desde el dominio raíz sin romper la URL técnica bajo `/Babitos/`;
+- documentó los cuatro registros IPv4, los cuatro IPv6, el alias `www` y el TXT de verificación;
+- dejó explícito que los despliegues mediante GitHub Actions ignoran el archivo `CNAME` del artefacto y usan la configuración Pages del repositorio;
+- añadió una regresión documental para evitar que la URL canónica o los DNS de GitHub desaparezcan por accidente.
+
+Pruebas: 64 casos automáticos, compilación de producción y `git diff --check`. HTTPS queda pendiente de que los DNS del registrador apunten a GitHub y se emita el certificado.
+
 ## Movimiento y acabado del Babito — 2026-10-08
 
 Commit [`1795ebd`](https://github.com/jorgegalindocruces/Babitos/commit/1795ebd):
