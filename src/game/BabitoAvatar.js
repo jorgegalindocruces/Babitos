@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 import {
   BABITO_ANIMATION_CLIPS,
   BABITO_PALETTES,
-  BABITO_TEXTURE_SIZE,
+  BABITO_RENDER_SIZE,
   TEXTURE_KEYS,
   createTextures,
   sampleBabitoAnimationFrame,
@@ -25,8 +25,7 @@ export const DEFAULT_BABITO_APPEARANCE = Object.freeze({
 });
 
 const MOTION_ALIASES = Object.freeze({
-  run: 'walk',
-  running: 'walk',
+  running: 'run',
   walking: 'walk',
   airborne: 'jump',
   falling: 'fall',
@@ -140,7 +139,7 @@ export class BabitoAvatar extends Phaser.GameObjects.Container {
     this._destroying = false;
 
     this._buildLayers();
-    super.setSize(BABITO_TEXTURE_SIZE, BABITO_TEXTURE_SIZE);
+    super.setSize(BABITO_RENDER_SIZE, BABITO_RENDER_SIZE);
     scene.add.existing(this);
 
     this.setAppearance(appearance, size);
@@ -149,7 +148,9 @@ export class BabitoAvatar extends Phaser.GameObjects.Container {
       this.syncToTarget();
       this._applyMotion(time, delta);
     };
-    scene.events.on(Phaser.Scenes.Events.UPDATE, this._onSceneUpdate);
+    // PlayerController resolves velocity/state during Scene.update. Sampling in
+    // POST_UPDATE prevents the visual from trailing physics by one frame.
+    scene.events.on(Phaser.Scenes.Events.POST_UPDATE, this._onSceneUpdate);
   }
 
   _buildLayers() {
@@ -163,7 +164,9 @@ export class BabitoAvatar extends Phaser.GameObjects.Container {
 
     const makeLayer = (name, initialKey) => {
       const image = new Phaser.GameObjects.Image(this.scene, 0, 0, initialKey, 0);
-      image.setOrigin(0.5, 0.5);
+      image
+        .setOrigin(0.5, 0.5)
+        .setDisplaySize(BABITO_RENDER_SIZE, BABITO_RENDER_SIZE);
       image.name = `babito-${name}`;
       this.layers[name] = image;
       this.motionRoot.add(image);
@@ -300,14 +303,23 @@ export class BabitoAvatar extends Phaser.GameObjects.Container {
       const safeScale = Number.isFinite(numeric) && numeric > 0 ? numeric : 1;
       this.sizeVariant = safeScale;
       this.setScale(safeScale);
+      this._alignVisualBaseline(safeScale);
       return this;
     }
 
     const id = asId(size);
     const variant = BABITO_SIZE_SCALES[id] ? id : 'normal';
     this.sizeVariant = variant;
-    this.setScale(BABITO_SIZE_SCALES[variant]);
+    const scale = BABITO_SIZE_SCALES[variant];
+    this.setScale(scale);
+    this._alignVisualBaseline(scale);
     return this;
+  }
+
+  _alignVisualBaseline(scale = 1) {
+    const safeScale = Math.max(0.01, Number(scale) || 1);
+    const baseline = 20;
+    this.visualRoot?.setY((baseline / safeScale) - baseline);
   }
 
   /**
@@ -329,7 +341,7 @@ export class BabitoAvatar extends Phaser.GameObjects.Container {
    * Selects a lightweight procedural pose. This does not replace the stored
    * cosmetic arm choice; leaving the temporary state restores it.
    *
-   * Supported states: idle, walk, jump, fall, attack, hurt, dead.
+   * Supported states: idle, walk, run, jump, fall, attack, hurt, dead.
    * @param {string} state
    * @param {{x?: number, y?: number}|Phaser.Math.Vector2} [velocity]
    * @param {{restart?: boolean}} [options]
@@ -359,67 +371,18 @@ export class BabitoAvatar extends Phaser.GameObjects.Container {
     return this;
   }
 
-  pulseJump(duration = 90) {
-    if (!this.scene?.tweens || !this.visualRoot) return this;
-    this.cancelScalePulse();
-    let tween;
-    tween = this.scene.tweens.add({
-      targets: this.visualRoot,
-      scaleX: 0.92,
-      scaleY: 1.08,
-      duration: Math.max(50, Number(duration) || 90),
-      yoyo: true,
-      ease: 'Quad.Out',
-      onComplete: () => {
-        if (this._scaleTween !== tween) return;
-        this._scaleTween = null;
-        this.visualRoot?.setScale(1);
-      },
-    });
-    this._scaleTween = tween;
+  pulseJump() {
+    // Squash/stretch is authored into the six jump frames. A transform tween
+    // on top of the raster caused shimmer at small/large cosmetic scales.
     return this;
   }
 
-  pulseLanding(velocity = 260) {
-    if (!this.scene?.tweens || !this.visualRoot) return this;
-    this.cancelScalePulse();
-    const strength = Phaser.Math.Clamp(Math.abs(Number(velocity) || 260) / 620, 0.35, 0.82);
-    let tween;
-    tween = this.scene.tweens.add({
-      targets: this.visualRoot,
-      scaleX: 1 + strength * 0.1,
-      scaleY: 1 - strength * 0.12,
-      duration: 65,
-      yoyo: true,
-      ease: 'Quad.Out',
-      onComplete: () => {
-        if (this._scaleTween !== tween) return;
-        this._scaleTween = null;
-        this.visualRoot?.setScale(1);
-      },
-    });
-    this._scaleTween = tween;
+  pulseLanding() {
     return this;
   }
 
   /** Brief attack accent used by PlayerController without disturbing size. */
-  pulseAttack(duration = 110) {
-    if (!this.scene?.tweens || !this.visualRoot) return this;
-    this.cancelActionPulse();
-    let tween;
-    tween = this.scene.tweens.add({
-      targets: this.visualRoot,
-      angle: this.facing * 7,
-      duration: Math.max(40, Number(duration) || 110) / 2,
-      yoyo: true,
-      ease: 'Quad.Out',
-      onComplete: () => {
-        if (this._actionTween !== tween) return;
-        this._actionTween = null;
-        this.visualRoot?.setAngle(0);
-      },
-    });
-    this._actionTween = tween;
+  pulseAttack() {
     return this;
   }
 
@@ -469,9 +432,12 @@ export class BabitoAvatar extends Phaser.GameObjects.Container {
     }
 
     const clip = BABITO_ANIMATION_CLIPS[this.motionState] ?? BABITO_ANIMATION_CLIPS.idle;
-    const speedMultiplier = this.motionState === 'walk'
-      ? Phaser.Math.Clamp(Math.abs(this.motionVelocity.x) / 180, 0.72, 1.45)
-      : 1;
+    let speedMultiplier = 1;
+    if (this.motionState === 'walk') {
+      speedMultiplier = Phaser.Math.Clamp(Math.abs(this.motionVelocity.x) / 135, 0.75, 1.3);
+    } else if (this.motionState === 'run') {
+      speedMultiplier = Phaser.Math.Clamp(Math.abs(this.motionVelocity.x) / 260, 0.85, 1.35);
+    }
     const frame = sampleBabitoAnimationFrame(
       this.motionState,
       this.motionElapsedMs,
@@ -480,26 +446,17 @@ export class BabitoAvatar extends Phaser.GameObjects.Container {
     const localFrame = frame - clip.start;
     this._setMotionFrame(frame);
 
-    // Rotation is deliberately stepped with the raster frames. It gives the
-    // knocked-out state a readable finish without introducing a second,
-    // continuously-running animation clock that could desynchronise layers.
+    // Major lean/squash silhouettes are authored in the synchronized atlas.
+    // Only whole-pixel accents remain here, avoiding fractional raster shimmer.
     let offsetX = 0;
     let offsetY = 0;
-    let angle = 0;
-    if (this.motionState === 'jump') offsetY = [1, -1, -3, -4][localFrame];
-    else if (this.motionState === 'fall') offsetY = [-3, -2, -1, 0][localFrame];
-    else if (this.motionState === 'attack') {
-      offsetX = this.facing * [-1, 1, 3, 1][localFrame];
-      offsetY = [0, -1, 0, 0][localFrame];
+    if (this.motionState === 'attack') {
+      offsetX = this.facing * [0, 0, 1, 2, 1, 0][localFrame];
     } else if (this.motionState === 'hurt') {
-      offsetX = this.facing * [2, -2, 1, 0][localFrame];
-      offsetY = [-1, 0, 1, 2][localFrame];
-      angle = this.facing * [4, -4, 3, 0][localFrame];
-    } else if (this.motionState === 'dead') {
-      offsetY = [1, 3, 5, 6][localFrame];
-      angle = this.facing * [0, 6, 14, 20][localFrame];
+      offsetX = this.facing * [1, -1, 1, 0, 0][localFrame];
+      offsetY = [-1, 0, 1, 1, 0][localFrame];
     }
-    this.motionRoot?.setPosition(offsetX, offsetY).setAngle(angle);
+    this.motionRoot?.setPosition(Math.round(offsetX), Math.round(offsetY)).setAngle(0);
   }
 
   /**
@@ -616,7 +573,7 @@ export class BabitoAvatar extends Phaser.GameObjects.Container {
     this.cancelMotionPulses();
     const sceneEvents = this.scene?.events;
     if (sceneEvents && this._onSceneUpdate) {
-      sceneEvents.off(Phaser.Scenes.Events.UPDATE, this._onSceneUpdate);
+      sceneEvents.off(Phaser.Scenes.Events.POST_UPDATE, this._onSceneUpdate);
     }
     this.stopFollowing();
     super.destroy(fromScene);

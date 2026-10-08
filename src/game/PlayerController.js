@@ -1,17 +1,15 @@
 import Phaser from 'phaser';
 import gameData from '../data/game-data.json';
 import { BabitoAvatar } from './BabitoAvatar.js';
-import { BABITO_ANIMATION_CLIPS } from './createTextures.js';
+import {
+  getBabitoAnimationDurationMs,
+  selectBabitoLocomotionState,
+} from './BabitoAnimations.js';
 import { getPower, launchPower } from './PowerSystem.js';
 
-function clipDurationMs(name) {
-  const clip = BABITO_ANIMATION_CLIPS[name];
-  return Math.ceil((clip.frameCount / clip.fps) * 1000);
-}
-
-const ATTACK_ANIMATION_MS = clipDurationMs('attack');
-const HURT_ANIMATION_MS = clipDurationMs('hurt');
-const DEAD_ANIMATION_MS = clipDurationMs('dead');
+const ATTACK_ANIMATION_MS = getBabitoAnimationDurationMs('attack');
+const HURT_ANIMATION_MS = getBabitoAnimationDurationMs('hurt');
+const DEAD_ANIMATION_MS = getBabitoAnimationDurationMs('dead');
 
 function getGameplayTime(scene) {
   const value = scene?.getGameplayTime?.();
@@ -241,7 +239,7 @@ export class PlayerController {
           ? 'attack'
           : (jumpedThisFrame || !grounded
             ? (this.body.body.velocity.y < 0 ? 'jump' : 'fall')
-            : (Math.abs(this.body.body.velocity.x) > 20 ? 'run' : 'idle'))));
+            : selectBabitoLocomotionState(this.body.body.velocity.x))));
     this.syncBodyVisual(motion);
 
     const blinking = time < this.invulnerableUntil && Math.floor(time / 75) % 2 === 0;
@@ -257,7 +255,7 @@ export class PlayerController {
       ? 'dead'
       : (!grounded
         ? (this.body.body.velocity.y < 0 ? 'jump' : 'fall')
-        : (Math.abs(this.body.body.velocity.x) > 20 ? 'walk' : 'idle')));
+        : selectBabitoLocomotionState(this.body.body.velocity.x)));
     this.avatar.setPosition(this.body.x, this.body.y + 2);
     this.avatar.setFacing(this.facing);
     this.avatar.setMotion?.(resolvedMotion, this.body.body.velocity);

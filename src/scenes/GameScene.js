@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import levelData from '../data/levels/babilandia.json';
 import gameData from '../data/game-data.json';
 import { EnemyController } from '../game/EnemyController.js';
+import { BABITO_ANIMATION_CLIPS } from '../game/BabitoAnimations.js';
 import { PlayerController } from '../game/PlayerController.js';
 import { isPowerProjectile, makeImpact } from '../game/PowerSystem.js';
 import { placeOnSurface, TUTORIAL_SIGN_STYLE } from '../game/surfaceAnchoring.js';
@@ -40,10 +41,30 @@ export class GameScene extends Phaser.Scene {
     this.qaCombat = false;
     this.qaCheckpointId = null;
     this.qaCheckpointActive = false;
+    this.qaMotion = null;
+    this.qaMotionFrame = null;
+    this.qaSize = null;
     if (import.meta.env.DEV && typeof location !== 'undefined') {
       const params = new URLSearchParams(location.search);
       this.qaCombat = params.get('qaCombat') === '1';
       this.qaCheckpointId = params.get('qaCheckpoint');
+      const requestedMotion = params.get('qaMotion')?.trim().toLowerCase();
+      const requestedFrameParam = params.get('qaFrame');
+      const requestedFrame = requestedFrameParam == null
+        ? null
+        : Number(requestedFrameParam);
+      const requestedSize = params.get('qaSize')?.trim().toLowerCase();
+      this.qaMotion = [
+        'idle', 'walk', 'run', 'jump', 'fall', 'attack', 'hurt', 'dead',
+      ].includes(requestedMotion) ? requestedMotion : null;
+      this.qaMotionFrame = requestedFrame != null
+        && Number.isInteger(requestedFrame)
+        && requestedFrame >= 0
+        ? requestedFrame
+        : null;
+      this.qaSize = ['small', 'normal', 'large'].includes(requestedSize)
+        ? requestedSize
+        : null;
     }
     this.enemyControllers = [];
     this.gameplayTime = 0;
@@ -90,6 +111,7 @@ export class GameScene extends Phaser.Scene {
       onGameOver: () => this.showGameOver(),
     });
     this.player.setCheckpoint(savedCheckpoint.x, savedCheckpoint.y - 20);
+    if (this.qaSize) this.player.avatar.setSizeVariant(this.qaSize);
     this.cameras.main.startFollow(this.player.body, true, 0.09, 0.09, -120, 40);
     this.cameras.main.setDeadzone(180, 100);
 
@@ -575,6 +597,19 @@ export class GameScene extends Phaser.Scene {
     this.gameplayTime += Math.max(0, Number(delta) || 0);
 
     this.player?.update(this.gameplayTime);
+    if (this.qaMotion) {
+      const qaVelocity = this.qaMotion === 'run'
+        ? { x: 280, y: 0 }
+        : (this.qaMotion === 'walk'
+          ? { x: 135, y: 0 }
+          : { x: 0, y: this.qaMotion === 'jump' ? -260 : 220 });
+      this.player.avatar.setMotion(this.qaMotion, qaVelocity);
+      if (this.qaMotionFrame != null) {
+        const clip = BABITO_ANIMATION_CLIPS[this.qaMotion];
+        const localFrame = Math.min(this.qaMotionFrame, clip.frameCount - 1);
+        this.player.avatar.motionElapsedMs = (localFrame * 1000) / clip.fps;
+      }
+    }
     this.enemyControllers.forEach((enemy) => enemy.update());
     if (this.player?.body.y > 575) this.handleFall();
     this.progressText?.setText(`ENCUENTROS  ${this.defeatedEnemies}/${this.level.enemies.length}`);

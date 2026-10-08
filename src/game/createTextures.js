@@ -1,90 +1,92 @@
+import {
+  BABITO_ANIMATION_CLIPS,
+  BABITO_ANIMATION_COLUMNS,
+  BABITO_ANIMATION_FRAME_COUNT,
+  BABITO_FRAME_POSES,
+  sampleBabitoAnimationFrame,
+} from './BabitoAnimations.js';
+
 // Phaser.Textures.FilterMode.NEAREST. Keeping this tiny module free of a
 // runtime Phaser import also makes the frame contract unit-testable in Node.
 const PHASER_NEAREST_FILTER = 1;
 
-/** Native size shared by every composable Babito layer. */
-export const BABITO_TEXTURE_SIZE = 48;
+export {
+  BABITO_ANIMATION_CLIPS,
+  BABITO_ANIMATION_COLUMNS,
+  BABITO_ANIMATION_FRAME_COUNT,
+  sampleBabitoAnimationFrame,
+} from './BabitoAnimations.js';
 
-/**
- * Every customizable Babito layer uses this exact 4 x 7 frame contract.
- * Keeping one shared grid is what lets bodies, faces and accessories animate
- * without baking (and therefore losing) the player's chosen appearance.
- */
-export const BABITO_ANIMATION_CLIPS = Object.freeze({
-  idle: Object.freeze({ start: 0, frameCount: 4, fps: 4, loop: true }),
-  walk: Object.freeze({ start: 4, frameCount: 4, fps: 10, loop: true }),
-  jump: Object.freeze({ start: 8, frameCount: 4, fps: 10, loop: false }),
-  fall: Object.freeze({ start: 12, frameCount: 4, fps: 8, loop: false }),
-  attack: Object.freeze({ start: 16, frameCount: 4, fps: 14, loop: false }),
-  hurt: Object.freeze({ start: 20, frameCount: 4, fps: 11, loop: false }),
-  dead: Object.freeze({ start: 24, frameCount: 4, fps: 6, loop: false }),
+/** Native size shared by every composable Babito layer. */
+export const BABITO_TEXTURE_SIZE = 64;
+export const BABITO_RENDER_SIZE = 64;
+const BABITO_ART_SIZE = 48;
+const BABITO_ART_SCALE = 1.15;
+export const BABITO_SPRING_HAND_RADIUS = 3;
+export const BABITO_AUTHORED_ART_BOUNDS = Object.freeze({
+  minX: 1,
+  // Canvas primitives that draw through x=47 occupy the half-open edge at 48.
+  maxX: 48,
+  minY: 2,
+  maxY: 45,
 });
 
-export const BABITO_ANIMATION_COLUMNS = 4;
-export const BABITO_ANIMATION_FRAME_COUNT = 28;
-export const BABITO_SPRING_HAND_RADIUS = 3;
+const BABITO_POSE_TRANSFORMS = Object.freeze({
+  default: Object.freeze({ scaleX: 0.72, scaleY: 0.72, offsetX: 0.72, offsetY: 0.72, lean: 0.62 }),
+  attack: Object.freeze({ scaleX: 0.55, scaleY: 0.6, offsetX: 0.25, offsetY: 0.4, lean: 0.32 }),
+  hurt: Object.freeze({ scaleX: 0.55, scaleY: 0.68, offsetX: 0.35, offsetY: 0.65, lean: 0.45 }),
+  // KO stays visibly flattened, but its width, rotation and fall are capped so
+  // the final silhouette neither clips the atlas nor sinks into the platform.
+  dead: Object.freeze({ scaleX: 0.2, scaleY: 0.72, offsetX: 0, offsetY: 0.2, lean: 0.22 }),
+});
 
 export function getBabitoSpringHandCenterX(state = 'idle', phase = 0) {
-  const extendsForAttack = state === 'attack' && phase >= 1 && phase <= 2;
-  // The center may reach x=44 at most: the three-pixel hand then ends at the
-  // final pixel (47) of the shared 48px frame instead of being clipped.
-  return extendsForAttack ? 44 : 43;
+  if (state !== 'attack') return 42;
+  const safePhase = Number.isFinite(Number(phase)) ? Math.trunc(Number(phase)) : 0;
+  return [39, 41, 43, 44, 42, 40][Math.max(0, Math.min(5, safePhase))];
 }
 
-export function sampleBabitoAnimationFrame(state, elapsedMs = 0, speedMultiplier = 1) {
-  const clip = Object.hasOwn(BABITO_ANIMATION_CLIPS, state)
-    ? BABITO_ANIMATION_CLIPS[state]
-    : BABITO_ANIMATION_CLIPS.idle;
-  const numericElapsed = Number(elapsedMs);
-  const numericSpeed = Number(speedMultiplier);
-  const safeElapsed = Number.isFinite(numericElapsed) ? Math.max(0, numericElapsed) : 0;
-  const safeSpeed = Number.isFinite(numericSpeed) && numericSpeed > 0
-    ? Math.max(0.01, numericSpeed)
-    : 1;
-  const elapsedFrame = Math.floor(safeElapsed / (1000 / (clip.fps * safeSpeed)));
-  const localFrame = clip.loop
-    ? elapsedFrame % clip.frameCount
-    : Math.min(elapsedFrame, clip.frameCount - 1);
-  return clip.start + localFrame;
+function getBabitoPoseTransform(pose = {}) {
+  const profile = BABITO_POSE_TRANSFORMS[pose.state] ?? BABITO_POSE_TRANSFORMS.default;
+  return {
+    scaleX: BABITO_ART_SCALE * (1 + (Number(pose.scaleX ?? 1) - 1) * profile.scaleX),
+    scaleY: BABITO_ART_SCALE * (1 + (Number(pose.scaleY ?? 1) - 1) * profile.scaleY),
+    offsetX: Number(pose.offset?.x ?? 0) * profile.offsetX,
+    offsetY: Number(pose.offset?.y ?? 0) * profile.offsetY,
+    rotation: (Number(pose.lean ?? 0) * profile.lean * Math.PI) / 180,
+  };
 }
 
-const BABITO_FRAME_POSES = Object.freeze([
-  // IDLE: a four-frame breath with a deliberate blink on frame 2.
-  { state: 'idle', phase: 0, x: 0, y: 0 },
-  { state: 'idle', phase: 1, x: 0, y: -1 },
-  { state: 'idle', phase: 2, x: 0, y: -1, expression: 'blink' },
-  { state: 'idle', phase: 3, x: 0, y: 0 },
-  // WALK: alternating feet plus a two-pixel up beat makes the gait readable.
-  { state: 'walk', phase: 0, x: -1, y: 0, leftFootX: -2, rightFootX: 1 },
-  { state: 'walk', phase: 1, x: 0, y: -2, leftFootX: -1, rightFootX: 0 },
-  { state: 'walk', phase: 2, x: 1, y: 0, leftFootX: 1, rightFootX: -2 },
-  { state: 'walk', phase: 3, x: 0, y: -2, leftFootX: 0, rightFootX: -1 },
-  // JUMP: anticipation, take-off, rise and apex. Feet tuck into the body.
-  { state: 'jump', phase: 0, x: 0, y: 0, feetY: 1 },
-  { state: 'jump', phase: 1, x: 0, y: 0, feetY: -1 },
-  { state: 'jump', phase: 2, x: 0, y: 0, feetY: -2 },
-  { state: 'jump', phase: 3, x: 0, y: 0, feetY: -2 },
-  // FALL: a separate silhouette which lengthens towards landing.
-  { state: 'fall', phase: 0, x: 0, y: 0, feetY: -2 },
-  { state: 'fall', phase: 1, x: 0, y: 0, feetY: -1 },
-  { state: 'fall', phase: 2, x: 0, y: 0, feetY: 0 },
-  { state: 'fall', phase: 3, x: 0, y: 0, feetY: 1 },
-  // ATTACK: anticipation followed by a clear forward lunge and recovery.
-  { state: 'attack', phase: 0, x: 0, y: 0, expression: 'attack' },
-  { state: 'attack', phase: 1, x: 0, y: 0, expression: 'attack' },
-  { state: 'attack', phase: 2, x: 0, y: 0, expression: 'attack' },
-  { state: 'attack', phase: 3, x: 0, y: 0 },
-  // HURT: three sharp recoil positions followed by a guarded pose.
-  { state: 'hurt', phase: 0, x: 0, y: 0, expression: 'hurt' },
-  { state: 'hurt', phase: 1, x: 0, y: 0, expression: 'hurt' },
-  { state: 'hurt', phase: 2, x: 0, y: 0, expression: 'hurt' },
-  { state: 'hurt', phase: 3, x: 0, y: 0, expression: 'hurt' },
-  // DEAD means knocked-out in this friendly world: sink, close eyes, hold.
-  { state: 'dead', phase: 0, x: 0, y: 0, expression: 'hurt' },
-  { state: 'dead', phase: 1, x: 0, y: 0, expression: 'dazed', feetY: 1 },
-  { state: 'dead', phase: 2, x: 0, y: 0, expression: 'dazed', feetY: 2 },
-  { state: 'dead', phase: 3, x: 0, y: 0, expression: 'dazed', feetY: 2 },
-]);
+/** Conservative atlas-space bounds used by regression tests and art tooling. */
+export function getBabitoTransformedBounds(
+  pose = {},
+  bounds = BABITO_AUTHORED_ART_BOUNDS,
+) {
+  const transform = getBabitoPoseTransform(pose);
+  const cosine = Math.cos(transform.rotation);
+  const sine = Math.sin(transform.rotation);
+  const centerX = BABITO_TEXTURE_SIZE / 2 + transform.offsetX;
+  const centerY = BABITO_TEXTURE_SIZE / 2 + transform.offsetY;
+  const points = [
+    [bounds.minX, bounds.minY],
+    [bounds.maxX, bounds.minY],
+    [bounds.minX, bounds.maxY],
+    [bounds.maxX, bounds.maxY],
+  ].map(([x, y]) => {
+    const localX = (x - BABITO_ART_SIZE / 2) * transform.scaleX;
+    const localY = (y - BABITO_ART_SIZE / 2) * transform.scaleY;
+    return {
+      x: centerX + localX * cosine - localY * sine,
+      y: centerY + localX * sine + localY * cosine,
+    };
+  });
+  return Object.freeze({
+    minX: Math.min(...points.map((point) => point.x)),
+    maxX: Math.max(...points.map((point) => point.x)),
+    minY: Math.min(...points.map((point) => point.y)),
+    maxY: Math.max(...points.map((point) => point.y)),
+  });
+}
 
 /**
  * Color sets used by the generated bodies and by {@link BabitoAvatar} to tint
@@ -287,21 +289,27 @@ function sparkle(ctx, x, y, color = COLORS.yellowLight) {
 }
 
 function drawBabitoBody(ctx, palette, pose = {}) {
-  const leftFootX = Number(pose.leftFootX) || 0;
-  const rightFootX = Number(pose.rightFootX) || 0;
-  const feetY = Number(pose.feetY) || 0;
-  // Feet are behind the body so the layer still reads as one compact silhouette.
-  rect(ctx, 13 + leftFootX, 35 + feetY, 11, 7, COLORS.ink);
-  rect(ctx, 27 + rightFootX, 35 + feetY, 9, 7, COLORS.ink);
-  rect(ctx, 15 + leftFootX, 35 + feetY, 8, 4, palette.shade);
-  rect(ctx, 28 + rightFootX, 35 + feetY, 7, 4, palette.shade);
-  rect(ctx, 14 + leftFootX, 39 + feetY, 10, 2, palette.main);
-  rect(ctx, 27 + rightFootX, 39 + feetY, 9, 2, palette.main);
+  const leftFootX = Number(pose.feet?.left?.x) || 0;
+  const rightFootX = Number(pose.feet?.right?.x) || 0;
+  const leftFootY = Number(pose.feet?.left?.y) || 0;
+  const rightFootY = Number(pose.feet?.right?.y) || 0;
+  // Feet are authored independently so contact, passing and airborne poses
+  // change the silhouette instead of sliding an unchanged body over the floor.
+  rect(ctx, 12 + leftFootX, 35 + leftFootY, 12, 7, COLORS.ink);
+  rect(ctx, 27 + rightFootX, 35 + rightFootY, 10, 7, COLORS.ink);
+  rect(ctx, 14 + leftFootX, 35 + leftFootY, 9, 4, palette.shade);
+  rect(ctx, 28 + rightFootX, 35 + rightFootY, 8, 4, palette.shade);
+  rect(ctx, 13 + leftFootX, 39 + leftFootY, 11, 2, palette.main);
+  rect(ctx, 27 + rightFootX, 39 + rightFootY, 10, 2, palette.main);
 
   outlinedEllipse(ctx, 24, 25, 17, 15, COLORS.ink, palette.main, 2);
-  rect(ctx, 13, 15, 7, 2, palette.light);
-  rect(ctx, 11, 18, 3, 7, palette.light);
+  // A broader stepped highlight and a two-level lower shade match the richer
+  // volume used by COME/VUELA/DA VUELTAS without flattening custom colours.
+  rect(ctx, 13, 14, 9, 2, palette.light);
+  rect(ctx, 11, 17, 4, 8, palette.light);
+  rect(ctx, 14, 16, 4, 2, '#ffffff');
   rect(ctx, 12, 34, 24, 3, palette.shade);
+  rect(ctx, 16, 37, 17, 2, palette.shade);
   rect(ctx, 34, 22, 3, 10, palette.shade);
   rect(ctx, 13, 27, 4, 3, COLORS.blush);
   rect(ctx, 32, 27, 4, 3, COLORS.blush);
@@ -314,7 +322,7 @@ function drawBabitoEyes(ctx, style, pose = {}) {
     return;
   }
 
-  if (pose.expression === 'hurt') {
+  if (pose.expression === 'hurt' || pose.expression === 'knocked-out') {
     pixelLine(ctx, 16, 21, 22, 27, COLORS.ink, 2);
     pixelLine(ctx, 22, 21, 16, 27, COLORS.ink, 2);
     pixelLine(ctx, 28, 21, 34, 27, COLORS.ink, 2);
@@ -327,6 +335,27 @@ function drawBabitoEyes(ctx, style, pose = {}) {
     rect(ctx, 27, 24, 7, 2, COLORS.ink);
     rect(ctx, 18, 22, 3, 1, COLORS.ink);
     rect(ctx, 29, 22, 3, 1, COLORS.ink);
+    return;
+  }
+
+  if (pose.expression === 'surprised') {
+    outlinedEllipse(ctx, 19, 23, 5, 6, COLORS.ink, COLORS.white, 1);
+    outlinedEllipse(ctx, 31, 23, 5, 6, COLORS.ink, COLORS.white, 1);
+    rect(ctx, 20, 22, 3, 4, COLORS.ink);
+    rect(ctx, 32, 22, 3, 4, COLORS.ink);
+    rect(ctx, 20, 21, 1, 1, COLORS.white);
+    rect(ctx, 32, 21, 1, 1, COLORS.white);
+    return;
+  }
+
+  if (['focus', 'determined', 'attack'].includes(pose.expression)) {
+    const pupilOffset = pose.expression === 'attack' ? 1 : 0;
+    rect(ctx, 17, 21, 6, 8, COLORS.ink);
+    rect(ctx, 28, 21, 6, 8, COLORS.ink);
+    rect(ctx, 19 + pupilOffset, 22, 2, 3, COLORS.white);
+    rect(ctx, 30 + pupilOffset, 22, 2, 3, COLORS.white);
+    pixelLine(ctx, 16, 20, 22, pose.expression === 'attack' ? 22 : 21, COLORS.ink, 2);
+    pixelLine(ctx, 28, pose.expression === 'attack' ? 22 : 21, 35, 20, COLORS.ink, 2);
     return;
   }
 
@@ -374,8 +403,20 @@ function drawBabitoMouth(ctx, style, pose = {}) {
     return;
   }
 
-  if (pose.expression === 'dazed') {
+  if (pose.expression === 'dazed' || pose.expression === 'knocked-out') {
     rect(ctx, 21, 32, 9, 2, COLORS.ink);
+    return;
+  }
+
+  if (pose.expression === 'surprised') {
+    outlinedEllipse(ctx, 25, 32, 4, 5, COLORS.ink, '#691b3b', 1);
+    rect(ctx, 23, 34, 4, 1, COLORS.blush);
+    return;
+  }
+
+  if (pose.expression === 'determined' || pose.expression === 'focus') {
+    pixelLine(ctx, 20, 33, 25, 31, COLORS.ink, 2);
+    pixelLine(ctx, 25, 31, 31, 33, COLORS.ink, 2);
     return;
   }
 
@@ -422,11 +463,17 @@ function drawBabitoFin(ctx, side, pose = 'rest') {
     rest: [[15, 22], [8, 21], [3, 27], [7, 34], [15, 31]],
     raised: [[17, 27], [8, 22], [6, 13], [11, 10], [16, 20]],
     attack: [[15, 22], [7, 19], [1, 22], [7, 27], [15, 29]],
+    down: [[15, 23], [9, 27], [7, 38], [12, 40], [17, 30]],
+    wide: [[15, 23], [8, 18], [2, 16], [4, 25], [15, 31]],
+    flat: [[15, 27], [9, 31], [3, 36], [9, 38], [17, 32]],
   };
   const insetByPose = {
     rest: [[14, 24], [9, 24], [6, 27], [9, 31], [14, 29]],
     raised: [[15, 25], [10, 21], [9, 15], [11, 14], [14, 21]],
     attack: [[14, 24], [8, 22], [5, 22], [8, 25], [14, 27]],
+    down: [[14, 25], [11, 28], [10, 36], [12, 37], [15, 29]],
+    wide: [[14, 24], [9, 21], [5, 19], [7, 24], [14, 29]],
+    flat: [[14, 28], [10, 32], [7, 35], [10, 35], [15, 31]],
   };
   polygon(ctx, pointsByPose[pose].map(([x, y]) => [mirror(x), y]), COLORS.ink);
   polygon(ctx, insetByPose[pose].map(([x, y]) => [mirror(x), y]), '#ffffff');
@@ -434,7 +481,26 @@ function drawBabitoFin(ctx, side, pose = 'rest') {
 
 function drawBabitoArms(ctx, style, framePose = {}) {
   const motion = framePose.state ?? 'idle';
-  const phase = framePose.phase ?? 0;
+  const phase = framePose.localFrame ?? 0;
+
+  const resolveFinPose = (value, side) => {
+    const descriptor = String(value ?? 'rest');
+    if (descriptor.includes('flat')) return 'flat';
+    if (descriptor.includes('down') || descriptor.includes('droop')) return 'down';
+    if (descriptor.includes('wide') || descriptor.includes('high') || descriptor.includes('up')) return 'wide';
+    if (
+      descriptor.includes('strike')
+      || descriptor.includes('charge')
+      || descriptor.includes('forward')
+    ) return 'attack';
+    if (descriptor.includes('back') || descriptor.includes('guard') || descriptor.includes('windup')) {
+      return 'raised';
+    }
+    if (descriptor.includes('flail')) return side < 0 ? 'raised' : 'wide';
+    if (descriptor.includes('counter') || descriptor.includes('recover')) return 'raised';
+    if (descriptor.includes('soft-out')) return 'wide';
+    return 'rest';
+  };
 
   if (style === 'spring') {
     // Keep the unmistakable zig-zag silhouette while the shared frame offsets
@@ -459,44 +525,16 @@ function drawBabitoArms(ctx, style, framePose = {}) {
     return;
   }
 
-  if (motion === 'attack') {
-    const heroic = style === 'hero' || style === 'raised';
-    if (phase === 0 || phase === 3) {
-      drawBabitoFin(ctx, -1, heroic ? 'raised' : 'rest');
-      drawBabitoFin(ctx, 1, heroic ? 'raised' : 'rest');
-    } else {
-      drawBabitoFin(ctx, -1, phase === 2 || heroic ? 'raised' : 'rest');
-      drawBabitoFin(ctx, 1, 'attack');
-    }
-    return;
-  }
-
-  if (motion === 'jump' || motion === 'fall' || motion === 'hurt') {
-    drawBabitoFin(ctx, -1, 'raised');
-    drawBabitoFin(ctx, 1, 'raised');
-    return;
-  }
-
-  if (motion === 'dead') {
-    drawBabitoFin(ctx, -1, 'rest');
-    drawBabitoFin(ctx, 1, 'rest');
-    return;
-  }
-
+  let leftPose = resolveFinPose(framePose.arms?.left, -1);
+  let rightPose = resolveFinPose(framePose.arms?.right, 1);
+  // Hero/raised are cosmetic silhouettes, not frozen animation poses. They
+  // keep their characteristic lift while still following every action beat.
   if (style === 'raised' || style === 'hero') {
-    drawBabitoFin(ctx, -1, 'raised');
-    drawBabitoFin(ctx, 1, 'raised');
-    return;
+    if (leftPose === 'rest') leftPose = 'raised';
+    if (rightPose === 'rest') rightPose = 'raised';
   }
-
-  if (motion === 'walk' && phase % 2 === 0) {
-    drawBabitoFin(ctx, -1, phase === 0 ? 'attack' : 'rest');
-    drawBabitoFin(ctx, 1, phase === 2 ? 'attack' : 'rest');
-    return;
-  }
-
-  drawBabitoFin(ctx, -1, 'rest');
-  drawBabitoFin(ctx, 1, 'rest');
+  drawBabitoFin(ctx, -1, leftPose);
+  drawBabitoFin(ctx, 1, rightPose);
 }
 
 function drawStrawHat(ctx) {
@@ -954,7 +992,14 @@ function makeBabitoLayerSpec(key, drawFrame) {
         ctx.beginPath();
         ctx.rect(originX, originY, BABITO_TEXTURE_SIZE, BABITO_TEXTURE_SIZE);
         ctx.clip();
-        ctx.translate(originX + pose.x, originY + pose.y);
+        const transform = getBabitoPoseTransform(pose);
+        ctx.translate(
+          originX + BABITO_TEXTURE_SIZE / 2 + transform.offsetX,
+          originY + BABITO_TEXTURE_SIZE / 2 + transform.offsetY,
+        );
+        ctx.rotate(transform.rotation);
+        ctx.scale(transform.scaleX, transform.scaleY);
+        ctx.translate(-BABITO_ART_SIZE / 2, -BABITO_ART_SIZE / 2);
         drawFrame(ctx, pose, frameIndex);
         ctx.restore();
       });
