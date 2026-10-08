@@ -9,7 +9,7 @@ Este archivo relaciona las iteraciones entregadas con sus cambios observables, c
 
 ## Babito sin banda inferior de sombra — 2026-10-08
 
-Commit pendiente. Se elimina la lectura accidental de pantalón en el Babito base: vientre e interior de los pies comparten ahora el color principal de forma continua, mientras la sombra de volumen queda limitada al lateral lejano del cuerpo. El ajuste conserva silueta, paletas desbloqueables, 51 frames, siete capas, tamaños, baseline, hitbox y guardados.
+Commit [`60126f3`](https://github.com/jorgegalindocruces/Babitos/commit/60126f3). Se elimina la lectura accidental de pantalón en el Babito base: vientre e interior de los pies comparten ahora el color principal de forma continua, mientras la sombra de volumen queda limitada al lateral lejano del cuerpo. El ajuste conserva silueta, paletas desbloqueables, 51 frames, siete capas, tamaños, baseline, hitbox y guardados.
 
 Validación: 117 pruebas automáticas, build de producción, `git diff --check` y QA visual en Creador y `GameScene` (caminar), con el Babito cian y rosa, sin banda inferior ni errores de consola.
 
