@@ -36,7 +36,7 @@ El pixel art pertenece a personajes, escenarios y efectos; no debe convertir la 
 
 ## Creador
 
-Capas independientes: `body`, `eyes`, `mouth`, `arms`, `headAccessory`, `glasses` y `neckAccessory`. Ojos y bocas nunca son una cara prefabricada. La opción inicial muestra al Babito base sin sombrero y conserva la identidad de [su arte aprobado](../art/production/babito-v3.md): cuerpo casi circular, cara pequeña, aletas descendentes y pies cortos; los cosméticos se superponen sin sustituir esa construcción. Los catálogos son ampliables, con opciones gratuitas y otras comprables. Pequeño, normal y grande son cosméticos: mismo hitbox, daño, velocidad y ventajas. `¡BABITO LOCO!` randomiza opciones desbloqueadas.
+Capas independientes: `body`, `eyes`, `mouth`, `arms`, `headAccessory`, `glasses` y `neckAccessory`. Ojos y bocas nunca son una cara prefabricada. La opción inicial muestra al Babito base sin sombrero y conserva la identidad de [su arte aprobado](../art/production/babito-v4.md): cuerpo ancho y redondo con corona plana, cara pequeña, aletas descendentes y pies visibles; los cosméticos se superponen sin sustituir esa construcción. Los catálogos son ampliables, con opciones gratuitas y otras comprables. Pequeño, normal y grande son cosméticos: mismo hitbox, daño, velocidad y ventajas. `¡BABITO LOCO!` randomiza opciones desbloqueadas.
 
 ## Poder inicial
 

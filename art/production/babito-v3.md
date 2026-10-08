@@ -1,5 +1,7 @@
 # Babito canónico v3
 
+> **Histórico y supersedido.** Esta ficha documenta la iteración integrada en `fa77fc2`. El contrato vigente del personaje es [Babito canónico v4](babito-v4.md); no se deben usar las medidas de v3 para cambios nuevos.
+
 ## Estado
 
 Integrado el 8 de octubre de 2026 en [`fa77fc2`](https://github.com/jorgegalindocruces/Babitos/commit/fa77fc2). Sustituye las proporciones anchas y rectangulares del renderer anterior sin cambiar su contrato de animación, personalización o física.

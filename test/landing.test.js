@@ -176,7 +176,7 @@ test('the landing Babito is a crisp export of the canonical game palette', () =>
     REPOSITORY_ROOT,
     'public/assets/landing/babito.png',
   ));
-  assert.deepEqual([asset.width, asset.height], [256, 256]);
+  assert.deepEqual([asset.width, asset.height], [320, 320]);
 
   const colors = new Set();
   for (let y = 0; y < asset.height; y += 1) {
@@ -186,7 +186,7 @@ test('the landing Babito is a crisp export of the canonical game palette', () =>
       assert.ok(pixel[3] === 0 || pixel[3] === 255, `unexpected alpha at ${x},${y}`);
       if (pixel[3]) colors.add(pixel.join(','));
 
-      // The 64 px authored export is enlarged exactly 4× with nearest pixels.
+      // The 80 px canonical source is enlarged exactly 4× with nearest pixels.
       if (x % 4 === 0 && y % 4 === 0) {
         for (let blockY = y; blockY < y + 4; blockY += 1) {
           for (let blockX = x; blockX < x + 4; blockX += 1) {

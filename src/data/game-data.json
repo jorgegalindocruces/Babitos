@@ -40,9 +40,9 @@
     "la_oscuridad": { "name": "LA OSCURIDAD", "health": 20, "patterns": ["SHADOW_GLIDE", "SHADOW_RAIN", "DARK_WAVE"], "rewardCoins": 40, "exposedMs": 2200, "lanternLitMs": 14000 }
   },
   "bodySizes": {
-    "small": { "label": "Pequeño", "renderScale": 1.0, "hitbox": "standard" },
-    "normal": { "label": "Normal", "renderScale": 1.25, "hitbox": "standard" },
-    "large": { "label": "Grande", "renderScale": 1.5, "hitbox": "standard" }
+    "small": { "label": "Pequeño", "renderScale": 0.8, "hitbox": "standard" },
+    "normal": { "label": "Normal", "renderScale": 1.0, "hitbox": "standard" },
+    "large": { "label": "Grande", "renderScale": 1.2, "hitbox": "standard" }
   },
   "creatorCategories": ["body", "eyes", "mouth", "arms", "headAccessory", "glasses", "neckAccessory"]
 }

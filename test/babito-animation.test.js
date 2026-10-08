@@ -15,14 +15,17 @@ import {
 import {
   BABITO_AUTHORED_ART_BOUNDS,
   BABITO_CANONICAL_GEOMETRY,
+  BABITO_DETAIL_SCALE,
   BABITO_PALETTES,
   BABITO_RENDER_SIZE,
   BABITO_SPRING_HAND_RADIUS,
   BABITO_TEXTURE_SIZE,
+  getBabitoBodyScanlineWidths,
   getBabitoSpringHandCenterX,
   getBabitoTransformedBounds,
 } from '../src/game/createTextures.js';
 import {
+  BABITO_ART_BASELINE,
   BABITO_BASELINE,
   BABITO_SIZE_SCALES,
   getBabitoBaselineOffset,
@@ -155,15 +158,20 @@ test('horizontal speed selects idle, walk and a genuinely distinct run state', (
 });
 
 test('the richer layered renderer stays crisp and keeps spring hands inside the authored art', () => {
-  assert.equal(BABITO_TEXTURE_SIZE, 64);
-  assert.equal(BABITO_RENDER_SIZE, 64);
+  assert.equal(BABITO_TEXTURE_SIZE, 80);
+  assert.equal(BABITO_RENDER_SIZE, 80);
+  assert.equal(BABITO_DETAIL_SCALE, 4 / 3);
 
   const attackCenters = Array.from(
     { length: BABITO_ANIMATION_CLIPS.attack.frameCount },
     (_, phase) => getBabitoSpringHandCenterX('attack', phase),
   );
   assert.deepEqual(attackCenters, [39, 41, 43, 44, 42, 40]);
-  assert.ok(Math.max(...attackCenters) + BABITO_SPRING_HAND_RADIUS <= 47);
+  assert.ok(
+    Math.round(Math.max(...attackCenters) * BABITO_DETAIL_SCALE)
+      + Math.round(BABITO_SPRING_HAND_RADIUS * BABITO_DETAIL_SCALE)
+      <= BABITO_AUTHORED_ART_BOUNDS.maxX,
+  );
   assert.equal(getBabitoSpringHandCenterX('walk', 7), 42);
   assert.equal(getBabitoSpringHandCenterX('attack', 2.8), 43);
   assert.equal(getBabitoSpringHandCenterX('attack', Number.NaN), 39);
@@ -180,15 +188,25 @@ test('the richer layered renderer stays crisp and keeps spring hands inside the 
 test('the base silhouette keeps the approved round Babito proportions', () => {
   const { body, normalEyes, feet, restingFin } = BABITO_CANONICAL_GEOMETRY;
   const bodyWidth = body.radiusX * 2 + 1;
-  const bodyHeight = body.radiusY * 2 + 1;
-  const totalRestingWidth = (48 - restingFin.minX) - restingFin.minX + 1;
+  const bodyHeight = body.radiusY * 2 + 1 - body.trimmedTips * 2;
+  const totalRestingWidth = (64 - restingFin.minX) - restingFin.minX + 1;
 
-  assert.equal(bodyWidth, 31);
-  assert.equal(bodyHeight, 33);
-  assert.ok(bodyWidth / bodyHeight >= 0.9 && bodyWidth / bodyHeight <= 1.05);
-  assert.ok(totalRestingWidth / bodyWidth <= 1.35, 'resting fins must stay compact');
-  assert.deepEqual(normalEyes, { width: 3, height: 7, gap: 8 });
-  assert.deepEqual(feet, { maxWidth: 10, authoredHeight: 7, exposedHeight: 4 });
+  assert.equal(bodyWidth, 47);
+  assert.equal(bodyHeight, 45);
+  assert.ok(bodyWidth / bodyHeight >= 1 && bodyWidth / bodyHeight <= 1.05);
+  assert.ok(body.trimmedTips >= 1, 'the crown must use a flat scanline instead of a one-pixel tip');
+  assert.ok(totalRestingWidth / bodyWidth <= 1.4, 'resting fins must stay compact');
+  assert.deepEqual(normalEyes, { width: 4, height: 9, gap: 11 });
+  assert.deepEqual(feet, { maxWidth: 13, authoredHeight: 9, exposedHeight: 5 });
+  const bodyProfile = getBabitoBodyScanlineWidths();
+  assert.equal(bodyProfile.length, bodyHeight);
+  assert.ok(bodyProfile[0] > 1, 'the crown cannot collapse to a one-pixel spike');
+  assert.equal(bodyProfile[0], bodyProfile.at(-1));
+  assert.equal(Math.max(...bodyProfile), bodyWidth);
+  assert.deepEqual(bodyProfile, [...bodyProfile].reverse(), 'the base body must remain symmetric');
+  for (let index = 1; index <= Math.floor(bodyProfile.length / 2); index += 1) {
+    assert.ok(bodyProfile[index] >= bodyProfile[index - 1], 'the upper curve must expand monotonically');
+  }
   assert.deepEqual(BABITO_PALETTES.cyan, {
     main: '#7cdbf9',
     light: '#a8edff',
@@ -199,15 +217,15 @@ test('the base silhouette keeps the approved round Babito proportions', () => {
 
 test('larger Babito sizes keep integer render dimensions and one shared baseline', () => {
   assert.deepEqual(BABITO_SIZE_SCALES, {
-    small: 1,
-    normal: 1.25,
-    large: 1.5,
+    small: 0.8,
+    normal: 1,
+    large: 1.2,
   });
-  assert.ok(BABITO_SIZE_SCALES.normal > 1);
+  assert.equal(BABITO_ART_BASELINE, 30);
 
   for (const scale of Object.values(BABITO_SIZE_SCALES)) {
     assert.equal(Number.isInteger(BABITO_RENDER_SIZE * scale), true);
     const offset = getBabitoBaselineOffset(scale);
-    assert.ok(Math.abs(scale * (offset + BABITO_BASELINE) - BABITO_BASELINE) < 1e-9);
+    assert.ok(Math.abs(scale * (offset + BABITO_ART_BASELINE) - BABITO_BASELINE) < 1e-9);
   }
 });

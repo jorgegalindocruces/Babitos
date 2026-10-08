@@ -62,7 +62,16 @@ test('small, normal and large change render scale but share one hitbox contract'
     ),
     BABITO_SIZE_SCALES,
   );
-  assert.ok(gameData.bodySizes.normal.renderScale > 1);
+  assert.equal(gameData.bodySizes.normal.renderScale, 1);
+  assert.deepEqual(
+    Object.fromEntries(
+      Object.entries(gameData.bodySizes).map(([id, definition]) => [
+        id,
+        80 * definition.renderScale,
+      ]),
+    ),
+    { small: 64, normal: 80, large: 96 },
+  );
 });
 
 test('the three initial powers preserve their canonical behavior', () => {

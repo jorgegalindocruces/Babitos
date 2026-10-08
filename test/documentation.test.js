@@ -23,6 +23,7 @@ const CONTEXT_DOCUMENTS = Object.freeze([
   'docs/IMPLEMENTATION_SPEC.md',
   'docs/INTERACTIONS.md',
   'art/production/babito-v3.md',
+  'art/production/babito-v4.md',
   'art/production/landing-web-v1.md',
   'art/production/babilandia-v2.md',
   'art/production/boss-arena-v1.md',
@@ -225,7 +226,7 @@ test('scope and critical gameplay invariants are explicit', async () => {
   assert.match(interactions, /todos los clips se anclan por los pies a la superficie física/u);
   assert.match(interactions, /`idle` \(6 frames\), `walk` \(8\), `run` \(8\), `jump` \(6\), `fall` \(6\), `attack` \(6\), `hurt` \(5\) y `dead` \(6\)/u);
   assert.match(interactions, /Caminar y correr son ciclos diferentes/u);
-  assert.match(interactions, /cuerpo ovoide mide 31 × 33 px[\s\S]*ojos normales 3 × 7 px/u);
+  assert.match(interactions, /cuerpo rasterizado mide 47 × 45 px[\s\S]*ojos normales 4 × 9 px/u);
   assert.match(interactions, /`#7CDBF9`[\s\S]*`#A8EDFF`[\s\S]*`#2BBFE5`/u);
   assert.match(interactions, /`#FF7196`[\s\S]*`#07111E`/u);
   assert.match(interactions, /`\?qa=TitleScene`[\s\S]*`DarknessBossScene`/u);
@@ -237,7 +238,7 @@ test('scope and critical gameplay invariants are explicit', async () => {
   assert.match(acceptance, /`Tab` y `Mayús \+ Tab`[\s\S]*`Enter` y `Espacio`/u);
   assert.match(acceptance, /Landing → diálogo → Título[\s\S]*La Jungla → La Oscuridad/u);
   assert.match(acceptance, /cinco pads: izquierda, derecha, bajar \(`▼`\), salto y ataque/u);
-  assert.match(acceptance, /un ancho total no superior a 1,35 veces el cuerpo/u);
+  assert.match(acceptance, /un ancho total no superior a 1,4(?:0)? veces el cuerpo/u);
   assert.match(acceptance, /transparencia binaria y escala nearest 4×/u);
   assert.match(acceptance, /Ningún `fontSize` visible[\s\S]*menor de 12 px/u);
   assert.match(interactions, /texturas Canvas de texto usan filtro linear[\s\S]*cada cambio/u);
@@ -248,7 +249,7 @@ test('scope and critical gameplay invariants are explicit', async () => {
   assert.match(implementation, /main\.js[^\n]*landing[\s\S]*gameBoot\.js[^\n]*Phaser/u);
   assert.match(implementation, /BABITO_CANONICAL_GEOMETRY[\s\S]*drawBabitoCompositeFrame/u);
   assert.match(masterPrompt, /Landing → JUGAR → diálogo → Boot → Título/u);
-  assert.match(masterPrompt, /cuerpo ovoide 31 × 33[\s\S]*paleta cian canónica/u);
+  assert.match(masterPrompt, /Babito v4[\s\S]*cuerpo rasterizado 47 × 45[\s\S]*ojos 4 × 9[\s\S]*paleta cian canónica/u);
 });
 
 test('visible shell and scene copy cannot regress to the pre-Phase-2 context', async () => {

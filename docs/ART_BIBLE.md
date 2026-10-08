@@ -29,7 +29,7 @@ Las láminas son concept art, no spritesheets finales. No se recortan automátic
 | COME | Spritesheet raster por estados | [enemy-come-sheet-v3.png](../public/assets/characters/enemy-come-sheet-v3.png) |
 | VUELA | Spritesheet raster de 36 poses, alpha binario y celdas de 256 px | [enemy-vuela-v4.md](../art/production/enemy-vuela-v4.md) |
 | DA VUELTAS | Spritesheet procedural temporal | [EnemyAnimations.js](../src/game/EnemyAnimations.js) |
-| Babito | Atlas procedural canónico de 64 px, 51 poses y capas cosméticas sincronizadas | [babito-v3.md](../art/production/babito-v3.md) |
+| Babito | Atlas procedural canónico con celdas de 80 px, raster de detalle de 64 px, 51 poses y capas cosméticas sincronizadas | [babito-v4.md](../art/production/babito-v4.md) |
 | Boss, tenderos y Árbol | PNG raster de personaje con poses o composición runtime | `public/assets/characters/` |
 | Jungla | Nivel jugable con fondo, losetas, agua, cascada, lianas y ruinas procedurales; sin raster de producción todavía | [jungleScenery.js](../src/game/jungleScenery.js) y [createTextures.js](../src/game/createTextures.js) |
 | La Oscuridad | Sprite procedural fiel a `bosses_canonical.png`: masa negra, borde violeta, tentáculos y ojos rasgados, sin boca | [createTextures.js](../src/game/createTextures.js) |
@@ -51,7 +51,7 @@ El frame nunca modifica la hitbox. Los estados de ataque, daño, vulnerabilidad 
 ## Color, escala y legibilidad
 
 - Mantener grupos de píxeles nítidos; no aplicar suavizado fotográfico.
-- El Babito se dibuja en celdas fuente de 64 px a partir de una rejilla interna bloqueada de 48 px: en esa rejilla, el cuerpo ovoide mide 31 × 33, con rostro pequeño, aletas descendentes y pies cortos. El cian canónico usa `#7CDBF9`, luz `#A8EDFF` y sombra `#2BBFE5`. Sus tres cajas de presentación son 64, 80 y 96 px, siempre con dimensiones enteras y una línea de pies compartida. La animación usa cambios reales de silueta, apoyo de pies, brazos, expresión, inclinación y *squash/stretch*; no se simula con una única imagen deslizándose.
+- El Babito conserva un diseño lógico de 48 unidades y lo rasteriza a 64 px reales con escala de detalle 4/3 dentro de celdas fuente de 80 px. El cuerpo físico del raster mide 47 × 45 px (`rx = ry = 23`, con un píxel recortado en cada extremo vertical), de modo que la corona queda plana y la curva gana escalones sin formar un ápice. Los ojos normales miden 4 × 9 px con 11 px de separación; la sonrisa y las mejillas son compactas, las aletas de reposo son más largas y caídas sin superar 1,4 veces el ancho del cuerpo y los pies permanecen visibles. El cian canónico usa `#7CDBF9`, luz `#A8EDFF` y sombra `#2BBFE5`. Sus tres cajas de presentación son 64, 80 y 96 px mediante escalas `0.8`, `1` y `1.2`; el tamaño normal muestra cada píxel fuente 1:1 y los tres comparten línea de pies. La animación usa cambios reales de silueta, apoyo de pies, brazos, expresión, inclinación y *squash/stretch*; no se simula con una única imagen deslizándose.
 - VUELA se autoriza en celdas raster de 256 px y se muestra a 64 × 64 mediante escala exacta de 1/4 y filtro nearest. Cada pose conserva margen transparente y alpha 0/255 para evitar neblina, rectángulos o interpolación sobre el fondo.
 - Usar contorno azul marino u oscuro y una paleta limitada por mundo.
 - La estética pixel art no justifica texto empastado: el texto visible parte de 12 px, conserva counters y huecos abiertos y usa como máximo 1 px de contorno entre 12 y 15 px. El filtro nearest se reserva para arte; las texturas tipográficas usan linear.

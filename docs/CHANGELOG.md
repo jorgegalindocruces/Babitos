@@ -7,6 +7,18 @@ Este archivo relaciona las iteraciones entregadas con sus cambios observables, c
 - Mantener sincronizados `README.md`, `INTERACTIONS.md`, `GAME_DESIGN.md`, `IMPLEMENTATION_SPEC.md` y `ACCEPTANCE_CRITERIA.md` cuando cambien flujo, controles, estados, persistencia o contenido jugable.
 - Añadir una entrada aquí por cada cambio observable, con el commit final y las pruebas realizadas.
 
+## Babito v4 más redondo y con mayor detalle — 2026-10-08
+
+Commit pendiente de cierre de la iteración. El protagonista se vuelve a contrastar con el recorte «BABITO BASE» y corrige la silueta todavía estrecha y puntiaguda de v3:
+
+- **Más resolución útil**: el diseño lógico permanece en 48 unidades, pero se rasteriza con detalle 4/3 a 64 px reales dentro de celdas fuente de 80 × 80. El tamaño normal usa esos píxeles 1:1; pequeño y grande aplican `0.8` y `1.2` para conservar 64/80/96 px.
+- **Silueta canónica**: el cuerpo pasa a 47 × 45 px, con radios 23, extremos verticales recortados y corona plana sin ápice. Se mantienen rostro pequeño, sonrisa compacta y mejillas; las aletas son más largas y caídas y los pies quedan visibles.
+- **Contratos estables**: continúan los 51 frames, ocho estados, siete capas, hitbox de 28 × 40, paleta y guardados. La baseline fuente de 30 px se compensa a 20 px de mundo y los cambios de tamaño no desplazan el apoyo.
+- **Landing**: [babito.png](../public/assets/landing/babito.png) se vuelve a exportar desde el renderer compartido a 320 × 320, con alpha binario y nearest 4× desde la celda de 80 px.
+- **Proceso y contexto**: la construcción vigente queda fijada en [babito-v4.md](../art/production/babito-v4.md); [babito-v3.md](../art/production/babito-v3.md) se conserva como historial supersedido. El rediseño es Canvas determinista y no utiliza ImageGen.
+
+Validación: 117 pruebas automáticas, build de producción, `git diff --check` y QA visual en Creador y `GameScene` para reposo, caminar, ataque y KO, con el Babito base y sombrero, sin recortes ni errores de consola.
+
 ## Texto nítido y legible en toda la interfaz — 2026-10-08
 
 Commit [`f58ec45`](https://github.com/jorgegalindocruces/Babitos/commit/f58ec45). La corrección se aplica a todas las rutas comunes de texto y no solo a la Tienda:

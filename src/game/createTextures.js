@@ -17,28 +17,72 @@ export {
   sampleBabitoAnimationFrame,
 } from './BabitoAnimations.js';
 
-/** Native size shared by every composable Babito layer. */
-export const BABITO_TEXTURE_SIZE = 64;
-export const BABITO_RENDER_SIZE = 64;
-const BABITO_ART_SIZE = 48;
-const BABITO_ART_SCALE = 1.15;
+/** Native source size shared by every composable Babito layer. */
+export const BABITO_TEXTURE_SIZE = 80;
+export const BABITO_RENDER_SIZE = 80;
+const BABITO_DESIGN_SIZE = 48;
+const BABITO_ART_SIZE = 64;
+export const BABITO_DETAIL_SCALE = BABITO_ART_SIZE / BABITO_DESIGN_SIZE;
+const BABITO_ART_SCALE = 1.1;
 export const BABITO_SPRING_HAND_RADIUS = 3;
+
+const BABITO_DESIGN_GEOMETRY = Object.freeze({
+  body: Object.freeze({ centerX: 24, centerY: 23, radiusX: 17, radiusY: 17 }),
+  normalEyes: Object.freeze({ width: 3, height: 7, gap: 8 }),
+  feet: Object.freeze({ maxWidth: 10, authoredHeight: 7, exposedHeight: 4 }),
+  restingFin: Object.freeze({ minX: 1, maxX: 14, minY: 21, maxY: 36 }),
+});
+
+function scaleBabitoMetric(value) {
+  return Math.round(value * BABITO_DETAIL_SCALE);
+}
 /**
- * Measurable anchors for the approved 32 px Babito translated to our 48 px
+ * Measurable anchors for the approved Babito translated to the detailed 64 px
  * composable grid. Keeping these public makes art regressions testable without
  * coupling tests to every individual canvas primitive.
  */
 export const BABITO_CANONICAL_GEOMETRY = Object.freeze({
-  body: Object.freeze({ centerX: 24, centerY: 23, radiusX: 15, radiusY: 16 }),
-  normalEyes: Object.freeze({ width: 3, height: 7, gap: 8 }),
-  feet: Object.freeze({ maxWidth: 10, authoredHeight: 7, exposedHeight: 4 }),
-  restingFin: Object.freeze({ minX: 4, maxX: 14, minY: 21, maxY: 34 }),
+  body: Object.freeze({
+    centerX: scaleBabitoMetric(BABITO_DESIGN_GEOMETRY.body.centerX),
+    centerY: scaleBabitoMetric(BABITO_DESIGN_GEOMETRY.body.centerY),
+    radiusX: scaleBabitoMetric(BABITO_DESIGN_GEOMETRY.body.radiusX),
+    radiusY: scaleBabitoMetric(BABITO_DESIGN_GEOMETRY.body.radiusY),
+    trimmedTips: scaleBabitoMetric(1),
+  }),
+  normalEyes: Object.freeze({
+    width: scaleBabitoMetric(BABITO_DESIGN_GEOMETRY.normalEyes.width),
+    height: scaleBabitoMetric(BABITO_DESIGN_GEOMETRY.normalEyes.height),
+    gap: scaleBabitoMetric(BABITO_DESIGN_GEOMETRY.normalEyes.gap),
+  }),
+  feet: Object.freeze({
+    maxWidth: scaleBabitoMetric(BABITO_DESIGN_GEOMETRY.feet.maxWidth),
+    authoredHeight: scaleBabitoMetric(BABITO_DESIGN_GEOMETRY.feet.authoredHeight),
+    exposedHeight: scaleBabitoMetric(BABITO_DESIGN_GEOMETRY.feet.exposedHeight),
+  }),
+  restingFin: Object.freeze({
+    minX: scaleBabitoMetric(BABITO_DESIGN_GEOMETRY.restingFin.minX),
+    maxX: scaleBabitoMetric(BABITO_DESIGN_GEOMETRY.restingFin.maxX),
+    minY: scaleBabitoMetric(BABITO_DESIGN_GEOMETRY.restingFin.minY),
+    maxY: scaleBabitoMetric(BABITO_DESIGN_GEOMETRY.restingFin.maxY),
+  }),
 });
+
+/** Physical scanline widths for the idle body's outer silhouette. */
+export function getBabitoBodyScanlineWidths() {
+  const { radiusX, radiusY, trimmedTips } = BABITO_CANONICAL_GEOMETRY.body;
+  const widths = [];
+  for (let y = -radiusY + trimmedTips; y <= radiusY - trimmedTips; y += 1) {
+    const ratio = 1 - (y * y) / (radiusY * radiusY);
+    widths.push(Math.floor(radiusX * Math.sqrt(Math.max(0, ratio))) * 2 + 1);
+  }
+  return Object.freeze(widths);
+}
+
 export const BABITO_AUTHORED_ART_BOUNDS = Object.freeze({
-  minX: 3,
-  maxX: 47,
-  minY: 2,
-  maxY: 45,
+  minX: scaleBabitoMetric(1),
+  maxX: scaleBabitoMetric(47),
+  minY: scaleBabitoMetric(2),
+  maxY: scaleBabitoMetric(47),
 });
 
 const BABITO_POSE_TRANSFORMS = Object.freeze({
@@ -61,8 +105,8 @@ function getBabitoPoseTransform(pose = {}) {
   return {
     scaleX: BABITO_ART_SCALE * (1 + (Number(pose.scaleX ?? 1) - 1) * profile.scaleX),
     scaleY: BABITO_ART_SCALE * (1 + (Number(pose.scaleY ?? 1) - 1) * profile.scaleY),
-    offsetX: Number(pose.offset?.x ?? 0) * profile.offsetX,
-    offsetY: Number(pose.offset?.y ?? 0) * profile.offsetY,
+    offsetX: Number(pose.offset?.x ?? 0) * profile.offsetX * BABITO_DETAIL_SCALE,
+    offsetY: Number(pose.offset?.y ?? 0) * profile.offsetY * BABITO_DETAIL_SCALE,
     rotation: (Number(pose.lean ?? 0) * profile.lean * Math.PI) / 180,
   };
 }
@@ -224,20 +268,67 @@ const COLORS = Object.freeze({
   grayDark: '#3a4350',
 });
 
-function rect(ctx, x, y, width, height, color) {
+const PIXEL_GRID_SCALES = new WeakMap();
+
+function getPixelGridScale(ctx) {
+  return PIXEL_GRID_SCALES.get(ctx) ?? 1;
+}
+
+function withPixelGridScale(ctx, scale, draw) {
+  const previous = PIXEL_GRID_SCALES.get(ctx);
+  PIXEL_GRID_SCALES.set(ctx, scale);
+  try {
+    return draw();
+  } finally {
+    if (previous === undefined) PIXEL_GRID_SCALES.delete(ctx);
+    else PIXEL_GRID_SCALES.set(ctx, previous);
+  }
+}
+
+function fillPhysicalRect(ctx, x, y, width, height, color) {
   ctx.fillStyle = color;
   ctx.fillRect(Math.round(x), Math.round(y), Math.round(width), Math.round(height));
 }
 
-/** Draws a scanline ellipse with no antialiased vector edge. */
-function ellipse(ctx, cx, cy, radiusX, radiusY, color) {
+function rect(ctx, x, y, width, height, color) {
+  const scale = getPixelGridScale(ctx);
+  const left = Math.round(x * scale);
+  const top = Math.round(y * scale);
+  const right = Math.round((x + width) * scale);
+  const bottom = Math.round((y + height) * scale);
+  fillPhysicalRect(
+    ctx,
+    left,
+    top,
+    Math.max(1, right - left),
+    Math.max(1, bottom - top),
+    color,
+  );
+}
+
+function scanlineEllipse(ctx, cx, cy, radiusX, radiusY, color, trimTips = 0) {
   ctx.fillStyle = color;
   const safeRadiusY = Math.max(1, radiusY);
-  for (let y = -radiusY; y <= radiusY; y += 1) {
+  const firstY = -radiusY + trimTips;
+  const lastY = radiusY - trimTips;
+  for (let y = firstY; y <= lastY; y += 1) {
     const ratio = 1 - (y * y) / (safeRadiusY * safeRadiusY);
     const halfWidth = Math.floor(radiusX * Math.sqrt(Math.max(0, ratio)));
     ctx.fillRect(Math.round(cx - halfWidth), Math.round(cy + y), halfWidth * 2 + 1, 1);
   }
+}
+
+/** Draws a scanline ellipse with no antialiased vector edge. */
+function ellipse(ctx, cx, cy, radiusX, radiusY, color) {
+  const scale = getPixelGridScale(ctx);
+  scanlineEllipse(
+    ctx,
+    Math.round(cx * scale),
+    Math.round(cy * scale),
+    Math.max(1, Math.round(radiusX * scale)),
+    Math.max(1, Math.round(radiusY * scale)),
+    color,
+  );
 }
 
 function outlinedEllipse(ctx, cx, cy, radiusX, radiusY, outline, fill, inset = 2) {
@@ -252,31 +343,76 @@ function outlinedEllipse(ctx, cx, cy, radiusX, radiusY, outline, fill, inset = 2
   );
 }
 
+/**
+ * The reference Babito has a short, flat crown and a continuous round cheek.
+ * Trimming the mathematical ellipse tips removes the old one-pixel spike while
+ * retaining a deterministic, symmetric scanline profile.
+ */
+function outlinedRoundedBody(ctx, cx, cy, radiusX, radiusY, outline, fill, inset = 2) {
+  const scale = getPixelGridScale(ctx);
+  const physicalCenterX = Math.round(cx * scale);
+  const physicalCenterY = Math.round(cy * scale);
+  const physicalRadiusX = Math.max(1, Math.round(radiusX * scale));
+  const physicalRadiusY = Math.max(1, Math.round(radiusY * scale));
+  const physicalInset = Math.max(1, Math.round(inset * scale));
+  const trimmedTips = Math.max(1, Math.round(scale));
+
+  scanlineEllipse(
+    ctx,
+    physicalCenterX,
+    physicalCenterY,
+    physicalRadiusX,
+    physicalRadiusY,
+    outline,
+    trimmedTips,
+  );
+  scanlineEllipse(
+    ctx,
+    physicalCenterX,
+    physicalCenterY - Math.floor(physicalInset / 2),
+    Math.max(1, physicalRadiusX - physicalInset),
+    Math.max(1, physicalRadiusY - physicalInset),
+    fill,
+    trimmedTips,
+  );
+}
+
 function polygon(ctx, points, color) {
+  const scale = getPixelGridScale(ctx);
+  const mappedPoints = points.map(([x, y]) => [Math.round(x * scale), Math.round(y * scale)]);
   ctx.fillStyle = color;
   ctx.beginPath();
-  ctx.moveTo(points[0][0], points[0][1]);
-  for (let index = 1; index < points.length; index += 1) {
-    ctx.lineTo(points[index][0], points[index][1]);
+  ctx.moveTo(mappedPoints[0][0], mappedPoints[0][1]);
+  for (let index = 1; index < mappedPoints.length; index += 1) {
+    ctx.lineTo(mappedPoints[index][0], mappedPoints[index][1]);
   }
   ctx.closePath();
   ctx.fill();
 }
 
 function pixelLine(ctx, x0, y0, x1, y1, color, thickness = 1) {
-  let x = Math.round(x0);
-  let y = Math.round(y0);
-  const endX = Math.round(x1);
-  const endY = Math.round(y1);
+  const scale = getPixelGridScale(ctx);
+  let x = Math.round(x0 * scale);
+  let y = Math.round(y0 * scale);
+  const endX = Math.round(x1 * scale);
+  const endY = Math.round(y1 * scale);
   const deltaX = Math.abs(endX - x);
   const stepX = x < endX ? 1 : -1;
   const deltaY = -Math.abs(endY - y);
   const stepY = y < endY ? 1 : -1;
   let error = deltaX + deltaY;
-  const offset = Math.floor(thickness / 2);
+  const physicalThickness = Math.max(1, Math.round(thickness * scale));
+  const offset = Math.floor(physicalThickness / 2);
 
   while (true) {
-    rect(ctx, x - offset, y - offset, thickness, thickness, color);
+    fillPhysicalRect(
+      ctx,
+      x - offset,
+      y - offset,
+      physicalThickness,
+      physicalThickness,
+      color,
+    );
     if (x === endX && y === endY) break;
     const doubled = error * 2;
     if (doubled >= deltaY) {
@@ -291,13 +427,18 @@ function pixelLine(ctx, x0, y0, x1, y1, color, thickness = 1) {
 }
 
 function triangle(ctx, centerX, baseY, halfWidth, height, color, direction = 'up') {
+  const scale = getPixelGridScale(ctx);
+  const physicalCenterX = Math.round(centerX * scale);
+  const physicalBaseY = Math.round(baseY * scale);
+  const physicalHalfWidth = Math.max(1, Math.round(halfWidth * scale));
+  const physicalHeight = Math.max(1, Math.round(height * scale));
   ctx.fillStyle = color;
-  for (let row = 0; row < height; row += 1) {
+  for (let row = 0; row < physicalHeight; row += 1) {
     // `baseY` is always the wide edge; rows converge on the distant tip.
-    const progress = 1 - row / Math.max(1, height - 1);
-    const width = Math.max(1, Math.round(halfWidth * 2 * progress));
-    const y = direction === 'up' ? baseY - row : baseY + row;
-    ctx.fillRect(Math.round(centerX - width / 2), Math.round(y), width, 1);
+    const progress = 1 - row / Math.max(1, physicalHeight - 1);
+    const width = Math.max(1, Math.round(physicalHalfWidth * 2 * progress));
+    const y = direction === 'up' ? physicalBaseY - row : physicalBaseY + row;
+    ctx.fillRect(Math.round(physicalCenterX - width / 2), Math.round(y), width, 1);
   }
 }
 
@@ -312,29 +453,31 @@ function drawBabitoBody(ctx, palette, pose = {}) {
   const rightFootX = Number(pose.feet?.right?.x) || 0;
   const leftFootY = Number(pose.feet?.left?.y) || 0;
   const rightFootY = Number(pose.feet?.right?.y) || 0;
-  const { centerX, centerY, radiusX, radiusY } = BABITO_CANONICAL_GEOMETRY.body;
+  const { centerX, centerY, radiusX, radiusY } = BABITO_DESIGN_GEOMETRY.body;
 
   // Short feet sit behind the lower curve like the approved 32 px sprite.
   // They still move independently, preserving every contact and airborne pose.
-  rect(ctx, 14 + leftFootX, 35 + leftFootY, 10, 7, COLORS.ink);
-  rect(ctx, 27 + rightFootX, 35 + rightFootY, 9, 7, COLORS.ink);
-  rect(ctx, 15 + leftFootX, 36 + leftFootY, 8, 3, palette.shade);
-  rect(ctx, 28 + rightFootX, 36 + rightFootY, 7, 3, palette.shade);
-  rect(ctx, 15 + leftFootX, 39 + leftFootY, 8, 2, palette.main);
-  rect(ctx, 28 + rightFootX, 39 + rightFootY, 7, 2, palette.main);
+  rect(ctx, 14 + leftFootX, 37 + leftFootY, 10, 7, COLORS.ink);
+  rect(ctx, 27 + rightFootX, 37 + rightFootY, 9, 7, COLORS.ink);
+  rect(ctx, 15 + leftFootX, 38 + leftFootY, 8, 3, palette.shade);
+  rect(ctx, 28 + rightFootX, 38 + rightFootY, 7, 3, palette.shade);
+  rect(ctx, 15 + leftFootX, 41 + leftFootY, 8, 2, palette.main);
+  rect(ctx, 28 + rightFootX, 41 + rightFootY, 7, 2, palette.main);
 
-  // The approved Babito is a compact, almost circular drop rather than a wide
-  // torso. Its stepped volume remains readable without introducing a flat belt.
-  outlinedEllipse(ctx, centerX, centerY, radiusX, radiusY, COLORS.ink, palette.main, 2);
-  rect(ctx, 14, 12, 7, 2, palette.light);
-  rect(ctx, 12, 15, 3, 7, palette.light);
-  rect(ctx, 15, 13, 3, 1, '#ffffff');
-  rect(ctx, 13, 33, 22, 2, palette.shade);
-  rect(ctx, 15, 35, 18, 2, palette.shade);
-  rect(ctx, 18, 37, 12, 2, palette.shade);
-  rect(ctx, 35, 23, 2, 8, palette.shade);
-  rect(ctx, 13, 26, 3, 2, COLORS.blush);
-  rect(ctx, 34, 26, 3, 2, COLORS.blush);
+  // A broad, tip-trimmed scanline body follows the approved base: flat crown,
+  // stepped shoulders and one continuous cheek-to-belly curve.
+  outlinedRoundedBody(ctx, centerX, centerY, radiusX, radiusY, COLORS.ink, palette.main, 2);
+  rect(ctx, 13, 11, 8, 2, palette.light);
+  rect(ctx, 11, 14, 3, 8, palette.light);
+  rect(ctx, 15, 12, 4, 1, '#ffffff');
+  rect(ctx, 11, 33, 26, 1, palette.shade);
+  rect(ctx, 13, 34, 22, 1, palette.shade);
+  rect(ctx, 15, 35, 18, 1, palette.shade);
+  rect(ctx, 18, 36, 12, 1, palette.shade);
+  rect(ctx, 38, 22, 2, 4, palette.shade);
+  rect(ctx, 37, 26, 2, 5, palette.shade);
+  rect(ctx, 12, 26, 3, 2, COLORS.blush);
+  rect(ctx, 35, 26, 3, 2, COLORS.blush);
 }
 
 function drawBabitoEyes(ctx, style, pose = {}) {
@@ -408,7 +551,7 @@ function drawBabitoEyes(ctx, style, pose = {}) {
     return;
   }
 
-  const { width, height, gap } = BABITO_CANONICAL_GEOMETRY.normalEyes;
+  const { width, height, gap } = BABITO_DESIGN_GEOMETRY.normalEyes;
   rect(ctx, 18, 19, width, height, COLORS.ink);
   rect(ctx, 18 + width + gap, 19, width, height, COLORS.ink);
 }
@@ -468,9 +611,9 @@ function drawBabitoMouth(ctx, style, pose = {}) {
   }
 
   // Canonical small U-shaped smile.
-  rect(ctx, 22, 27, 1, 3, COLORS.ink);
-  rect(ctx, 28, 27, 1, 3, COLORS.ink);
-  rect(ctx, 23, 29, 5, 1, COLORS.ink);
+  rect(ctx, 23, 27, 1, 3, COLORS.ink);
+  rect(ctx, 27, 27, 1, 3, COLORS.ink);
+  rect(ctx, 24, 29, 3, 1, COLORS.ink);
 }
 
 function drawArm(ctx, x0, y0, x1, y1) {
@@ -481,23 +624,24 @@ function drawArm(ctx, x0, y0, x1, y1) {
 }
 
 function drawBabitoFin(ctx, side, pose = 'rest', fillColor = '#ffffff') {
-  const mirror = (x) => (side < 0 ? x : 48 - x);
+  const mirror = (x) => (side < 0 ? x : BABITO_DESIGN_SIZE - x);
   const mirroredRect = (x, y, width, height, color) => {
-    rect(ctx, side < 0 ? x : 48 - x - width, y, width, height, color);
+    rect(ctx, side < 0 ? x : BABITO_DESIGN_SIZE - x - width, y, width, height, color);
   };
 
   if (pose === 'rest') {
     // Hand-authored scanlines reproduce the short downward fin of the approved
     // 32 px base without polygon antialiasing turning it into a round earmuff.
     mirroredRect(9, 21, 4, 2, COLORS.ink);
-    mirroredRect(7, 23, 6, 2, COLORS.ink);
-    mirroredRect(4, 25, 9, 5, COLORS.ink);
-    mirroredRect(6, 30, 7, 3, COLORS.ink);
-    mirroredRect(8, 33, 4, 1, COLORS.ink);
-    mirroredRect(9, 23, 3, 1, fillColor);
-    mirroredRect(7, 24, 5, 2, fillColor);
-    mirroredRect(6, 26, 6, 4, fillColor);
-    mirroredRect(8, 30, 4, 2, fillColor);
+    mirroredRect(5, 23, 8, 2, COLORS.ink);
+    mirroredRect(1, 25, 12, 5, COLORS.ink);
+    mirroredRect(3, 30, 10, 4, COLORS.ink);
+    mirroredRect(6, 34, 6, 2, COLORS.ink);
+    mirroredRect(8, 23, 4, 1, fillColor);
+    mirroredRect(5, 24, 7, 2, fillColor);
+    mirroredRect(3, 26, 9, 4, fillColor);
+    mirroredRect(5, 30, 7, 3, fillColor);
+    mirroredRect(7, 33, 4, 1, fillColor);
     return;
   }
 
@@ -635,7 +779,7 @@ function drawHeroCape(ctx) {
 }
 
 /**
- * Draws one fully composited Babito frame onto a 64 × 64 canvas context.
+ * Draws one fully composited Babito frame onto an 80 × 80 canvas context.
  * Phaser normally keeps every cosmetic in a separate atlas; this deterministic
  * export path lets the landing reuse the exact same authored renderer.
  */
@@ -662,6 +806,19 @@ export function drawBabitoCompositeFrame(ctx, {
   const mouthStyle = String(mouth).replace(/^mouth_/, '');
   const armStyle = String(arms).replace(/^arms_/, '');
   const headStyle = String(headAccessory).replace(/^head_/, '');
+  const drawLayers = (targetContext) => withPixelGridScale(
+    targetContext,
+    BABITO_DETAIL_SCALE,
+    () => {
+      drawBabitoArms(targetContext, armStyle, pose, palette.main);
+      drawBabitoBody(targetContext, palette, pose);
+      drawBabitoEyes(targetContext, eyeStyle, pose);
+      drawBabitoMouth(targetContext, mouthStyle, pose);
+      if (headStyle === 'straw_hat' || headStyle === 'strawhat') drawStrawHat(targetContext);
+      else if (headStyle === 'cowboy_hat' || headStyle === 'cowboyhat') drawCowboyHat(targetContext);
+      else if (headStyle === 'crown') drawCrown(targetContext);
+    },
+  );
 
   ctx.clearRect(0, 0, BABITO_TEXTURE_SIZE, BABITO_TEXTURE_SIZE);
   ctx.imageSmoothingEnabled = false;
@@ -673,13 +830,19 @@ export function drawBabitoCompositeFrame(ctx, {
   ctx.rotate(transform.rotation);
   ctx.scale(transform.scaleX, transform.scaleY);
   ctx.translate(-BABITO_ART_SIZE / 2, -BABITO_ART_SIZE / 2);
-  drawBabitoArms(ctx, armStyle, pose, palette.main);
-  drawBabitoBody(ctx, palette, pose);
-  drawBabitoEyes(ctx, eyeStyle, pose);
-  drawBabitoMouth(ctx, mouthStyle, pose);
-  if (headStyle === 'straw_hat' || headStyle === 'strawhat') drawStrawHat(ctx);
-  else if (headStyle === 'cowboy_hat' || headStyle === 'cowboyhat') drawCowboyHat(ctx);
-  else if (headStyle === 'crown') drawCrown(ctx);
+  const scratchSize = BABITO_ART_SIZE + BABITO_ART_MARGIN * 2;
+  const scratch = createScratchCanvas(scratchSize, ctx);
+  const scratchContext = scratch?.getContext('2d');
+  if (scratchContext) {
+    scratchContext.imageSmoothingEnabled = false;
+    scratchContext.save();
+    scratchContext.translate(BABITO_ART_MARGIN, BABITO_ART_MARGIN);
+    drawLayers(scratchContext);
+    scratchContext.restore();
+    ctx.drawImage(scratch, -BABITO_ART_MARGIN, -BABITO_ART_MARGIN);
+  } else {
+    drawLayers(ctx);
+  }
   ctx.restore();
   snapCanvasAlpha(ctx, BABITO_TEXTURE_SIZE, BABITO_TEXTURE_SIZE);
   return ctx;
@@ -1210,7 +1373,7 @@ function drawPortal(ctx) {
   sparkle(ctx, 47, 61, COLORS.magenta);
 }
 
-// Canvas resamples the 48 px art through fractional pose transforms, leaving a
+// Canvas resamples the detailed 64 px art through fractional pose transforms, leaving a
 // soft halo of half-transparent pixels. Menus enlarge the Babito 3-4x with
 // nearest filtering, which turns that halo into a blurry, dirty outline.
 // Snapping alpha restores a crisp pixel-art silhouette at every scale.
@@ -1230,18 +1393,26 @@ function snapCanvasAlpha(ctx, width, height) {
   ctx.putImageData(image, 0, 0);
 }
 
-// Babito art is authored on a 48 px grid. Drawing it straight through the
-// fractional pose transform blends neighbouring colours into stripes, so each
-// frame is first drawn at native size and then copied with nearest sampling.
+// Babito coordinates remain on the stable 48-unit design grid, but every layer
+// is rasterized onto a true 64 px detail grid before pose transforms. This adds
+// scanlines to the curve instead of merely enlarging the old staircase.
 const BABITO_ART_MARGIN = 8;
 
-function createScratchCanvas(size) {
+function createScratchCanvas(size, templateContext = null) {
   if (typeof OffscreenCanvas === 'function') return new OffscreenCanvas(size, size);
   if (typeof document !== 'undefined') {
     const canvas = document.createElement('canvas');
     canvas.width = size;
     canvas.height = size;
     return canvas;
+  }
+  const CanvasConstructor = templateContext?.canvas?.constructor;
+  if (typeof CanvasConstructor === 'function') {
+    try {
+      return new CanvasConstructor(size, size);
+    } catch {
+      // A browser's HTMLCanvasElement constructor is not directly callable.
+    }
   }
   return null;
 }
@@ -1256,7 +1427,7 @@ function makeBabitoLayerSpec(key, drawFrame) {
     height,
     (ctx) => {
       const scratchSize = BABITO_ART_SIZE + BABITO_ART_MARGIN * 2;
-      const scratch = createScratchCanvas(scratchSize);
+      const scratch = createScratchCanvas(scratchSize, ctx);
       const scratchCtx = scratch?.getContext('2d');
       if (scratchCtx) scratchCtx.imageSmoothingEnabled = false;
       BABITO_FRAME_POSES.forEach((pose, frameIndex) => {
@@ -1280,12 +1451,20 @@ function makeBabitoLayerSpec(key, drawFrame) {
           scratchCtx.clearRect(0, 0, scratchSize, scratchSize);
           scratchCtx.save();
           scratchCtx.translate(BABITO_ART_MARGIN, BABITO_ART_MARGIN);
-          drawFrame(scratchCtx, pose, frameIndex);
+          withPixelGridScale(
+            scratchCtx,
+            BABITO_DETAIL_SCALE,
+            () => drawFrame(scratchCtx, pose, frameIndex),
+          );
           scratchCtx.restore();
           ctx.imageSmoothingEnabled = false;
           ctx.drawImage(scratch, -BABITO_ART_MARGIN, -BABITO_ART_MARGIN);
         } else {
-          drawFrame(ctx, pose, frameIndex);
+          withPixelGridScale(
+            ctx,
+            BABITO_DETAIL_SCALE,
+            () => drawFrame(ctx, pose, frameIndex),
+          );
         }
         ctx.restore();
       });

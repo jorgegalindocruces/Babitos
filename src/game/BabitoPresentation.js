@@ -1,17 +1,26 @@
 export const BABITO_BASELINE = 20;
+export const BABITO_ART_BASELINE = 30;
 
-// Each 64 px animation cell still resolves to an integer display size:
-// 64 px, 80 px and 96 px respectively.
+// Each 80 px animation cell resolves to the established 64, 80 and 96 px
+// display sizes. Normal therefore renders source pixels 1:1 without shimmer.
 export const BABITO_SIZE_SCALES = Object.freeze({
-  small: 1,
-  normal: 1.25,
-  large: 1.5,
+  small: 0.8,
+  normal: 1,
+  large: 1.2,
 });
 
-export function getBabitoBaselineOffset(scale = 1, baseline = BABITO_BASELINE) {
+export function getBabitoBaselineOffset(
+  scale = 1,
+  baseline = BABITO_BASELINE,
+  artBaseline = BABITO_ART_BASELINE,
+) {
   const numericScale = Number(scale);
   const safeScale = Number.isFinite(numericScale) && numericScale > 0 ? numericScale : 1;
   const numericBaseline = Number(baseline);
   const safeBaseline = Number.isFinite(numericBaseline) ? numericBaseline : BABITO_BASELINE;
-  return (safeBaseline / safeScale) - safeBaseline;
+  const numericArtBaseline = Number(artBaseline);
+  const safeArtBaseline = Number.isFinite(numericArtBaseline)
+    ? numericArtBaseline
+    : BABITO_ART_BASELINE;
+  return (safeBaseline / safeScale) - safeArtBaseline;
 }

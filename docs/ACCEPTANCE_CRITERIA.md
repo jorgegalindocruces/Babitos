@@ -52,7 +52,7 @@ Estos criterios validan el vertical slice 0.2 descrito en [INTERACTIONS.md](INTE
 
 - Ojos y boca son capas distintas; se pueden combinar las siete categorías de apariencia.
 - Los selectores recorren solo opciones desbloqueadas y equipan el resultado inmediatamente.
-- Pequeño, normal y grande muestran cajas de render de 64, 80 y 96 px respectivamente; nunca cambian la hitbox de 28 × 40 ni las estadísticas y conservan una línea de pies común.
+- Pequeño, normal y grande muestran cajas de render de 64, 80 y 96 px mediante escalas exactas `0.8`, `1` y `1.2` sobre una fuente de 80 px; el tamaño normal conserva los píxeles fuente 1:1. Nunca cambian la hitbox de 28 × 40 ni las estadísticas y conservan una línea de pies común.
 - `¡BABITO LOCO!` usa solo cosméticos desbloqueados.
 - Fuego, Rayo y Roca se pueden seleccionar y sus diferencias de velocidad, trayectoria, cooldown y daño coinciden con [game-data.json](../src/data/game-data.json).
 - No se puede continuar sin elegir un poder y los poderes no se compran con Babicoins.
@@ -113,10 +113,10 @@ Estos criterios validan el vertical slice 0.2 descrito en [INTERACTIONS.md](INTE
 
 ## Animación y arte
 
-- El Babito base sin accesorios se reconoce como el aprobado: en la rejilla interna de 48 px, cuerpo ovoide de 31 × 33 px, ojos normales de 3 × 7 px, sonrisa de hasta 7 px, mejillas de 3 × 2 px, aletas en reposo con un ancho total no superior a 1,35 veces el cuerpo y pies de hasta 10 px. El cian usa `#7CDBF9`, luz `#A8EDFF`, sombra `#2BBFE5`, rubor `#FF7196` y contorno `#07111E`.
+- El Babito base sin accesorios se reconoce como el aprobado: su diseño lógico de 48 unidades se rasteriza a 64 px reales con detalle 4/3 dentro de una celda de 80 px; el cuerpo del raster mide 47 × 45 px, usa `rx = ry = 23`, recorta un píxel en cada extremo vertical y presenta una corona plana sin ápice. Los ojos normales miden 4 × 9 px con 11 px de separación, la sonrisa y las mejillas son compactas, las aletas de reposo caen a los lados con un ancho total no superior a 1,4 veces el cuerpo y los pies quedan visibles. El cian usa `#7CDBF9`, luz `#A8EDFF`, sombra `#2BBFE5`, rubor `#FF7196` y contorno `#07111E`.
 - El Babito distingue `idle`, `walk`, `run`, `jump`, `fall`, `attack`, `hurt` y `dead` mediante poses y siluetas diferentes, sin cambiar su hitbox, perder sus capas equipadas ni despegarse del suelo al cambiar de tamaño.
 - Sus siete capas permanecen sincronizadas durante los 51 frames; caminar no reutiliza las poses de correr y ataque, daño y KO terminan en un frame final legible.
-- La exportación `public/assets/landing/babito.png` mide 256 × 256, usa transparencia binaria y escala nearest 4×: cada bloque visible de 4 × 4 conserva un único RGBA y contiene la paleta canónica.
+- La exportación `public/assets/landing/babito.png` mide 320 × 320, usa transparencia binaria y escala nearest 4× desde la celda fuente de 80 px: cada bloque visible de 4 × 4 conserva un único RGBA y contiene la paleta canónica.
 - Cada estado de COME, VUELA y DA VUELTAS tiene un mapping explícito a un clip existente. Cambiar entre estados que comparten clip no lo reinicia; `hurt` y `defeat` son one-shot, y anticipación/mordisco de COME no recorren la misma secuencia desde el principio. Babito Corrupto cambia de pose entre patrones, `RECOVER` y purificación. La Oscuridad ondula en sombra, se desvanece en `SHIFT`, anticipa rasante/meteoritos/charco/apagado, muestra anillo dorado en `EXPOSED` y se disipa en luciérnagas.
 - El atlas raster de VUELA contiene 36 celdas de 256 × 256 con contenido, margen transparente y alpha 0/255; se renderiza a 64 × 64 sin escala fraccionaria ni deformación.
 - Pausar congela el frame de animación y reanudar continúa sin desincronizarlo.
