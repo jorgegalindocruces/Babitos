@@ -9,7 +9,7 @@ Este archivo relaciona las iteraciones entregadas con sus cambios observables, c
 
 ## Babito v4 más redondo y con mayor detalle — 2026-10-08
 
-Commit pendiente de cierre de la iteración. El protagonista se vuelve a contrastar con el recorte «BABITO BASE» y corrige la silueta todavía estrecha y puntiaguda de v3:
+Commit [`0e760a1`](https://github.com/jorgegalindocruces/Babitos/commit/0e760a1). El protagonista se vuelve a contrastar con el recorte «BABITO BASE» y corrige la silueta todavía estrecha y puntiaguda de v3:
 
 - **Más resolución útil**: el diseño lógico permanece en 48 unidades, pero se rasteriza con detalle 4/3 a 64 px reales dentro de celdas fuente de 80 × 80. El tamaño normal usa esos píxeles 1:1; pequeño y grande aplican `0.8` y `1.2` para conservar 64/80/96 px.
 - **Silueta canónica**: el cuerpo pasa a 47 × 45 px, con radios 23, extremos verticales recortados y corona plana sin ápice. Se mantienen rostro pequeño, sonrisa compacta y mejillas; las aletas son más largas y caídas y los pies quedan visibles.
