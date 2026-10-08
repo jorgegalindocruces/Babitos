@@ -19,19 +19,22 @@ La configuración de arranque está en [main.js](../src/main.js) y el workflow e
 
 ```text
 TitleScene → CreatorScene → PowerScene → IntroScene
-           → GameScene → BossScene → ShopScene → WorldMapScene
-                                                    └→ ComingSoonScene
+           → GameScene(babilandia) → BossScene → ShopScene → WorldMapScene
+WorldMapScene → GameScene(jungla) → DarknessBossScene → ShopScene → WorldMapScene
+              └→ ComingSoonScene(city)
 ```
 
-`WorldMapScene` también vuelve a Tienda, Título o `GameScene`. `ComingSoonScene` recibe `world: 'jungle' | 'city'` y solo ofrece volver al mapa. Las escenas dejan como estados estables `creator`, `power`, `intro`, `babilandia`, `boss1`, `shop`, `map`, `jungle` y `city`; [progressionFlow.js](../src/state/progressionFlow.js) persiste `map` al salir de Tienda y `babilandia` con `checkpoint: 'start'` antes de iniciar una rejugada. Título conserva aliases de compatibilidad como `game`, `boss` y `world-map`.
+`WorldMapScene` también vuelve a Tienda o Título. `GameScene` recibe `{ level: 'babilandia' | 'jungla' }`; sin dato, resuelve el nivel a partir de `progress.scene`, de modo que `CONTINUAR` reanuda el nivel guardado. `ComingSoonScene` recibe `world: 'jungle' | 'city'` y solo ofrece volver al mapa. Las escenas dejan como estados estables `creator`, `power`, `intro`, `babilandia`, `boss1`, `jungla`, `boss2`, `shop`, `map` y `city`; [progressionFlow.js](../src/state/progressionFlow.js) persiste `map` al salir de Tienda, `babilandia` o `jungla` con `checkpoint: 'start'` antes de iniciar cada fase desde el mapa, y expone `isJungleUnlocked()`. Título conserva aliases de compatibilidad como `game`, `boss`, `jungle` y `world-map`.
 
 ## Datos y estado
 
 - [game-data.json](../src/data/game-data.json): jugador, tamaños, poderes, enemigos y boss.
 - [cosmetics.json](../src/data/cosmetics.json): siete categorías, claves de asset, desbloqueo inicial y precios.
 - [babilandia.json](../src/data/levels/babilandia.json): geometría, spawn, cuatro checkpoints, seis enemigos, 25 Babicoins colocadas (`coins`, con `id`, `x` e `y`) y portal.
-- Los carteles tutoriales de `babilandia.json` solo guardan `id`, `x` y texto. [surfaceAnchoring.js](../src/game/surfaceAnchoring.js) obtiene la superficie física superior, y `GameScene` compone tabla, texto y poste como una sola decoración apoyada.
-- [SaveStore.js](../src/state/SaveStore.js): normalización, migración y persistencia.
+- [jungla.json](../src/data/levels/jungla.json): mismo formato más `springs` (`id`, `x`, `launchHeight`), `darkness` (`startX`, `endX`, `maxAlpha`) y `style` opcional por plataforma (`branch`, `bridge`, `ruin`, `stone`). Los huecos entre segmentos de suelo son fosos; el suelo con `style` es un pilar sólido elevado.
+- [levels/index.js](../src/data/levels/index.js): registro de niveles (tema, fondo, color de cámara, texturas, prefijo de recompensas, anuncio y jefe de destino), `resolveLevelId()` y `getGroundSpans()`, que fusiona segmentos de suelo contiguos en tramos caminables.
+- Los carteles tutoriales de cada nivel solo guardan `id`, `x` y texto. [surfaceAnchoring.js](../src/game/surfaceAnchoring.js) obtiene la superficie física superior, y `GameScene` compone tabla, texto y poste como una sola decoración apoyada.
+- [SaveStore.js](../src/state/SaveStore.js): normalización, migración y persistencia; el progreso incluye `boss2Defeated` y `phase2Complete`.
 
 El guardado versionado `babitos.save.v1` contiene nombre, tamaño, apariencia, poder seleccionado/desbloqueado, monedas, cosméticos desbloqueados/comprados y progreso. `restartAdventure()` conserva colección, apariencia, saldo e IDs de recompensas cobradas, y reinicia poder, checkpoint y relato. El mute se guarda aparte en `babitos.audio.v1`.
 
@@ -85,7 +88,7 @@ El antiguo `moveSpeed`, que no se usaba, y `jumpVelocity` se sustituyeron por el
 
 Invariante: ningún disparo puede destruir, desactivar o esconder terreno. Fondos raster, plataformas visuales y cuerpos de colisión tienen responsabilidades separadas.
 
-[platformCollision.js](../src/game/platformCollision.js) discrimina terreno por `kind`. `ground` y geometría sin clasificar son sólidos. Para `platform`, el *process callback* acepta separación solo si la velocidad vertical no es ascendente y el borde inferior del paso anterior estaba como máximo 4 px por debajo de la cara superior. Así se atraviesan cara inferior y laterales, pero se aterriza y permanece sobre la cara superior. El proceso se comparte entre jugador, enemigos terrestres, monedas y boss; VUELA continúa sin collider. Los colliders de proyectiles son independientes y siguen consumiendo el proyectil contra cualquier terreno.
+[platformCollision.js](../src/game/platformCollision.js) discrimina terreno por `kind`. `ground` y geometría sin clasificar son sólidos. Para `platform`, el *process callback* acepta separación solo si la velocidad vertical no es ascendente y el borde inferior del paso anterior estaba como máximo 4 px por debajo de la cara superior. Así se atraviesan cara inferior y laterales, pero se aterriza y permanece sobre la cara superior. El proceso se comparte entre jugador, enemigos terrestres, monedas y boss; VUELA continúa sin collider. Los colliders de proyectiles son independientes y siguen consumiendo el proyectil contra cualquier terreno. El collider del jugador pasa además `ignore`, el conjunto de plataformas que está atravesando con `↓`: `findOneWayPlatformsUnder()` elige las plataformas bajo sus pies al pulsar y `hasClearedPlatform()` las retira del conjunto cuando los pies superan la tolerancia de aterrizaje o deja de solaparlas en horizontal.
 
 ## Enemigos
 
@@ -93,9 +96,9 @@ Invariante: ningún disparo puede destruir, desactivar o esconder terreno. Fondo
 - VUELA: `AIR_PATROL → TARGET → WINDUP → DIVE → RETURN`; solo `DIVE` daña y el nivel incluye una aparición individual y una pareja.
 - DA VUELTAS: `PATROL → WINDUP → SPIN → DIZZY`; solo `SPIN` daña y solo `DIZZY` acepta impactos.
 
-Los drops se eligen entre 0, 1 o 2 monedas. Cada moneda usa overlap y suma una. Las monedas colocadas forman un grupo estático propio; al recogerlas se llama a `claimReward('babilandia:coin:<id>', 1)`, por lo que cada una paga una vez por guardado y `restartAdventure()` conserva su estado como el de cualquier recompensa. Las rutas QA (`qaCheckpoint`, `qaEnemy`) no las cobran. El portal se habilita cuando `defeatedEnemies === level.enemies.length`.
+Los drops se eligen entre 0, 1 o 2 monedas. Cada moneda usa overlap y suma una. Las monedas colocadas forman un grupo estático propio; al recogerlas se llama a `claimReward('<prefijo del nivel><id>', 1)` (`babilandia:coin:` o `jungla:coin:`), por lo que cada una paga una vez por guardado y `restartAdventure()` conserva su estado como el de cualquier recompensa. Las rutas QA (`qaCheckpoint`, `qaEnemy`) no las cobran. El portal se habilita cuando `defeatedEnemies === level.enemies.length`.
 
-DA VUELTAS entra en `WINDUP` solo con el Babito a menos de 460 px, se orienta hacia él durante la anticipación y gira 1,7 s. `EnemyController.resetToHome()` devuelve un enemigo vivo a su origen en el primer estado de su máquina; `GameScene` lo aplica a los enemigos a menos de 700 px del checkpoint en cada respawn.
+DA VUELTAS entra en `WINDUP` solo con el Babito a menos de 460 px, se orienta hacia él durante la anticipación y gira 1,7 s. `GameScene` pasa a COME y DA VUELTAS `walkBounds`, el tramo de suelo continuo donde aparecen; `keepInsideWalkBounds()` los detiene en el borde (o invierte patrulla y giro), y en patrulla también se dan la vuelta al quedar bloqueados por un pilar. Si un enemigo cae por debajo de y = 600, vuelve a su origen. `EnemyController.resetToHome()` devuelve un enemigo vivo a su origen en el primer estado de su máquina; `GameScene` lo aplica a los enemigos a menos de 700 px del checkpoint en cada respawn.
 
 Las reacciones de daño son interrupciones temporales, no un clip decorativo superpuesto: usan la duración real de `hurt`, suspenden el reloj de estado, desactivan daño/impactos repetidos y conducen los ataques de COME y VUELA a `RECOVER`/`RETURN`. VUELA no registra collider con plataformas, de modo que un picado no puede quedar atrapado debajo de una plataforma durante `RETURN`. [EnemyBehavior.js](../src/game/EnemyBehavior.js) resuelve límites y rebotes con direcciones deterministas para evitar inversión cada frame.
 
@@ -107,13 +110,15 @@ Babito Corrupto tiene 16 de vida. Su ciclo es `FIREBALL → FROM_ABOVE → FURY_
 
 La arena usa cuerpos estáticos propios con `kind: ground|platform`; el suelo es sólido y las plataformas elevadas comparten el proceso unidireccional con Babilandia. La lógica completa está en [BossScene.js](../src/scenes/BossScene.js).
 
+La Oscuridad (`bossData.la_oscuridad`: 20 de vida, `exposedMs` 2200, `lanternLitMs` 14000, 40 monedas) vive en [DarknessBossScene.js](../src/scenes/DarknessBossScene.js). Flota sin gravedad y se mueve con `moveBossTo()` y `shadowStep()` (fundido, recolocación y reaparición). Mientras `bossIntangible` es verdadero los proyectiles la atraviesan sin consumirse y su cuerpo físico es bajo (70 × 50) para que su sombra rasante se pueda saltar; expuesta crece a 78 × 86 para que también acierte el arco de la Roca. `checkExposure()` comprueba en `SHADOW_GLIDE` y `SHIFT` si su centro está a menos de 140 px de un farolillo encendido; `ZONA OSCURA` hace la misma comprobación con el charco. La exposición usa la misma programación por `stateNonce` que el primer boss, y al terminar apaga el farolillo que la causó. Los farolillos son cuerpos estáticos: un proyectil enciende uno apagado o que parpadea y atraviesa uno encendido. La victoria llama a `claimReward('boss2_reward', 40)` y guarda `boss2Defeated`/`phase2Complete`.
+
 ## Pausa, caída y reintento
 
 Cada escena jugable mantiene un reloj de gameplay descontando el tiempo pausado. Pausa detiene Arcade Physics, tweens, temporizadores y animaciones de jugador/enemigos/boss, y retira el aviso flotante activo mediante `dismissToast()`.
 
 Ambas escenas implementan `setHitStop(ms)`, que [effects.js](../src/ui/effects.js) invoca con `hitStop()`: pausa Arcade Physics y deja de avanzar el reloj de gameplay durante unos milisegundos, sin abrir la pausa. Si el combate termina durante un hit-stop, la purificación reanuda la física. `spawnDust()` genera motas cortas en los pies o los impactos y respeta el movimiento reducido. Los pads táctiles se comparten en [touchControls.js](../src/ui/touchControls.js).
 
-- Babilandia: una caída intenta aplicar daño y respawnea en checkpoint; la invulnerabilidad puede impedir el descuento de un segundo corazón. Game Over reintenta desde allí con vida completa.
+- Babilandia y La Jungla: una caída (por un foso, en La Jungla) intenta aplicar daño y respawnea en checkpoint; la invulnerabilidad puede impedir el descuento de un segundo corazón. Game Over reintenta desde allí con vida completa.
 - Boss: la arena tiene suelo continuo y límites físicos. Llegar a cero corazones abre Game Over; reintentar reconstruye el encuentro desde el principio.
 
 ## Animación
@@ -122,15 +127,16 @@ Ambas escenas implementan `setHitStop(ms)`, que [effects.js](../src/ui/effects.j
 - [BabitoAvatar.js](../src/game/BabitoAvatar.js) compone las siete capas sobre celdas de 64 px, muestrea el mismo frame para todas y aplica las escalas de [BabitoPresentation.js](../src/game/BabitoPresentation.js) sobre una línea de suelo común. El cuerpo físico nunca cambia. `POST_UPDATE` aplica el estado después de que `PlayerController` resuelva la física para evitar un frame visual de retraso.
 - [EnemyAnimations.js](../src/game/EnemyAnimations.js): hojas, subclips, duración, mapeo de estados y resolución QA para COME, VUELA y DA VUELTAS. VUELA usa [enemy-vuela-sheet-v4.png](../public/assets/characters/enemy-vuela-sheet-v4.png), 36 celdas raster de 256 px mostradas a escala exacta de 1/4.
 - [BossAnimator.js](../src/game/BossAnimator.js): poses escalonadas para intro, tres patrones, `RECOVER` y purificación.
+- Las capas del Babito se dibujan primero a su tamaño nativo de 48 px en un lienzo auxiliar y después se copian con muestreo *nearest* bajo la transformación de cada pose; `snapPixelAlpha()` deja cada píxel totalmente opaco o transparente. Así la escala fraccionaria no mezcla colores ni deja halos, y el Babito se ve nítido a ×3 o ×4 en Título y Creador.
 
 ## Arte y audio
 
-Los fondos de Babilandia, arena del boss y Ciudad son raster 16:9 con escala *cover* y fallback procedural. Su inventario y procedencia están en [ART_BIBLE.md](ART_BIBLE.md) y `art/production/`. Las colisiones nunca se derivan de estos fondos.
+Los fondos de Babilandia, arena del boss y Ciudad son raster 16:9 con escala *cover* y fallback procedural. La Jungla y su arena usan el fondo procedural `jungle`; [jungleScenery.js](../src/game/jungleScenery.js) añade agua animada en los fosos, cascada, lianas, ruinas, maleza, luciérnagas, el velo de oscuridad en espacio de pantalla y el halo aditivo del Babito. Losetas (`tile_jungle_ground`, `tile_branch`, `tile_bridge`, `tile_ruin`), seta, farolillos, Manzana de Poder y el sprite de La Oscuridad se generan en [createTextures.js](../src/game/createTextures.js). Su inventario y procedencia están en [ART_BIBLE.md](ART_BIBLE.md) y `art/production/`. Las colisiones nunca se derivan de estos fondos.
 
-AudioSystem sintetiza música y efectos con Web Audio, desbloquea el contexto tras interacción y tolera falta de soporte. No hay archivos de audio ni control de volumen en 0.2.
+AudioSystem sintetiza música y efectos con Web Audio (con temas `jungle` y `darkness` para la Fase 2), desbloquea el contexto tras interacción y tolera falta de soporte. No hay archivos de audio ni control de volumen en 0.2.
 
 ## QA y extensión
 
-En desarrollo, `BootScene` acepta `?qa=<Scene>`, `qaCoins`, `qaComplete=1` y `world=jungle|city`. `GameScene` añade `qaCombat=1`, `qaCheckpoint=<id>`, `debugAI=1`, `qaMotion=idle|walk|run|jump|fall|attack|hurt|dead`, `qaFrame=<n>` y `qaSize=small|normal|large`; los tres últimos permiten inspeccionar poses y tamaños sin alterar el guardado. Para enemigos, `qaEnemy=come|vuela|da_vueltas` aísla el tipo, `qaEnemyState=<estado-o-clip>` fija su presentación y `qaEnemyFrame=<n>` congela un frame local; el modo QA desactiva daño y persistencia. `BossScene` añade `qaOneHit=1`. Estos parámetros no se procesan en producción. `globalThis.__BABITOS__` expone versión, escena y una copia del save para smoke tests y mods.
+En desarrollo, `BootScene` acepta `?qa=<Scene>`, `qaCoins`, `qaComplete=1` y `world=jungle|city`. `GameScene` añade `qaLevel=jungla`, `qaCombat=1`, `qaCheckpoint=<id>`, `debugAI=1`, `qaMotion=idle|walk|run|jump|fall|attack|hurt|dead`, `qaFrame=<n>` y `qaSize=small|normal|large`; los tres últimos permiten inspeccionar poses y tamaños sin alterar el guardado. Para enemigos, `qaEnemy=come|vuela|da_vueltas` aísla el tipo, `qaEnemyState=<estado-o-clip>` fija su presentación y `qaEnemyFrame=<n>` congela un frame local; el modo QA desactiva daño y persistencia. `BossScene` y `DarknessBossScene` añaden `qaOneHit=1`. Estos parámetros no se procesan en producción. `globalThis.__BABITOS__` expone versión, escena y una copia del save para smoke tests y mods.
 
 Para extender el juego se conservan IDs estables, lógica data-driven y fallbacks. Un cambio de interacción debe actualizar [INTERACTIONS.md](INTERACTIONS.md), [ACCEPTANCE_CRITERIA.md](ACCEPTANCE_CRITERIA.md) y [CHANGELOG.md](CHANGELOG.md).

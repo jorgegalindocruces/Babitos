@@ -124,7 +124,7 @@ const BACKGROUND_TEXTURE_PREFIX = 'babitos-ui-bg-v1';
 const BACKGROUND_MUSIC_THEMES = Object.freeze({
   title: 'title',
   babilandia: 'babilandia',
-  jungle: 'ending',
+  jungle: 'jungle',
   city: 'ending',
   shop: 'shop',
 });

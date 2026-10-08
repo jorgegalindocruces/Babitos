@@ -20,14 +20,15 @@ Si un texto histórico contradice la aplicación, comprueba código y datos, cor
 ```text
 Título → Creador → Fuego/Rayo/Roca → Intro → Babilandia
        → COME/VUELA/DA VUELTAS → Babito Corrupto → Tienda → Mapa
+       → La Jungla → La Oscuridad → Tienda → Mapa
 ```
 
-La Jungla y Ciudad Bicharraca solo tienen avances estáticos. La Oscuridad, Boss Total y el Final son roadmap, no gameplay actual.
+Ciudad Bicharraca solo tiene un avance estático. Boss Total y el Final son roadmap, no gameplay actual.
 
 ## Reglas no negociables
 
 - Señor Empanadilla y Señor Pingüino son aliados y tenderos.
-- Los bosses canónicos son Babito Corrupto, La Oscuridad y Boss Total; solo el primero está implementado.
+- Los bosses canónicos son Babito Corrupto, La Oscuridad y Boss Total; los dos primeros están implementados. La Oscuridad es intangible en la sombra y solo la luz la vuelve vulnerable.
 - COME es mayor que el Babito; VUELA es menor y aparece solo o en pareja; DA VUELTAS es la bola verde con pinchos y solo es vulnerable mareado.
 - No rediseñar personajes canónicos ni inventar sustitutos para los tres enemigos.
 - Ojos y boca son capas separadas dentro de siete categorías.
@@ -35,8 +36,8 @@ La Jungla y Ciudad Bicharraca solo tienen avances estáticos. La Oscuridad, Boss
 - Los poderes no se compran con Babicoins.
 - `worlds_environment_reference_only.png` define entorno y atmósfera, nunca enemigos.
 - Fondos, render de plataformas y cuerpos de colisión son capas distintas. Un proyectil puede destruirse contra terreno; nunca puede destruir el terreno.
-- El suelo base es sólido. Las plataformas elevadas son unidireccionales: personajes y monedas las atraviesan al ascender desde abajo y aterrizan al descender; los proyectiles siguen chocando con ellas.
-- La victoria purifica a Babito Corrupto y su recompensa de monedas es única.
+- El suelo base es sólido. Las plataformas elevadas son unidireccionales: personajes y monedas las atraviesan al ascender desde abajo y aterrizan al descender, y el jugador puede dejarse caer con `↓`; los proyectiles siguen chocando con ellas.
+- La victoria purifica a Babito Corrupto y disipa a La Oscuridad en luciérnagas; cada recompensa de monedas es única.
 
 ## Forma de trabajar
 

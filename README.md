@@ -2,7 +2,7 @@
 
 **Pequeños Babitos, grandes aventuras.**
 
-BABITOS es un plataformas 2D familiar hecho con JavaScript, Phaser 3 y Vite. En este primer *vertical slice* puedes crear un Babito por capas, elegir un poder y recorrer Babilandia para enfrentarte a COME, VUELA, DA VUELTAS y al Babito Corrupto. Las monedas del juego, llamadas Babicoins, sirven para comprar cosméticos en la tienda del Señor Empanadilla y el Señor Pingüino.
+BABITOS es un plataformas 2D familiar hecho con JavaScript, Phaser 3 y Vite. Puedes crear un Babito por capas, elegir un poder, recorrer Babilandia para enfrentarte a COME, VUELA, DA VUELTAS y al Babito Corrupto, y después cruzar La Jungla hasta La Oscuridad. Las monedas del juego, llamadas Babicoins, sirven para comprar cosméticos en la tienda del Señor Empanadilla y el Señor Pingüino.
 
 El juego funciona completamente en el navegador, sin backend ni base de datos. La partida se guarda en `localStorage` bajo la clave versionada `babitos.save.v1`.
 
@@ -25,7 +25,10 @@ Documentación vigente:
 6. Seis encuentros con COME, VUELA y DA VUELTAS; cada enemigo puede soltar entre cero y dos monedas.
 7. Combate contra el Babito Corrupto.
 8. Tienda de cosméticos.
-9. Mapa con rejuego de Babilandia y avances estáticos de La Jungla y Ciudad Bicharraca.
+9. Mapa con rejuego de Babilandia y acceso a La Jungla.
+10. La Jungla: fosos del río, puentes de cuerda, setas saltarinas, ruinas y ocho encuentros en una luz que se apaga.
+11. Combate contra La Oscuridad: solo la luz de los farolillos la vuelve vulnerable.
+12. Tienda y Mapa de nuevo; Ciudad Bicharraca sigue siendo un avance estático.
 
 Los tamaños pequeño, normal y grande son puramente visuales: usan el mismo *hitbox* y las mismas estadísticas.
 
@@ -35,6 +38,7 @@ Los tamaños pequeño, normal y grande son puramente visuales: usan el mismo *hi
 |---|---|
 | Mover | `A` / `D` o `←` / `→` |
 | Saltar | `W`, `↑` o `Espacio` |
+| Bajar de una plataforma elevada | `S` o `↓` |
 | Atacar con el poder activo | `J` o `X` |
 | Pausa | `P` o `Esc` |
 | Activar o silenciar audio | `M` |
@@ -42,7 +46,7 @@ Los tamaños pequeño, normal y grande son puramente visuales: usan el mismo *hi
 | Navegar por botones | `Tab` / `Mayús + Tab` |
 | Activar el botón enfocado | `Enter` o `Espacio` |
 
-También se puede usar ratón o pantalla táctil en los menús. Los pads virtuales de movimiento, salto y ataque aparecen durante la partida cuando el navegador detecta una pantalla táctil o puntero grueso. `Espacio` salta mientras el foco está en el gameplay y activa un botón cuando el foco accesible está sobre ese control. El botón `AUDIO` permanece disponible junto al lienzo y recuerda la preferencia local de mute.
+También se puede usar ratón o pantalla táctil en los menús. Los pads virtuales de movimiento, bajada, salto y ataque aparecen durante la partida cuando el navegador detecta una pantalla táctil o puntero grueso. `Espacio` salta mientras el foco está en el gameplay y activa un botón cuando el foco accesible está sobre ese control. El botón `AUDIO` permanece disponible junto al lienzo y recuerda la preferencia local de mute.
 
 La descripción exhaustiva, incluidas las reglas de foco, pausa, reintento y vulnerabilidad, está en [Interacciones del juego](docs/INTERACTIONS.md).
 
@@ -54,7 +58,7 @@ La descripción exhaustiva, incluidas las reglas de foco, pausa, reintento y vul
 - Música ambiental y efectos para interfaz, salto, ataque, daño, monedas, checkpoints, boss y compras se sintetizan en el navegador mediante Web Audio, sin archivos ni dependencias adicionales.
 - El Babito usa un atlas por capas de 64 px y 51 poses: `idle`, caminar, correr, saltar, caer, atacar, recibir daño y KO. Cada ciclo mueve silueta, pies, brazos y expresión sin perder la personalización. COME, VUELA, DA VUELTAS y Babito Corrupto también cambian de animación o pose según su estado.
 - El Babito ocupa ahora cajas visuales de 64, 80 y 96 px en pequeño, normal y grande, manteniendo una única hitbox de 28 × 40 y la misma línea de apoyo. COME ancla sus pies al cuerpo físico para no hundirse en suelo o plataformas durante caminar, anticipar o morder.
-- El suelo base sigue siendo sólido; las plataformas elevadas de Babilandia y de la arena del boss son unidireccionales: se atraviesan al subir desde abajo y sostienen al personaje al caer. Los proyectiles continúan impactando contra todo el terreno.
+- El suelo base sigue siendo sólido; las plataformas elevadas de Babilandia y de la arena del boss son unidireccionales: se atraviesan al subir desde abajo, sostienen al personaje al caer y `S`/`↓` permite dejarse caer a través de ellas. Los proyectiles continúan impactando contra todo el terreno.
 - VUELA usa un atlas raster de 36 poses fiel al diseño canónico. Sus ciclos de vuelo, picado, anticipación, daño y derrota son independientes; un impacto interrumpe un ataque peligroso antes de reanudar la IA.
 - Los botones responden en toda su superficie visible a ratón y toque, y ofrecen foco, estado deshabilitado y activación por teclado mediante controles HTML accesibles.
 - `Espacio` queda reservado para saltar durante el gameplay; los botones del HUD siguen disponibles con ratón, toque o navegación accesible mediante `Tab`.
@@ -192,7 +196,7 @@ Las láminas de `art/approved/` son dirección artística, no *spritesheets* fin
 - Logo, Babito Corrupto, tenderos y Árbol de Poder tienen PNG raster; las poses del boss se componen en runtime.
 - Las capas y cosméticos del Babito, la hoja de DA VUELTAS, la moneda, proyectiles, plataformas, props y HUD siguen siendo pixel art generado por código con claves definitivas.
 
-Los placeholders deben sustituirse gradualmente por sprites y animaciones finales sin cambiar sus IDs ni la lógica. El audio actual es procedural: funciona como primera dirección sonora, pero todavía debe sustituirse o ampliarse con música y efectos producidos. La Jungla y Ciudad Bicharraca son pantallas de avance; sus niveles y bosses completos pertenecen a iteraciones posteriores.
+Los placeholders deben sustituirse gradualmente por sprites y animaciones finales sin cambiar sus IDs ni la lógica. El audio actual es procedural: funciona como primera dirección sonora, pero todavía debe sustituirse o ampliarse con música y efectos producidos. La Jungla y La Oscuridad usan arte procedural (fondo, losetas, setas, farolillos y el sprite del jefe) a la espera de assets raster de producción. Ciudad Bicharraca es una pantalla de avance; su nivel y Boss Total pertenecen a iteraciones posteriores.
 
 El estado exacto y la procedencia de los assets se describen en [ART_BIBLE.md](docs/ART_BIBLE.md) y `art/production/`.
 

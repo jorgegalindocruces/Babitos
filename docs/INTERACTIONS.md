@@ -8,18 +8,18 @@ Esta es la referencia canónica de las interacciones disponibles en BABITOS 0.2.
 Boot
   └─ Título
       ├─ Creador → Poder → Intro → Babilandia → Babito Corrupto → Tienda → Mapa
-      ├─ Continuar → última pantalla guardada
+      ├─ Continuar → última pantalla guardada (también La Jungla o La Oscuridad)
       └─ Controles
 
 Mapa
   ├─ Rejugar Babilandia
+  ├─ La Jungla → La Oscuridad → Tienda → Mapa   (tras completar la Fase 1)
   ├─ Tienda
-  ├─ Avance estático de La Jungla → Mapa
   ├─ Avance estático de Ciudad Bicharraca → Mapa
   └─ Título
 ```
 
-Solo Babilandia y Babito Corrupto son contenido jugable. La Jungla y Ciudad Bicharraca tienen pantallas de avance, no niveles interactivos. La Oscuridad, Boss Total y el final pertenecen al roadmap.
+Son jugables Babilandia con Babito Corrupto (Fase 1) y La Jungla con La Oscuridad (Fase 2). Ciudad Bicharraca tiene una pantalla de avance, no un nivel interactivo. Boss Total y el final pertenecen al roadmap.
 
 ## Entradas globales
 
@@ -27,6 +27,7 @@ Solo Babilandia y Babito Corrupto son contenido jugable. La Jungla y Ciudad Bich
 |---|---|---|
 | Mover | `A` / `D` o `←` / `→` | Pads `◀` y `▶` en dispositivos táctiles |
 | Saltar | `W`, `↑` o `Espacio` | Pad `↑` en dispositivos táctiles |
+| Bajar de una plataforma elevada | `S` o `↓` | Pad `▼` en dispositivos táctiles |
 | Atacar | `J` o `X` | Pad `✦` en dispositivos táctiles |
 | Pausar o reanudar gameplay | `P` o `Esc` | `PAUSA` abre la capa; `CONTINUAR` la cierra |
 | Silenciar o activar audio | `M` | Botón `AUDIO` exterior al lienzo |
@@ -34,7 +35,7 @@ Solo Babilandia y Babito Corrupto son contenido jugable. La Jungla y Ciudad Bich
 | Recorrer botones | `Tab` / `Mayús + Tab` | Apuntar o tocar |
 | Activar el botón enfocado | `Enter` o `Espacio` | Clic principal o toque |
 
-Los pads virtuales solo aparecen cuando el navegador comunica capacidad táctil o un puntero grueso. Su zona activa es mayor que el círculo dibujado (radio 42 frente a 30), de modo que un pulgar que se desliza un poco no suelta el control, y el aviso inicial de Babilandia muestra los pads en lugar de las teclas. Durante el gameplay, `Espacio` pertenece al salto: el botón `PAUSA` del HUD no captura ese atajo. `Enter` y `Espacio` respetan el control HTML enfocado; salto, ataque y `M` también ignoran eventos nacidos en campos o botones. El movimiento y `P`/`Esc` siguen siendo atajos globales en una escena jugable.
+Los pads virtuales solo aparecen cuando el navegador comunica capacidad táctil o un puntero grueso. Su zona activa es mayor que el círculo dibujado (radio 42 frente a 30), de modo que un pulgar que se desliza un poco no suelta el control, y el aviso inicial de Babilandia muestra los pads en lugar de las teclas. Durante el gameplay, `Espacio` pertenece al salto: el botón `PAUSA` del HUD no captura ese atajo. `Enter` y `Espacio` respetan el control HTML enfocado; salto, bajada, ataque y `M` también ignoran eventos nacidos en campos o botones. El movimiento y `P`/`Esc` siguen siendo atajos globales en una escena jugable.
 
 ## Contrato de botones y menús
 
@@ -106,12 +107,12 @@ Los cinco carteles tutoriales también se definen allí sin coordenada vertical 
 - El Babito tiene 3 corazones. Alcanza su velocidad máxima de 320 px/s en unos 0,13 s, frena en unos 19 px y gira sin derrapar; en el aire conserva más inercia, pero puede corregir la trayectoria.
 - El salto máximo sube unos 138 px (algo más de tres veces la hitbox) en 0,4 s. Soltar el botón antes corta el salto de forma suave (un toque sube aproximadamente la mitad), el vértice flota un instante y la caída es más rápida que la subida. Se conservan 110 ms de *coyote time* y 130 ms de *jump buffer*. Al aterrizar sobre una plataforma unidireccional, el Babito admite 10 px de margen bajo el borde superior.
 - El movimiento horizontal y la gravedad del Babito se calculan con el tiempo real de cada frame, por lo que se sienten igual a 60, 120 o 144 Hz. El tuning vive en `player.movement` de [game-data.json](../src/data/game-data.json).
-- Todas las plataformas elevadas de Babilandia son alcanzables desde el suelo o desde otra plataforma con ese salto.
+- Todas las plataformas elevadas de Babilandia y de La Jungla son alcanzables desde el suelo, desde otra plataforma o desde una seta saltarina con ese salto.
 - Un golpe quita un corazón, aplica retroceso con un pequeño salto, congela la acción 80 ms para que se lea el impacto, bloquea el control horizontal 220 ms y concede 1050 ms de invulnerabilidad con parpadeo.
 - La cámara mira unos 110 px por delante en la dirección en que se mueve el Babito y desplaza ese margen suavemente al girar.
 - Saltar y aterrizar con fuerza levantan unas motas de polvo; acertar a un enemigo congela la acción 35 ms y derrotarlo, 70 ms, con una pequeña sacudida. La preferencia de movimiento reducido elimina las partículas.
 - El ataque sale en la dirección en que mira el Babito y respeta el cooldown del poder.
-- El suelo base es completamente sólido. Las plataformas elevadas son unidireccionales: su cara inferior y sus laterales se atraviesan al ascender o al llegar desde abajo, y su cara superior sostiene al Babito, enemigos terrestres y monedas cuando descienden desde arriba. No existe todavía un comando para dejarse caer con `↓`.
+- El suelo base es completamente sólido. Las plataformas elevadas son unidireccionales: su cara inferior y sus laterales se atraviesan al ascender o al llegar desde abajo, y su cara superior sostiene al Babito, enemigos terrestres y monedas cuando descienden desde arriba. Pulsar `S`, `↓` o el pad `▼` estando de pie sobre una plataforma elevada deja caer al Babito a través de ella con un pequeño impulso hacia abajo; la plataforma se ignora solo hasta que los pies quedan claramente por debajo de su cara superior, y vuelve a sostenerlo si salta de nuevo encima. Sobre el suelo base no hace nada. La pulsación se encola como el salto, así que un toque muy breve no se pierde, y anula el *coyote time* de la plataforma abandonada. La primera vez que el Babito descansa sobre una plataforma en un nivel (pasado el aviso inicial y si aún no ha bajado nunca) aparece un aviso breve: «S/↓ para bajar de la plataforma» o «▼» en táctil. Las pausas de Babilandia y del boss lo recuerdan junto a «Mover».
 - Los proyectiles desaparecen al tocar terreno. Invariante crítico: un poder nunca destruye, oculta ni desactiva suelo o plataformas; el fondo es decorativo y no tiene colisión.
 - El HUD muestra corazones, Babicoins, poder y teclas de ataque, encuentros derrotados y pausa.
 
@@ -146,6 +147,38 @@ Un impacto aceptado reproduce `hurt` completo como reacción no cíclica. Durant
 
 `P`, `Esc` o `PAUSA` abren la capa de pausa, salvo durante muerte o transición. Se congelan física, tweens, temporizadores, animaciones y reloj de gameplay. `CONTINUAR` restaura el mismo estado y `VOLVER AL TÍTULO` abandona la fase. Al abrir la pausa o `GAME OVER` se retira el aviso flotante activo, para que no quede encima del panel mientras el reloj está detenido.
 
+### La Jungla
+
+La Fase 2 reutiliza la escena de nivel ([GameScene.js](../src/scenes/GameScene.js)) con los datos de [jungla.json](../src/data/levels/jungla.json); el registro [levels/index.js](../src/data/levels/index.js) indica qué fondo, texturas, recompensas y jefe corresponden a cada nivel. Se abre desde el Mapa en cuanto la Fase 1 está completa y empieza siempre en `start`. Las reglas de movimiento, combate, checkpoints, pausa, Babicoins colocadas y portal son las de Babilandia, con estas diferencias:
+
+- **Fosos del río**: el suelo se interrumpe. Caer al agua cuesta un corazón y devuelve al último checkpoint, como cualquier caída. Todos los fosos miden como mucho 160 px (un salto en carrera cubre unos 230) o se cruzan por puentes de cuerda o un tronco intermedio.
+- **Tres tramos y cuatro checkpoints** (`start`, `lianas`, `ruinas`, `penumbra`):
+  1. **Raíces**: primeros fosos, COME patrullando entre ellos y la primera seta saltarina hacia una copa con monedas sobre el segundo foso.
+  2. **Puentes de cuerda**: el río ancho se cruza por dos puentes unidireccionales mientras una pareja de VUELA ataca en picado; una rama alta guarda monedas. Después, dos pilares de ruinas sólidos encierran a DA VUELTAS: su giro rebota entre ellos y los pilares sirven de refugio.
+  3. **Ruinas en penumbra**: COME y VUELA combinados, una segunda seta que sube a una ruta alta de piedra sobre el último foso y un encuentro final con DA VUELTAS y COME alrededor de un pilar y una rama refugio.
+- **Setas saltarinas**: caer sobre su sombrero lanza al Babito hasta 250–270 px si se mantiene el salto; soltándolo sube al menos el 60 % y después corta el impulso como un salto normal. Caminar contra el tallo no hace nada.
+- **Pilares de ruinas**: son suelo sólido elevado; bloquean el paso lateral y hay que saltarlos.
+- **Enemigos y fosos**: COME y DA VUELTAS no salen del tramo de suelo en el que aparecen; COME espera en el borde y DA VUELTAS se da la vuelta. Ambos giran al chocar con un pilar.
+- **La luz se apaga**: a partir de la mitad del último tramo un velo oscuro crece hasta el portal y un halo cálido sigue al Babito para mantenerlo legible.
+- Ocho encuentros abren el portal hacia La Oscuridad. Hay 30 Babicoins colocadas con identificadores `jungla:coin:<id>`, independientes de las de Babilandia.
+- Ambientación: agua animada en cada foso, una cascada sobre los puentes, lianas que se mecen, ruinas al fondo y luciérnagas.
+
+### La Oscuridad
+
+El combate de la Fase 2 se implementa en [DarknessBossScene.js](../src/scenes/DarknessBossScene.js).
+
+- La Oscuridad tiene 20 puntos de vida. En la sombra es **intangible**: los disparos la atraviesan y un aviso recuerda que hay que atraerla a la luz.
+- Hay tres **farolillos**: dos en el suelo, a los lados, y uno colgado en el centro que solo se alcanza disparando desde una plataforma. Un disparo los enciende durante 14 s; los últimos 3 s parpadean. Un farolillo encendido deja pasar los disparos, así que nunca la protege.
+- Si La Oscuridad cruza la luz de un farolillo encendido mientras se desliza o reaparece, queda **EXPUESTA** 2,2 s: se vuelve sólida, un anillo dorado la rodea y recibe daño. Al terminar se bebe esa luz y el farolillo se apaga. El farolillo central empieza encendido, de modo que la primera sombra rasante enseña el ciclo.
+- Patrones, en orden, siempre con un cartel de aviso:
+  - `SOMBRA RASANTE`: cruza la arena a ras de suelo desde el lado contrario al Babito. Se esquiva saltando hacia ella o subiendo a una plataforma; solo daña mientras se desliza.
+  - `METEORITOS OSCUROS`: dos tandas de tres meteoritos separados 150 px; una marca en el suelo avisa 0,76 s antes de cada uno.
+  - `ZONA OSCURA`: se funde en un charco que persigue al Babito por el suelo y brota bajo él tras un aviso de 0,48 s. Si el charco atraviesa la luz de un farolillo del suelo, sale a la fuerza y queda expuesta.
+  - Cada dos patrones, si queda algún farolillo encendido, `APAGA LA LUZ`: el más cercano al Babito parpadea 1,1 s y se apaga, salvo que se le dispare a tiempo.
+- Fuego y Rayo causan 1 punto; la Roca, 2. Recibir daño congela la acción 80 ms y acertar, 45 ms.
+- Pausa, `GAME OVER` y `REINTENTAR` funcionan como contra Babito Corrupto.
+- Al vencer, La Oscuridad se deshace en luciérnagas y devuelve la Manzana de Poder de la Jungla. Se conceden 40 Babicoins una sola vez (`boss2_reward`), se guardan `boss2Defeated` y `phase2Complete`, y `IR A LA TIENDA` continúa al catálogo y al Mapa.
+
 ### Babito Corrupto
 
 La interacción del combate se implementa en [BossScene.js](../src/scenes/BossScene.js).
@@ -174,9 +207,9 @@ La interacción del combate se implementa en [BossScene.js](../src/scenes/BossSc
 ### Mapa y avances
 
 - La tarjeta de `BABILANDIA` muestra una acción visible para jugar o rejugar la Fase 1. Al activarla guarda `babilandia`, reinicia solo el checkpoint a `start` y entra desde el principio; conserva poder, finalización, recompensas, monedas y colección.
+- La tarjeta de `LA JUNGLA` muestra `BLOQUEADA` hasta completar la Fase 1 (activarla solo avisa de cómo abrirla), después `FASE 2 DISPONIBLE` y, tras vencer a La Oscuridad, `FASE 2 COMPLETA` con el Árbol de Poder restaurado. Al jugarla guarda `jungla` con checkpoint `start` y conserva todo lo demás.
 - `IR A LA TIENDA` vuelve al catálogo y `VOLVER AL TÍTULO` vuelve al inicio.
-- `LA JUNGLA` y `CIUDAD BICHARRACA` abren pantallas descriptivas marcadas `PRÓXIMAMENTE`; la única acción allí es `VOLVER AL MAPA`.
-- Ciudad Bicharraca usa su fondo raster también en la previsualización. La Jungla mantiene por ahora una composición procedural.
+- `CIUDAD BICHARRACA` abre una pantalla descriptiva marcada `PRÓXIMAMENTE` con su fondo raster; la única acción allí es `VOLVER AL MAPA`.
 
 ## Animación y feedback
 
@@ -184,7 +217,8 @@ La interacción del combate se implementa en [BossScene.js](../src/scenes/BossSc
 - La animación se selecciona después de resolver movimiento y física en el mismo frame. Los tamaños pequeño, normal y grande producen cajas de render enteras de 64, 80 y 96 px y conservan una línea de suelo común sin cambiar el cuerpo físico.
 - COME tiene `idle`, `walk`, `windup`, `attack`, `hurt` y `defeat` sobre su spritesheet raster. `WINDUP` recorre la preparación y `BITE` empieza en la pose de mordisco sin reiniciar una fila ofensiva completa; todos los clips se anclan por los pies a la superficie física.
 - VUELA tiene `idle`, `fly`, `dive`, `attack`, `hurt` y `defeat` en un atlas raster de 36 poses; `dive`, `attack`, `hurt` y `defeat` no vuelven del último frame al primero. DA VUELTAS mantiene `idle`, `roll`, `windup`, `hurt` y `defeat` en su hoja procedural.
-- Babito Corrupto cambia de pose en intro, los tres patrones, `RECOVER` y su forma purificada.
+- Babito Corrupto cambia de pose en intro, los tres patrones, `RECOVER` y su forma purificada. La Oscuridad es un sprite procedural fiel a su referencia canónica (masa negra de borde violeta, tentáculos y ojos rasgados) que ondula, se desvanece al viajar por la sombra y se ilumina con un anillo dorado al quedar expuesta.
+- Las capas del Babito se dibujan a su tamaño nativo y se escalan después sin suavizado, con píxeles totalmente opacos o transparentes: en el título (×4) y el creador (×3) se ve nítido, sin franjas ni bordes borrosos.
 - Pausar congela también los relojes de animación.
 
 ## Persistencia
@@ -195,7 +229,7 @@ La interacción del combate se implementa en [BossScene.js](../src/scenes/BossSc
 - poder seleccionado y poderes desbloqueados;
 - Babicoins;
 - cosméticos desbloqueados y comprados;
-- pantalla, checkpoint, derrota del boss, fin de Fase 1 y recompensas ya reclamadas.
+- pantalla, checkpoint, derrota de cada boss, fin de Fase 1 y de Fase 2 y recompensas ya reclamadas.
 
 La preferencia de audio usa por separado `babitos.audio.v1`. Si `localStorage` no está disponible, el juego sigue funcionando durante la sesión.
 
@@ -203,7 +237,7 @@ La preferencia de audio usa por separado `babitos.audio.v1`. Si `localStorage` n
 
 - `M` y el botón HTML `AUDIO` alternan mute; el atajo se ignora mientras se escribe o cuando se usan modificadores.
 - La primera interacción desbloquea Web Audio. Si el navegador no lo ofrece, el control queda deshabilitado como `AUDIO N/D` y el juego continúa.
-- Hay temas para título/Creador/Poder, Babilandia/Intro, boss, tienda y mapa/avances, más efectos de UI, salto, ataque, daño, moneda, checkpoint, boss y compra.
+- Hay temas para título/Creador/Poder, Babilandia/Intro, boss, tienda, mapa/avances, La Jungla y La Oscuridad, más efectos de UI, salto, ataque, daño, moneda, checkpoint, boss y compra.
 - Esta versión no tiene control de volumen ni archivos de audio producidos: música y efectos son síntesis runtime.
 
 ## Límites de interacción actuales
@@ -211,7 +245,7 @@ La preferencia de audio usa por separado `babitos.audio.v1`. Si `localStorage` n
 - No hay navegación de menús con flechas ni soporte de mando.
 - Los botones y mensajes principales exponen controles HTML y anuncios; parte de la narrativa y textos secundarios dibujados en canvas no tiene todavía un equivalente DOM completo.
 - Los overlays no se declaran como diálogos modales formales. El soporte de teclado y lector es parcial y no se presenta como conformidad de accesibilidad completa.
-- El diálogo final de purificación enfoca `IR A LA TIENDA`, pero el botón de pausa —ya inerte— permanece todavía en el orden de tabulación.
+- Los diálogos finales de los dos jefes enfocan `IR A LA TIENDA`, pero el botón de pausa —ya inerte— permanece todavía en el orden de tabulación.
 - La preferencia de movimiento reducido cubre transiciones, flashes, toasts y motas, pero no todos los tweens decorativos.
 
 ## Accesos de QA en desarrollo

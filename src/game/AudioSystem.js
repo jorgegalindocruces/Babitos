@@ -74,6 +74,16 @@ const MUSIC_PRESETS = Object.freeze({
     detunes: Object.freeze([-4, 4, 10]),
     type: 'sine',
   }),
+  jungle: Object.freeze({
+    frequencies: Object.freeze([146.83, 220, 261.63, 329.63]),
+    detunes: Object.freeze([-6, 2, 5, 9]),
+    type: 'triangle',
+  }),
+  darkness: Object.freeze({
+    frequencies: Object.freeze([98, 116.54, 146.83]),
+    detunes: Object.freeze([-11, 0, 7]),
+    type: 'triangle',
+  }),
   ending: Object.freeze({
     frequencies: Object.freeze([220, 277.18, 329.63, 440]),
     detunes: Object.freeze([-6, 1, 6, 11]),

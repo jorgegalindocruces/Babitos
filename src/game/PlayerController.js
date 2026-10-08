@@ -6,7 +6,11 @@ import {
   selectBabitoLocomotionState,
 } from './BabitoAnimations.js';
 import { getPower, launchPower } from './PowerSystem.js';
-import { shouldCollideWithTerrain } from './platformCollision.js';
+import {
+  findOneWayPlatformsUnder,
+  hasClearedPlatform,
+  shouldCollideWithTerrain,
+} from './platformCollision.js';
 import {
   deriveJumpPhysics,
   getPlayerGravity,
@@ -18,6 +22,9 @@ const ATTACK_ANIMATION_MS = getBabitoAnimationDurationMs('attack');
 const HURT_ANIMATION_MS = getBabitoAnimationDurationMs('hurt');
 const DEAD_ANIMATION_MS = getBabitoAnimationDurationMs('dead');
 const RESPAWN_INVULNERABILITY_MS = 1500;
+// A small downward nudge makes ↓ read as an intentional drop, not a slip.
+const DROP_THROUGH_VELOCITY = 140;
+const SPRING_MIN_RISE_RATIO = 0.6;
 
 function getGameplayTime(scene) {
   const value = scene?.getGameplayTime?.();
@@ -69,9 +76,11 @@ export class PlayerController {
     this.wasGrounded = false;
     this.previousVerticalVelocity = 0;
     this.checkpoint = { x, y };
-    this.virtual = { left: false, right: false, jump: false, attack: false };
-    this.virtualPressed = { jump: false, attack: false };
-    this.keyboardPressed = { jump: false, attack: false };
+    this.virtual = { left: false, right: false, jump: false, attack: false, down: false };
+    this.virtualPressed = { jump: false, attack: false, down: false };
+    this.droppingThrough = new Set();
+    this.hasDroppedThrough = false;
+    this.keyboardPressed = { jump: false, attack: false, drop: false };
     this.suppressedUntilKeyUp = new Set();
     this.keyReleaseHandlers = new Map();
     this.keyPressHandlers = new Map();
@@ -91,7 +100,10 @@ export class PlayerController {
       this.body,
       platforms,
       null,
-      (first, second) => shouldCollideWithTerrain(first, second, { tolerance: landingTolerance }),
+      (first, second) => shouldCollideWithTerrain(first, second, {
+        tolerance: landingTolerance,
+        ignore: this.droppingThrough,
+      }),
     );
 
     this.avatar = new BabitoAvatar(scene, x, y, save.appearance, save.size);
@@ -100,6 +112,7 @@ export class PlayerController {
       right: Phaser.Input.Keyboard.KeyCodes.RIGHT,
       up: Phaser.Input.Keyboard.KeyCodes.UP,
       down: Phaser.Input.Keyboard.KeyCodes.DOWN,
+      s: Phaser.Input.Keyboard.KeyCodes.S,
       a: Phaser.Input.Keyboard.KeyCodes.A,
       d: Phaser.Input.Keyboard.KeyCodes.D,
       w: Phaser.Input.Keyboard.KeyCodes.W,
@@ -130,12 +143,20 @@ export class PlayerController {
           this.keyboardPressed.attack = true;
         }
       },
+      drop: (event) => {
+        if (this.enabled && !event?.repeat && !eventTargetsControl(event)) {
+          this.keyboardPressed.drop = true;
+        }
+      },
     };
     for (const eventName of ['keydown-SPACE', 'keydown-UP', 'keydown-W']) {
       scene.input.keyboard?.on(eventName, this.keyboardHandlers.jump);
     }
     for (const eventName of ['keydown-J', 'keydown-X']) {
       scene.input.keyboard?.on(eventName, this.keyboardHandlers.attack);
+    }
+    for (const eventName of ['keydown-DOWN', 'keydown-S']) {
+      scene.input.keyboard?.on(eventName, this.keyboardHandlers.drop);
     }
   }
 
@@ -148,14 +169,17 @@ export class PlayerController {
     this.jumpBufferedUntil = -Infinity;
     this.keyboardPressed.jump = false;
     this.keyboardPressed.attack = false;
+    this.keyboardPressed.drop = false;
     this.virtualPressed.jump = false;
     this.virtualPressed.attack = false;
+    this.virtualPressed.down = false;
 
     if (resetVirtual) {
       this.virtual.left = false;
       this.virtual.right = false;
       this.virtual.jump = false;
       this.virtual.attack = false;
+      this.virtual.down = false;
     }
 
     if (resetKeys) {
@@ -202,6 +226,7 @@ export class PlayerController {
       || this.virtual.right;
     const queuedJump = this.consumeKeyboardPress('jump');
     const queuedAttack = this.consumeKeyboardPress('attack');
+    const queuedDrop = this.consumeKeyboardPress('drop');
     // Evaluate every JustDown call even when the event listener already queued
     // the same press. Otherwise short-circuiting leaves Phaser's edge flag set
     // and the action is observed again on the following frame.
@@ -214,6 +239,11 @@ export class PlayerController {
       consumeGameplayJustDown(this.keys.attack, this.suppressedUntilKeyUp.has('attack')),
       consumeGameplayJustDown(this.keys.attackAlt, this.suppressedUntilKeyUp.has('attackAlt')),
     ].some(Boolean);
+    const justDownDrop = [
+      consumeGameplayJustDown(this.keys.down, this.suppressedUntilKeyUp.has('down')),
+      consumeGameplayJustDown(this.keys.s, this.suppressedUntilKeyUp.has('s')),
+    ].some(Boolean);
+    const dropPressed = queuedDrop || justDownDrop || this.consumeVirtualPress('down');
     const virtualJump = this.consumeVirtualPress('jump');
     const virtualAttack = this.consumeVirtualPress('attack');
     const jumpPressed = queuedJump || justDownJump || virtualJump;
@@ -244,19 +274,32 @@ export class PlayerController {
         spawnDust(this.scene, this.body.x, this.body.body.bottom, { count: 4, spread: 10 });
       }
 
+      if (dropPressed && grounded && !jumpedThisFrame && !controlLocked) this.dropThroughPlatform();
       if (attackPressed) this.attack(time);
+    }
+    for (const platform of this.droppingThrough) {
+      if (hasClearedPlatform(this.body.body, platform, this.movement.landingTolerancePx)) {
+        this.droppingThrough.delete(platform);
+      }
     }
 
     // Variable height only applies to a jump the player started: releasing the
     // button switches to a heavier rising gravity, independent of frame rate.
     if (!jumpHeld || this.body.body.velocity.y >= 0) this.jumpHeldSinceJump = false;
+    const springRising = this.springGuaranteedTopY != null
+      && this.body.body.velocity.y < 0
+      && this.body.y > this.springGuaranteedTopY;
+    if (!springRising) this.springGuaranteedTopY = null;
+    if (this.body.body.velocity.y >= 0 && this.body.body.maxVelocity.y !== this.movement.maxFallSpeed) {
+      this.body.body.maxVelocity.y = this.movement.maxFallSpeed;
+    }
     // Knockback keeps the full rising arc so the hit reads as a clear hop;
     // the KO bounce keeps plain world gravity.
     const gravity = this.isDead
       ? (this.scene.physics.world.gravity?.y ?? 0)
       : getPlayerGravity({
         velocityY: this.body.body.velocity.y,
-        jumpHeld: this.jumpHeldSinceJump || controlLocked,
+        jumpHeld: this.jumpHeldSinceJump || controlLocked || springRising,
         tuning: this.movement,
       });
     this.body.body.setGravityY(gravity - (this.scene.physics.world.gravity?.y ?? 0));
@@ -309,6 +352,46 @@ export class PlayerController {
     this.avatar.setPosition(this.body.x, this.body.y + 2);
     this.avatar.setFacing(this.facing);
     this.avatar.setMotion?.(resolvedMotion, this.body.body.velocity);
+  }
+
+  isStandingOnOneWayPlatform() {
+    const body = this.body?.body;
+    if (!body?.touching.down) return false;
+    return findOneWayPlatformsUnder(body, this.platforms?.getChildren?.() ?? []).length > 0;
+  }
+
+  /**
+   * Bounce from a spring mushroom. Holding jump reaches `height`; releasing it
+   * cuts the rise like a normal jump, so the bounce stays under control.
+   */
+  launchFromSpring(height = 240) {
+    if (!this.body?.active || this.isDead || !this.enabled) return false;
+    const { riseGravity } = this.jumpPhysics;
+    const launchSpeed = Math.sqrt(2 * riseGravity * Math.max(40, height));
+    // Arcade's max velocity is symmetric: lift the cap for this rise only,
+    // update() restores the terminal fall speed once the Babito descends.
+    this.body.body.maxVelocity.y = Math.max(this.movement.maxFallSpeed, launchSpeed);
+    this.body.setVelocityY(-launchSpeed);
+    this.jumpHeldSinceJump = true;
+    // Without holding jump the bounce still clears this much before cutting.
+    this.springGuaranteedTopY = this.body.y - height * SPRING_MIN_RISE_RATIO;
+    this.lastGroundedAt = -Infinity;
+    this.jumpBufferedUntil = -Infinity;
+    this.avatar.pulseJump?.();
+    return true;
+  }
+
+  /** ↓ on a one-way platform drops through it; on solid ground it does nothing. */
+  dropThroughPlatform() {
+    const under = findOneWayPlatformsUnder(this.body.body, this.platforms?.getChildren?.() ?? []);
+    if (!under.length) return false;
+    for (const platform of under) this.droppingThrough.add(platform);
+    this.hasDroppedThrough = true;
+    this.body.setVelocityY(DROP_THROUGH_VELOCITY);
+    // No coyote jump from a platform the player chose to leave.
+    this.lastGroundedAt = -Infinity;
+    this.jumpBufferedUntil = -Infinity;
+    return true;
   }
 
   consumeVirtualPress(control) {
@@ -397,6 +480,7 @@ export class PlayerController {
     this.attackUntil = -Infinity;
     this.hurtUntil = -Infinity;
     this.controlLockedUntil = -Infinity;
+    this.droppingThrough.clear();
     this.jumpHeldSinceJump = false;
     this.wasGrounded = false;
     this.previousVerticalVelocity = 0;
@@ -430,6 +514,9 @@ export class PlayerController {
     }
     for (const eventName of ['keydown-J', 'keydown-X']) {
       this.scene.input.keyboard?.off(eventName, this.keyboardHandlers.attack);
+    }
+    for (const eventName of ['keydown-DOWN', 'keydown-S']) {
+      this.scene.input.keyboard?.off(eventName, this.keyboardHandlers.drop);
     }
     this.collider?.destroy();
     this.avatar?.destroy();

@@ -20,6 +20,8 @@ const DEFAULT_PROGRESS = Object.freeze({
   checkpoint: 'start',
   boss1Defeated: false,
   phase1Complete: false,
+  boss2Defeated: false,
+  phase2Complete: false,
   claimedRewards: Object.freeze([]),
 });
 
@@ -77,6 +79,8 @@ function sanitizeProgress(value) {
     checkpoint: sanitizeText(progress.checkpoint, DEFAULT_PROGRESS.checkpoint),
     boss1Defeated: progress.boss1Defeated === true,
     phase1Complete: progress.phase1Complete === true,
+    boss2Defeated: progress.boss2Defeated === true,
+    phase2Complete: progress.phase2Complete === true,
     claimedRewards: [...new Set(
       rewards
         .filter((reward) => typeof reward === 'string')

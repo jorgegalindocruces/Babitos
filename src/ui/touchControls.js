@@ -12,7 +12,7 @@ export function prefersTouchControls() {
 }
 
 /**
- * Virtual left/right/jump/attack pads shared by every playable scene. Each pad
+ * Virtual left/right/down/jump/attack pads shared by every playable scene. Each pad
  * forwards press and release to `PlayerController.setVirtualControl`.
  */
 export function createTouchControls(scene, getPlayer, { y = 470, strokeColor = 0x71e5ff, fillAlpha = 0.44 } = {}) {
@@ -39,6 +39,7 @@ export function createTouchControls(scene, getPlayer, { y = 470, strokeColor = 0
 
   createPad(58, '◀', 'left');
   createPad(146, '▶', 'right');
+  createPad(234, '▼', 'down');
   createPad(814, '↑', 'jump');
   createPad(902, '✦', 'attack');
   return objects;

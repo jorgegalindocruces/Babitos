@@ -14,14 +14,16 @@ Este documento define la visión completa. No todo el flujo está implementado t
 | Babilandia, seis encuentros y checkpoints | Jugable |
 | Babito Corrupto | Jugable |
 | Tienda y Mapa | Implementado |
-| La Jungla y Ciudad Bicharraca | Pantallas de avance estáticas |
-| La Oscuridad, Boss Total y Final | Roadmap, sin gameplay |
+| La Jungla, ocho encuentros y checkpoints | Jugable (Fase 2) |
+| La Oscuridad | Jugable |
+| Ciudad Bicharraca | Pantalla de avance estática |
+| Boss Total y Final | Roadmap, sin gameplay |
 
 El comportamiento implementado se documenta en [INTERACTIONS.md](INTERACTIONS.md); su historial está en [CHANGELOG.md](CHANGELOG.md).
 
 ## Flujo actual
 
-Título → Creador → Poder → Intro → Babilandia → Babito Corrupto → Tienda → Mapa. La tienda ofrece `CONTINUAR AL MAPA` como salida principal. Desde el mapa se puede rejugar Babilandia desde el inicio sin perder la colección ni la finalización, visitar la tienda, volver al título o ver los avances de Jungla y Ciudad.
+Título → Creador → Poder → Intro → Babilandia → Babito Corrupto → Tienda → Mapa → Jungla → La Oscuridad → Tienda → Mapa. La tienda ofrece `CONTINUAR AL MAPA` como salida principal. Desde el mapa se puede rejugar Babilandia, entrar en La Jungla en cuanto la Fase 1 está completa (y rejugarla después), visitar la tienda, volver al título o ver el avance de Ciudad.
 
 ## Flujo objetivo
 
@@ -50,7 +52,7 @@ Cada enemigo puede soltar 0, 1 o 2 monedas. En Babilandia, solo el ataque activo
 ## Jefes
 
 1. Babito Corrupto — implementado: proyectil, ataque superior y embestida; se vuelve vulnerable en `RECOVER` y al perder vuelve a ser normal.
-2. La Oscuridad — roadmap: entidad de sombra; viaja por oscuridad y se vuelve vulnerable con luz.
+2. La Oscuridad — implementado: entidad de sombra intangible en la oscuridad. El jugador enciende farolillos con su poder; si ella cruza su luz queda expuesta y vulnerable, y se bebe esa luz. Ataca con sombra rasante, meteoritos oscuros y zona oscura, y apaga farolillos con aviso. Al perder se deshace en luciérnagas y devuelve la Manzana de Poder.
 3. Boss Total — roadmap: jefe de los Bicharracos; combina poderes y pierde capacidades al perder manzanas.
 
 ## Tienda
@@ -60,7 +62,7 @@ Señor Empanadilla y Señor Pingüino son aliados y tenderos. Nunca son enemigos
 ## Mundos
 
 1. Babilandia atacada — jugable: ciudad de Babitos, luminosa pero dañada. Funciona como tutorial en tres tramos: Mercado enseña a saltar y presenta a COME; Puente presenta a VUELA y premia el camino alto; Fuente y portal combina DA VUELTAS y COME alrededor de una plataforma refugio. El suelo base es continuo, de modo que el reto vertical procede de plataformas útiles, refugios y monedas, no de fosos.
-2. Jungla — avance/roadmap: ramas, lianas, ruinas, verticalidad y progresión hacia oscuridad.
+2. Jungla — jugable: ramas, lianas, cascadas, puentes de cuerda, ruinas y verticalidad, con progresión hacia la oscuridad. Combina lo aprendido en tres tramos: Raíces introduce los fosos del río y la seta saltarina; Puentes de cuerda obliga a cruzar el río mientras VUELA ataca y encierra a DA VUELTAS entre pilares de ruinas; Ruinas en penumbra mezcla enemigos, sube por setas a una ruta alta y oscurece la escena hasta el portal. A diferencia de Babilandia, aquí sí hay fosos: siempre saltables, y caer cuesta un corazón.
 3. Ciudad Bicharraca — avance/roadmap: industrial, máquinas, tuberías, trampas y fortaleza final.
 
 `worlds_environment_reference_only.png` define solo entorno, composición, paleta y atmósfera. Sus enemigos dibujados no son canónicos.
@@ -71,7 +73,7 @@ Sin poder: muy triste, copa apagada, ramas caídas, huecos vacíos, cara triste 
 
 ## Moneda
 
-Circular, basada en `coin_original.jpeg`, B central y marcas laterales. Rebota al caer y da feedback al recoger. Además de las que sueltan los enemigos, Babilandia esconde 25 Babicoins colocadas que se cobran una sola vez por guardado y que premian la exploración y los saltos arriesgados.
+Circular, basada en `coin_original.jpeg`, B central y marcas laterales. Rebota al caer y da feedback al recoger. Además de las que sueltan los enemigos, Babilandia esconde 25 Babicoins colocadas y La Jungla otras 30, que se cobran una sola vez por guardado y que premian la exploración y los saltos arriesgados.
 
 ## HUD y estados
 
@@ -79,12 +81,12 @@ HUD: corazones, monedas, poder activo, encuentros y pausa; durante el boss añad
 
 - Daño: retroceso, breve invulnerabilidad y parpadeo.
 - Checkpoint: guarda posición y restaura la vida.
-- Caída no fatal en Babilandia: intenta restar un corazón y reaparece en el último checkpoint; la invulnerabilidad evita daño repetido inmediato.
+- Caída no fatal en Babilandia o en un foso de La Jungla: intenta restar un corazón y reaparece en el último checkpoint; la invulnerabilidad evita daño repetido inmediato.
 - Game Over en Babilandia: reintenta desde el checkpoint con vida completa.
 - Game Over contra el boss: reinicia el encuentro completo.
 - Pausa: congela simulación y animaciones; permite continuar o volver al título.
 
-El suelo y las plataformas son cuerpos de colisión independientes de los fondos. El suelo base es sólido; las plataformas elevadas son unidireccionales, se atraviesan desde abajo y sostienen al caer desde arriba. Los poderes solo pueden destruir su propio proyectil al impactar; nunca eliminan terreno.
+El suelo y las plataformas son cuerpos de colisión independientes de los fondos. El suelo base es sólido; las plataformas elevadas son unidireccionales, se atraviesan desde abajo, sostienen al caer desde arriba y el jugador puede dejarse caer a través de ellas con `↓`, lo que convierte los refugios en posiciones de las que se sale a voluntad para castigar a COME desde abajo. Los poderes solo pueden destruir su propio proyectil al impactar; nunca eliminan terreno.
 
 ## Sensación de control
 

@@ -925,7 +925,7 @@ export class BossScene extends Phaser.Scene {
     const title = createTitle(this, 'PAUSA', 480, 150, { fontSize: '34px', depth: 4002 });
     const controls = createBodyText(
       this,
-      'Mover: A/D o ←/→\nSaltar: W / ↑ / Espacio\nAtacar: J / X\nSolo RECOVER recibe daño',
+      'Mover: A/D o ←/→ · Bajar: S / ↓\nSaltar: W / ↑ / Espacio\nAtacar: J / X\nSolo RECOVER recibe daño',
       480,
       232,
       { fontSize: '18px', lineSpacing: 8, depth: 4002 },

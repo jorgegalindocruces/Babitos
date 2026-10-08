@@ -7,6 +7,40 @@ Este archivo relaciona las iteraciones entregadas con sus cambios observables, c
 - Mantener sincronizados `README.md`, `INTERACTIONS.md`, `GAME_DESIGN.md`, `IMPLEMENTATION_SPEC.md` y `ACCEPTANCE_CRITERIA.md` cuando cambien flujo, controles, estados, persistencia o contenido jugable.
 - Añadir una entrada aquí por cada cambio observable, con el commit final y las pruebas realizadas.
 
+## Fase 2: La Jungla y La Oscuridad — 2026-10-08
+
+Pendiente de commit. La Jungla deja de ser una pantalla de avance y se convierte en la Fase 2 jugable, con su jefe.
+
+- **Motor de niveles**: `GameScene` carga cualquier nivel del nuevo registro [levels/index.js](../src/data/levels/index.js) (fondo, texturas, recompensas, anuncio y jefe de destino) y resuelve el nivel desde el progreso guardado. Babilandia no cambia.
+- **La Jungla** ([jungla.json](../src/data/levels/jungla.json)): 6400 px en tres tramos (Raíces, Puentes de cuerda, Ruinas en penumbra), cuatro checkpoints, ocho encuentros y 30 Babicoins colocadas (`jungla:coin:`). Es la primera fase con fosos: todos se saltan (≤ 160 px) o se cruzan por puentes, y caer cuesta un corazón. Añade setas saltarinas (mantener el salto lanza más alto), pilares de ruinas sólidos y una oscuridad progresiva con halo sobre el Babito. Ambientación procedural en [jungleScenery.js](../src/game/jungleScenery.js).
+- **Enemigos**: COME y DA VUELTAS se quedan en su tramo de suelo continuo (COME espera en el borde y DA VUELTAS se da la vuelta), giran al chocar con un pilar y vuelven a su origen si caen fuera del mundo.
+- **La Oscuridad** ([DarknessBossScene.js](../src/scenes/DarknessBossScene.js)): intangible en la sombra y vulnerable solo al cruzar la luz de un farolillo encendido. El jugador enciende los farolillos disparándoles. Tiene sombra rasante, meteoritos oscuros y zona oscura, y apaga farolillos con aviso. Al vencer devuelve la Manzana de Poder y concede 40 Babicoins una vez. Su sprite sigue la lámina canónica.
+- **Progreso**: el Mapa abre La Jungla al completar la Fase 1 y marca la Fase 2 como completa; `CONTINUAR` reanuda `jungla` o `boss2`. El guardado añade `boss2Defeated` y `phase2Complete`. Música nueva: `jungle` y `darkness`.
+- **Correcciones del playtest**:
+  - La Roca fallaba a media distancia porque su arco pasaba por encima de la hitbox baja de La Oscuridad; ahora la hitbox crece al quedar expuesta.
+  - Un farolillo encendido bloqueaba los disparos cuando ella quedaba expuesta a su lado; ahora los deja pasar.
+  - La seta lanzaba 184 px en vez de 250 porque la velocidad máxima de caída también limitaba la subida; ese límite se levanta solo durante el rebote.
+  - La lluvia de meteoritos dejaba huecos demasiado estrechos; ahora caen separados 150 px.
+- **Pruebas**:
+  - Unitarias: 8 tests nuevos (registro de niveles, tramos de suelo, fosos saltables, apoyo de checkpoints, enemigos, setas y portal, datos del jefe y desbloqueo), y la prueba de alcanzabilidad cubre ahora los dos niveles, con setas.
+  - Bots en Chrome: La Jungla completada con los tres poderes en 48–63 s, con 0 golpes en modo preciso y 2 en modo casual.
+  - La Oscuridad vencida por el bot casual con los tres poderes: Fuego 31 s, Rayo 16 s, Roca 80 s.
+  - Flujo completo verificado: Mapa → Jungla → jefe → Tienda → Mapa, y `CONTINUAR`.
+
+## Babito nítido en menús — 2026-10-08
+
+Pendiente de commit. El Babito se veía borroso en Título y Creador. Su arte de 48 px se dibujaba con formas vectoriales bajo una escala fraccionaria: el 62 % de los píxeles quedaba semitransparente y aparecían franjas de colores mezclados, que la ampliación ×4/×3 hacía evidentes. Ahora cada capa se dibuja a tamaño nativo, se copia con muestreo *nearest* y su alfa se binariza: el cuerpo pasa de 210 colores mezclados a 6 limpios. Se comprobaron las 51 poses con accesorios en la hoja completa.
+
+## Bajar de plataformas con ↓ — 2026-10-08
+
+Pendiente de commit. Primera de las ideas aplazadas en la iteración anterior: los refugios dejaban al jugador sin forma de bajar sobre COME salvo caminar hasta el borde.
+
+- `S`, `↓` o el nuevo pad táctil `▼` dejan caer al Babito a través de la plataforma elevada en la que está de pie; sobre el suelo base no hacen nada. Funciona en Babilandia y en la arena del boss.
+- [platformCollision.js](../src/game/platformCollision.js) añade `findOneWayPlatformsUnder()`, `hasClearedPlatform()` y la opción `ignore` de `shouldCollideWithTerrain()`; enemigos, monedas y boss no cambian.
+- La pulsación se encola desde `keydown`, como el salto: en el navegador, un toque de un solo frame se perdía con `JustDown`.
+- Aviso contextual único la primera vez que el Babito descansa sobre una plataforma, y la tecla aparece en Controles y en ambas pausas.
+- Pruebas: 2 tests unitarios nuevos; playtest en Chrome de la caída con `↓`, `S` y pad táctil en ambas escenas, de la vuelta a subir a la misma plataforma y de `↓` sobre el suelo sin efecto.
+
 ## Game feel, nivel y boss justos — 2026-10-08
 
 Commit [`28e32ec`](https://github.com/jorgegalindocruces/Babitos/commit/28e32ec). Auditoría de jugabilidad con playtest automatizado en navegador (bots preciso y «casual» con 250 ms de reacción, con los tres poderes):

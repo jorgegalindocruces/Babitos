@@ -8,6 +8,7 @@ import { PowerScene } from './scenes/PowerScene.js';
 import { IntroScene } from './scenes/IntroScene.js';
 import { GameScene } from './scenes/GameScene.js';
 import { BossScene } from './scenes/BossScene.js';
+import { DarknessBossScene } from './scenes/DarknessBossScene.js';
 import { ShopScene } from './scenes/ShopScene.js';
 import { WorldMapScene } from './scenes/WorldMapScene.js';
 import { ComingSoonScene } from './scenes/ComingSoonScene.js';
@@ -150,6 +151,7 @@ const config = {
     IntroScene,
     GameScene,
     BossScene,
+    DarknessBossScene,
     ShopScene,
     WorldMapScene,
     ComingSoonScene,

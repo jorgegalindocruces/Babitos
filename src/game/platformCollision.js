@@ -36,6 +36,8 @@ export function shouldCollideWithTerrain(first, second, options = {}) {
 
   const platform = firstIsOneWay ? first : second;
   const mover = firstIsOneWay ? second : first;
+  // A body dropping through (↓) ignores the platforms it stood on until clear.
+  if (options.ignore?.has?.(platform)) return false;
   const moverBody = mover?.body;
   const platformBody = platform?.body;
 
@@ -53,4 +55,41 @@ export function shouldCollideWithTerrain(first, second, options = {}) {
   const requestedTolerance = finiteNumber(options.tolerance);
   const tolerance = Math.max(0, requestedTolerance ?? ONE_WAY_LANDING_TOLERANCE);
   return previousBottom <= platformTop + tolerance;
+}
+
+/**
+ * One-way platforms the body is standing on: its feet rest on their top edge
+ * and they overlap horizontally. Used to start a drop-through with ↓.
+ */
+export function findOneWayPlatformsUnder(moverBody, platforms, tolerance = 2) {
+  const bottom = finiteNumber(moverBody?.bottom);
+  const left = finiteNumber(moverBody?.left);
+  const right = finiteNumber(moverBody?.right);
+  if (bottom === null || left === null || right === null) return [];
+  return (platforms ?? []).filter((platform) => {
+    const body = platform?.body;
+    if (!isOneWayPlatform(platform) || !body) return false;
+    const top = finiteNumber(body.top) ?? finiteNumber(body.y);
+    const platformLeft = finiteNumber(body.left) ?? finiteNumber(body.x);
+    const platformRight = finiteNumber(body.right);
+    if (top === null || platformLeft === null || platformRight === null) return false;
+    return Math.abs(bottom - top) <= tolerance && right > platformLeft && left < platformRight;
+  });
+}
+
+/**
+ * A dropping body keeps ignoring a platform until its feet are clearly below
+ * the top edge, or it no longer overlaps the platform horizontally.
+ */
+export function hasClearedPlatform(moverBody, platform, tolerance = ONE_WAY_LANDING_TOLERANCE) {
+  const body = platform?.body;
+  if (!platform?.active || !body) return true;
+  const bottom = finiteNumber(moverBody?.bottom);
+  const top = finiteNumber(body.top) ?? finiteNumber(body.y);
+  if (bottom === null || top === null) return true;
+  const left = finiteNumber(moverBody?.left);
+  const right = finiteNumber(moverBody?.right);
+  const outside = left !== null && right !== null
+    && (right <= finiteNumber(body.left) || left >= finiteNumber(body.right));
+  return outside || bottom > top + tolerance;
 }

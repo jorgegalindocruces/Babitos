@@ -166,6 +166,15 @@ export const TEXTURE_KEYS = Object.freeze({
   tileGround: 'tile_ground',
   tilePlatform: 'tile_platform',
   tileStone: 'tile_stone',
+  tileJungleGround: 'tile_jungle_ground',
+  tileBranch: 'tile_branch',
+  tileBridge: 'tile_bridge',
+  tileRuin: 'tile_ruin',
+  springMushroom: 'spring_mushroom',
+  bossDarkness: 'boss_darkness',
+  lanternOff: 'lantern_off',
+  lanternOn: 'lantern_on',
+  powerApple: 'power_apple',
   propFlower: 'prop_flower',
   propSign: 'prop_sign',
   propCrate: 'prop_crate',
@@ -897,6 +906,149 @@ function drawStone(ctx) {
   rect(ctx, 5, 5, 6, 2, COLORS.grayLight);
 }
 
+function drawJungleGround(ctx) {
+  rect(ctx, 0, 0, 32, 32, '#2c1a17');
+  rect(ctx, 1, 8, 30, 24, '#4a2d22');
+  rect(ctx, 0, 0, 32, 9, COLORS.ink);
+  rect(ctx, 0, 1, 32, 6, '#2f8f3c');
+  rect(ctx, 0, 1, 32, 2, '#7fd94c');
+  // Moss drips and leaf tips break the straight edge.
+  rect(ctx, 2, 7, 3, 4, '#2f8f3c');
+  rect(ctx, 13, 7, 2, 5, '#2f8f3c');
+  rect(ctx, 22, 7, 4, 3, '#2f8f3c');
+  rect(ctx, 7, 0, 3, 2, '#b6f06a');
+  rect(ctx, 26, 0, 2, 2, '#b6f06a');
+  // Roots crossing the earth.
+  pixelLine(ctx, 4, 15, 12, 21, '#6b4330', 2);
+  pixelLine(ctx, 20, 13, 27, 20, '#6b4330', 2);
+  rect(ctx, 16, 25, 5, 3, '#6b4330');
+  rect(ctx, 6, 27, 3, 3, '#1f1210');
+  rect(ctx, 25, 24, 3, 3, '#1f1210');
+}
+
+function drawBranch(ctx) {
+  rect(ctx, 0, 0, 32, 16, COLORS.ink);
+  rect(ctx, 0, 5, 32, 10, '#6b4330');
+  rect(ctx, 0, 6, 32, 2, '#94603f');
+  rect(ctx, 0, 1, 32, 5, '#2f8f3c');
+  rect(ctx, 0, 1, 32, 2, '#7fd94c');
+  rect(ctx, 6, 6, 4, 3, '#2f8f3c');
+  rect(ctx, 21, 6, 5, 2, '#2f8f3c');
+  rect(ctx, 12, 11, 7, 2, '#4a2d22');
+  rect(ctx, 26, 10, 3, 3, '#4a2d22');
+}
+
+function drawBridge(ctx) {
+  // Planks hang a little below the rope; the gaps stay transparent.
+  rect(ctx, 0, 1, 32, 2, '#c99a5b');
+  rect(ctx, 0, 3, 32, 1, '#5e3827');
+  for (const x of [0, 11, 22]) {
+    rect(ctx, x, 4, 9, 9, COLORS.ink);
+    rect(ctx, x + 1, 4, 7, 7, '#b0703f');
+    rect(ctx, x + 1, 4, 7, 2, '#d99a5c');
+    rect(ctx, x + 3, 8, 3, 1, '#7a4528');
+  }
+  rect(ctx, 4, 0, 2, 5, '#e3c38a');
+  rect(ctx, 26, 0, 2, 5, '#e3c38a');
+}
+
+function drawRuin(ctx) {
+  rect(ctx, 0, 0, 32, 32, COLORS.ink);
+  rect(ctx, 1, 1, 30, 30, '#5f6f62');
+  rect(ctx, 2, 2, 13, 13, '#7d8f7c');
+  rect(ctx, 17, 2, 13, 13, '#6e8070');
+  rect(ctx, 2, 17, 9, 13, '#6e8070');
+  rect(ctx, 13, 17, 17, 13, '#7d8f7c');
+  rect(ctx, 15, 1, 2, 15, '#2c3a33');
+  rect(ctx, 1, 15, 30, 2, '#2c3a33');
+  rect(ctx, 11, 17, 2, 14, '#2c3a33');
+  // An old carved spiral and creeping moss.
+  rect(ctx, 19, 20, 7, 2, '#3f4c44');
+  rect(ctx, 24, 20, 2, 6, '#3f4c44');
+  rect(ctx, 19, 24, 5, 2, '#3f4c44');
+  rect(ctx, 0, 0, 32, 4, '#2f8f3c');
+  rect(ctx, 0, 0, 32, 2, '#7fd94c');
+  rect(ctx, 3, 4, 3, 5, '#2f8f3c');
+  rect(ctx, 23, 4, 2, 3, '#2f8f3c');
+  rect(ctx, 4, 6, 6, 2, '#a7b8a4');
+}
+
+function drawSpringMushroom(ctx) {
+  // Stem.
+  rect(ctx, 16, 17, 16, 15, COLORS.ink);
+  rect(ctx, 18, 17, 12, 13, '#f3e3c2');
+  rect(ctx, 18, 17, 3, 13, '#d4bf98');
+  // Cap.
+  outlinedEllipse(ctx, 24, 14, 22, 11, COLORS.ink, '#ff4f6d', 2);
+  rect(ctx, 6, 16, 36, 4, '#c42d52');
+  rect(ctx, 10, 6, 8, 3, '#ff9aa9');
+  // Spots.
+  rect(ctx, 12, 9, 5, 4, COLORS.white);
+  rect(ctx, 27, 6, 6, 4, COLORS.white);
+  rect(ctx, 34, 12, 4, 3, COLORS.white);
+  rect(ctx, 20, 13, 3, 3, COLORS.white);
+}
+
+function drawBossDarkness(ctx) {
+  const rim = '#b45cff';
+  const glow = '#7a2fd0';
+  const body = '#0b0614';
+  // Curling tentacles behind the body (canonical: no fixed shape).
+  for (const [x0, y0, x1, y1, x2, y2] of [
+    [26, 40, 12, 26, 18, 10], [70, 40, 84, 26, 78, 10], [22, 58, 6, 54, 4, 40], [74, 58, 90, 54, 92, 40],
+  ]) {
+    pixelLine(ctx, x0, y0, x1, y1, glow, 7);
+    pixelLine(ctx, x1, y1, x2, y2, glow, 5);
+    pixelLine(ctx, x0, y0, x1, y1, body, 5);
+    pixelLine(ctx, x1, y1, x2, y2, body, 3);
+  }
+  // Purple rim, then the black mass with wisps dripping below.
+  ellipse(ctx, 48, 50, 33, 30, glow);
+  ellipse(ctx, 48, 30, 21, 19, glow);
+  ellipse(ctx, 48, 50, 31, 28, body);
+  ellipse(ctx, 48, 30, 19, 17, body);
+  for (const [x, length] of [[22, 22], [34, 30], [46, 26], [58, 32], [70, 20]]) {
+    rect(ctx, x - 1, 70, 10, length, glow);
+    rect(ctx, x, 70, 8, length - 2, body);
+  }
+  rect(ctx, 30, 16, 6, 3, rim);
+  rect(ctx, 60, 14, 5, 3, rim);
+  rect(ctx, 18, 46, 3, 8, rim);
+  rect(ctx, 76, 44, 3, 9, rim);
+  // Angry slanted glowing eyes; no mouth.
+  polygon(ctx, [[30, 36], [44, 41], [42, 47], [31, 43]], rim);
+  polygon(ctx, [[66, 36], [52, 41], [54, 47], [65, 43]], rim);
+  polygon(ctx, [[33, 38], [42, 42], [41, 45], [33, 42]], '#f1e3ff');
+  polygon(ctx, [[63, 38], [54, 42], [55, 45], [63, 42]], '#f1e3ff');
+}
+
+function drawLantern(ctx, lit) {
+  rect(ctx, 12, 0, 4, 6, COLORS.ink);
+  rect(ctx, 6, 5, 16, 5, COLORS.ink);
+  rect(ctx, 8, 6, 12, 3, '#9a6a3a');
+  rect(ctx, 4, 10, 20, 24, COLORS.ink);
+  rect(ctx, 6, 12, 16, 20, lit ? '#ffe9a0' : '#2b3a4a');
+  if (lit) {
+    rect(ctx, 10, 15, 8, 13, '#ffb43c');
+    rect(ctx, 12, 18, 4, 8, '#fff7d6');
+  } else {
+    rect(ctx, 11, 22, 6, 6, '#4a5c6e');
+  }
+  rect(ctx, 6, 21, 16, 2, COLORS.ink);
+  rect(ctx, 13, 12, 2, 20, COLORS.ink);
+  rect(ctx, 6, 34, 16, 5, COLORS.ink);
+  rect(ctx, 8, 35, 12, 3, '#9a6a3a');
+}
+
+function drawPowerApple(ctx) {
+  outlinedEllipse(ctx, 16, 19, 12, 11, COLORS.ink, '#ffcf3c', 2);
+  ellipse(ctx, 12, 15, 4, 3, '#fff3b0');
+  rect(ctx, 20, 21, 4, 4, '#e8a21a');
+  rect(ctx, 15, 3, 3, 7, '#6b4330');
+  rect(ctx, 18, 4, 8, 4, '#4fb748');
+  rect(ctx, 20, 3, 5, 2, '#7fd94c');
+}
+
 function drawFlower(ctx) {
   pixelLine(ctx, 8, 15, 8, 29, COLORS.greenDark, 2);
   rect(ctx, 3, 13, 5, 5, COLORS.white);
@@ -974,6 +1126,42 @@ function drawPortal(ctx) {
   sparkle(ctx, 47, 61, COLORS.magenta);
 }
 
+// Canvas resamples the 48 px art through fractional pose transforms, leaving a
+// soft halo of half-transparent pixels. Menus enlarge the Babito 3-4x with
+// nearest filtering, which turns that halo into a blurry, dirty outline.
+// Snapping alpha restores a crisp pixel-art silhouette at every scale.
+const BABITO_ALPHA_THRESHOLD = 128;
+
+export function snapPixelAlpha(data, threshold = BABITO_ALPHA_THRESHOLD) {
+  for (let index = 3; index < data.length; index += 4) {
+    data[index] = data[index] >= threshold ? 255 : 0;
+  }
+  return data;
+}
+
+function snapCanvasAlpha(ctx, width, height) {
+  if (typeof ctx.getImageData !== 'function') return;
+  const image = ctx.getImageData(0, 0, width, height);
+  snapPixelAlpha(image.data);
+  ctx.putImageData(image, 0, 0);
+}
+
+// Babito art is authored on a 48 px grid. Drawing it straight through the
+// fractional pose transform blends neighbouring colours into stripes, so each
+// frame is first drawn at native size and then copied with nearest sampling.
+const BABITO_ART_MARGIN = 8;
+
+function createScratchCanvas(size) {
+  if (typeof OffscreenCanvas === 'function') return new OffscreenCanvas(size, size);
+  if (typeof document !== 'undefined') {
+    const canvas = document.createElement('canvas');
+    canvas.width = size;
+    canvas.height = size;
+    return canvas;
+  }
+  return null;
+}
+
 function makeBabitoLayerSpec(key, drawFrame) {
   const width = BABITO_TEXTURE_SIZE * BABITO_ANIMATION_COLUMNS;
   const rows = Math.ceil(BABITO_ANIMATION_FRAME_COUNT / BABITO_ANIMATION_COLUMNS);
@@ -983,6 +1171,10 @@ function makeBabitoLayerSpec(key, drawFrame) {
     width,
     height,
     (ctx) => {
+      const scratchSize = BABITO_ART_SIZE + BABITO_ART_MARGIN * 2;
+      const scratch = createScratchCanvas(scratchSize);
+      const scratchCtx = scratch?.getContext('2d');
+      if (scratchCtx) scratchCtx.imageSmoothingEnabled = false;
       BABITO_FRAME_POSES.forEach((pose, frameIndex) => {
         const column = frameIndex % BABITO_ANIMATION_COLUMNS;
         const row = Math.floor(frameIndex / BABITO_ANIMATION_COLUMNS);
@@ -1000,9 +1192,20 @@ function makeBabitoLayerSpec(key, drawFrame) {
         ctx.rotate(transform.rotation);
         ctx.scale(transform.scaleX, transform.scaleY);
         ctx.translate(-BABITO_ART_SIZE / 2, -BABITO_ART_SIZE / 2);
-        drawFrame(ctx, pose, frameIndex);
+        if (scratchCtx) {
+          scratchCtx.clearRect(0, 0, scratchSize, scratchSize);
+          scratchCtx.save();
+          scratchCtx.translate(BABITO_ART_MARGIN, BABITO_ART_MARGIN);
+          drawFrame(scratchCtx, pose, frameIndex);
+          scratchCtx.restore();
+          ctx.imageSmoothingEnabled = false;
+          ctx.drawImage(scratch, -BABITO_ART_MARGIN, -BABITO_ART_MARGIN);
+        } else {
+          drawFrame(ctx, pose, frameIndex);
+        }
         ctx.restore();
       });
+      snapCanvasAlpha(ctx, width, height);
     },
     Object.freeze({
       frameWidth: BABITO_TEXTURE_SIZE,
@@ -1071,6 +1274,15 @@ function getTextureSpecs() {
     [TEXTURE_KEYS.tileGround, 32, 32, drawGround],
     [TEXTURE_KEYS.tilePlatform, 32, 16, drawPlatform],
     [TEXTURE_KEYS.tileStone, 32, 32, drawStone],
+    [TEXTURE_KEYS.tileJungleGround, 32, 32, drawJungleGround],
+    [TEXTURE_KEYS.tileBranch, 32, 16, drawBranch],
+    [TEXTURE_KEYS.tileBridge, 32, 16, drawBridge],
+    [TEXTURE_KEYS.tileRuin, 32, 32, drawRuin],
+    [TEXTURE_KEYS.springMushroom, 48, 32, drawSpringMushroom],
+    [TEXTURE_KEYS.bossDarkness, 96, 96, drawBossDarkness],
+    [TEXTURE_KEYS.lanternOff, 28, 40, (ctx) => drawLantern(ctx, false)],
+    [TEXTURE_KEYS.lanternOn, 28, 40, (ctx) => drawLantern(ctx, true)],
+    [TEXTURE_KEYS.powerApple, 32, 32, drawPowerApple],
     [TEXTURE_KEYS.propFlower, 16, 32, drawFlower],
     [TEXTURE_KEYS.propSign, 32, 48, drawSign],
     [TEXTURE_KEYS.propCrate, 32, 32, drawCrate],

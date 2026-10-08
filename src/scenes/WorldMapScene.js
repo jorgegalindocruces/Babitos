@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 import { BabitoAvatar } from '../game/BabitoAvatar.js';
 import { TEXTURE_KEYS, createTextures } from '../game/createTextures.js';
-import { replayPhaseOne } from '../state/progressionFlow.js';
+import { isJungleUnlocked, replayPhaseOne, startPhaseTwo } from '../state/progressionFlow.js';
 import { createButton } from '../ui/Button.js';
 import {
   addPixelBackground,
@@ -13,7 +13,12 @@ import {
   CHARACTER_ASSETS,
   UI_COLORS,
 } from '../ui/sceneHelpers.js';
-import { createAmbientMotes, fadeIn, transitionToScene } from '../ui/effects.js';
+import {
+  createAmbientMotes,
+  fadeIn,
+  showToast,
+  transitionToScene,
+} from '../ui/effects.js';
 
 export class WorldMapScene extends Phaser.Scene {
   constructor() {
@@ -37,6 +42,8 @@ export class WorldMapScene extends Phaser.Scene {
     }
     this.snapshot = snapshot;
     this.phaseComplete = snapshot.progress.phase1Complete;
+    this.jungleUnlocked = isJungleUnlocked(snapshot.progress);
+    this.phaseTwoComplete = snapshot.progress.phase2Complete === true;
 
     addPixelBackground(this, 'babilandia', {
       musicTheme: this.phaseComplete ? 'ending' : 'babilandia',
@@ -53,9 +60,11 @@ export class WorldMapScene extends Phaser.Scene {
     createTitle(this, 'MAPA DE BABILANDIA', 480, 37, { fontSize: 36, depth: 40 });
     createBodyText(
       this,
-      this.phaseComplete
-        ? 'FASE 1 COMPLETA · La primera luz ha regresado. ¿Qué mundo exploramos ahora?'
-        : 'FASE 1 DISPONIBLE · Babilandia necesita un pequeño héroe.',
+      this.phaseTwoComplete
+        ? 'FASE 2 COMPLETA · La Jungla vuelve a brillar. Ciudad Bicharraca aguarda.'
+        : (this.phaseComplete
+          ? 'FASE 1 COMPLETA · La primera luz ha regresado. ¡La Jungla te espera!'
+          : 'FASE 1 DISPONIBLE · Babilandia necesita un pequeño héroe.'),
       480,
       78,
       {
@@ -72,9 +81,11 @@ export class WorldMapScene extends Phaser.Scene {
     this.createNavigation();
 
     announce(
-      this.phaseComplete
-        ? 'Mapa de mundos. Fase uno completada. La Jungla y Ciudad Bicharraca muestran avances.'
-        : 'Mapa de mundos. Babilandia está disponible.',
+      this.phaseTwoComplete
+        ? 'Mapa de mundos. Fases uno y dos completadas. Ciudad Bicharraca muestra un avance.'
+        : (this.phaseComplete
+          ? 'Mapa de mundos. Fase uno completada. La Jungla está disponible.'
+          : 'Mapa de mundos. Babilandia está disponible.'),
     );
     fadeIn(this);
   }
@@ -141,13 +152,18 @@ export class WorldMapScene extends Phaser.Scene {
     });
     babilandiaButton.labelText.setY(72);
 
+    const jungleLabel = this.phaseTwoComplete
+      ? '✓ FASE 2 COMPLETA\nLA JUNGLA\nREJUGAR DESDE EL INICIO'
+      : (this.jungleUnlocked
+        ? '▶ FASE 2 DISPONIBLE\nLA JUNGLA\nJUGAR DESDE EL INICIO'
+        : 'BLOQUEADA\nLA JUNGLA\nCOMPLETA LA FASE 1');
     const jungleButton = createButton(this, {
       x: 480,
       y: 281,
       width: 250,
       height: 242,
       radius: 16,
-      label: 'PRÓXIMAMENTE\nLA JUNGLA\nMUNDO 2',
+      label: jungleLabel,
       variant: 'secondary',
       style: {
         fill: 0x1b5a3b,
@@ -156,12 +172,18 @@ export class WorldMapScene extends Phaser.Scene {
         border: 0x89e85c,
         shadow: 0x08321f,
       },
-      fontSize: '16px',
-      accessibleLabel: 'La Jungla, mundo 2, ver avance próximamente',
+      fontSize: '13px',
+      accessibleLabel: this.jungleUnlocked
+        ? 'La Jungla, mundo 2. Jugar desde el inicio.'
+        : 'La Jungla, mundo 2, bloqueada hasta completar la fase 1.',
       onPress: () => {
-        this.store.setProgress({ scene: 'jungle' });
-        transitionToScene(this, 'ComingSoonScene', { world: 'jungle' }, {
-          announcement: 'Avance de La Jungla',
+        if (!this.jungleUnlocked) {
+          showToast(this, 'Purifica a Babito Corrupto para abrir La Jungla', { type: 'warning', duration: 1600 });
+          return;
+        }
+        startPhaseTwo(this.store);
+        transitionToScene(this, 'GameScene', { level: 'jungla' }, {
+          announcement: 'Entrando en La Jungla',
         });
       },
     });
@@ -232,7 +254,7 @@ export class WorldMapScene extends Phaser.Scene {
     jungle.fillRect(39, -18, 13, 51);
     jungle.fillStyle(0x6edcf1, 0.9);
     jungle.fillRect(-7, -13, 14, 50);
-    const requestedTree = this.phaseComplete
+    const requestedTree = this.phaseTwoComplete
       ? CHARACTER_ASSETS.powerTreeRestoredV2.key
       : CHARACTER_ASSETS.powerTreeSadV2.key;
     const treeTexture = this.textures.exists(requestedTree)

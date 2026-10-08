@@ -3,6 +3,7 @@ import test from 'node:test';
 
 import gameData from '../src/data/game-data.json' with { type: 'json' };
 import babilandia from '../src/data/levels/babilandia.json' with { type: 'json' };
+import jungla from '../src/data/levels/jungla.json' with { type: 'json' };
 import {
   approach,
   deriveJumpPhysics,
@@ -110,49 +111,61 @@ function surfaceTop(platform) {
   return platform.y - platform.height / 2;
 }
 
-test('every elevated Babilandia platform is reachable with the authored jump', () => {
-  const { maxHeight, airtime } = simulateJump({ hz: 120 });
-  const maxGap = tuning.maxRunSpeed * airtime * 0.75;
-  const reachable = babilandia.platforms.filter((platform) => platform.kind === 'ground');
-  const pending = babilandia.platforms.filter((platform) => platform.kind === 'platform');
-  let progress = true;
-  while (pending.length && progress) {
-    progress = false;
-    for (const platform of [...pending]) {
-      const left = platform.x - platform.width / 2;
-      const right = platform.x + platform.width / 2;
-      const launch = reachable.find((from) => {
-        const rise = surfaceTop(from) - surfaceTop(platform);
-        const fromLeft = from.x - from.width / 2;
-        const fromRight = from.x + from.width / 2;
-        const gap = Math.max(0, left - fromRight, fromLeft - right);
-        // Keep a 10% height margin: a platform at the very apex is not fair.
-        return rise > 0 && rise <= maxHeight * 0.9 && gap <= maxGap;
-      });
-      if (launch) {
-        reachable.push(platform);
-        pending.splice(pending.indexOf(platform), 1);
-        progress = true;
+for (const level of [babilandia, jungla]) {
+  test(`every elevated ${level.name} surface is reachable with the authored jump`, () => {
+    const { maxHeight, airtime } = simulateJump({ hz: 120 });
+    const maxGap = tuning.maxRunSpeed * airtime * 0.75;
+    const isBase = (platform) => platform.kind === 'ground' && !platform.style;
+    const reachable = level.platforms.filter(isBase).map((platform) => ({ ...platform, reach: maxHeight }));
+    // A spring mushroom is a launch point on the ground with a taller reach.
+    for (const spring of level.springs ?? []) {
+      const ground = reachable.find((from) => Math.abs(spring.x - from.x) <= from.width / 2);
+      assert.ok(ground, `${spring.id} has no ground underneath`);
+      reachable.push({ x: spring.x, width: 40, y: ground.y, height: ground.height, reach: spring.launchHeight });
+    }
+    const pending = level.platforms.filter((platform) => !isBase(platform));
+    let progress = true;
+    while (pending.length && progress) {
+      progress = false;
+      for (const platform of [...pending]) {
+        const left = platform.x - platform.width / 2;
+        const right = platform.x + platform.width / 2;
+        const launch = reachable.find((from) => {
+          const rise = surfaceTop(from) - surfaceTop(platform);
+          const fromLeft = from.x - from.width / 2;
+          const fromRight = from.x + from.width / 2;
+          const gap = Math.max(0, left - fromRight, fromLeft - right);
+          // Keep a 10% height margin: a platform at the very apex is not fair.
+          return rise <= from.reach * 0.9 && gap <= maxGap && (rise > 0 || gap > 0);
+        });
+        if (launch) {
+          reachable.push({ ...platform, reach: maxHeight });
+          pending.splice(pending.indexOf(platform), 1);
+          progress = true;
+        }
       }
     }
-  }
-  assert.deepEqual(pending.map((platform) => platform.x), [], 'unreachable platforms');
-});
+    assert.deepEqual(pending.map((platform) => platform.x), [], 'unreachable platforms');
+  });
+}
 
-test('placed Babicoins have unique ids and float within reach above a surface', () => {
+for (const level of [babilandia, jungla]) test(`${level.name} Babicoins have unique ids and float within reach above a surface`, () => {
   const { maxHeight } = simulateJump({ hz: 120 });
   const ids = new Set();
-  assert.ok(babilandia.coins.length > 0);
-  for (const coin of babilandia.coins) {
+  assert.ok(level.coins.length > 0);
+  for (const coin of level.coins) {
     assert.equal(ids.has(coin.id), false, `duplicate coin id ${coin.id}`);
     ids.add(coin.id);
-    const below = babilandia.platforms
+    const below = level.platforms
       .filter((platform) => Math.abs(coin.x - platform.x) <= platform.width / 2 + 120)
       .map(surfaceTop)
       .filter((top) => top >= coin.y);
     assert.ok(below.length, `${coin.id} has no surface underneath`);
     const nearest = Math.min(...below);
-    // The Babito's head reaches surface - jump height - body height.
-    assert.ok(nearest - coin.y <= maxHeight + PLAYER_HEIGHT, `${coin.id} is out of reach`);
+    // The Babito's head reaches surface - jump height - body height; a
+    // spring mushroom right below raises that reach.
+    const spring = (level.springs ?? []).find((entry) => Math.abs(entry.x - coin.x) <= 60);
+    const reach = Math.max(maxHeight, spring?.launchHeight ?? 0);
+    assert.ok(nearest - coin.y <= reach + PLAYER_HEIGHT, `${coin.id} is out of reach`);
   }
 });

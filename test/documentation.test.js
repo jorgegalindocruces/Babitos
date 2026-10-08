@@ -194,7 +194,10 @@ test('scope and critical gameplay invariants are explicit', async () => {
   const interactions = await readRepositoryFile('docs/INTERACTIONS.md');
   const acceptance = await readRepositoryFile('docs/ACCEPTANCE_CRITERIA.md');
 
-  assert.match(gameDesign, /La Jungla y Ciudad Bicharraca[\s\S]*Pantallas de avance estáticas/u);
+  assert.match(gameDesign, /La Jungla, ocho encuentros y checkpoints \| Jugable/u);
+  assert.match(gameDesign, /Ciudad Bicharraca \| Pantalla de avance estática/u);
+  assert.match(gameDesign, /Boss Total y Final \| Roadmap, sin gameplay/u);
+  assert.match(interactions, /Todos los fosos miden como mucho 160 px/u);
   assert.match(interactions, /un poder nunca destruye, oculta ni desactiva suelo o plataformas/u);
   assert.match(interactions, /El suelo base es completamente sólido/u);
   assert.match(interactions, /Las plataformas elevadas son unidireccionales/u);

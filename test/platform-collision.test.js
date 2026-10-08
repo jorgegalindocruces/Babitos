@@ -3,6 +3,8 @@ import test from 'node:test';
 
 import {
   ONE_WAY_LANDING_TOLERANCE,
+  findOneWayPlatformsUnder,
+  hasClearedPlatform,
   isOneWayPlatform,
   shouldCollideWithTerrain,
 } from '../src/game/platformCollision.js';
@@ -89,4 +91,41 @@ test('the process callback accepts reversed arguments and fails safely on missin
     ),
     true,
   );
+});
+
+function standing({ bottom = 100, left = 40, right = 70 } = {}) {
+  return { bottom, left, right, velocity: { y: 0 }, prev: { y: bottom - 40 }, height: 40 };
+}
+
+function spanned(kind, { top = 100, left = 0, right = 200 } = {}) {
+  const platform = terrain(kind, top);
+  platform.active = true;
+  Object.assign(platform.body, { left, right, x: left });
+  return platform;
+}
+
+test('↓ finds only the one-way platforms under the feet', () => {
+  const below = spanned('platform');
+  const ground = spanned('ground');
+  const aside = spanned('platform', { left: 300, right: 400 });
+  const higher = spanned('platform', { top: 60 });
+  assert.deepEqual(findOneWayPlatformsUnder(standing(), [below, ground, aside, higher]), [below]);
+  assert.deepEqual(findOneWayPlatformsUnder(standing({ bottom: 130 }), [below]), []);
+  assert.deepEqual(findOneWayPlatformsUnder(undefined, [below]), []);
+});
+
+test('a dropping body ignores its platform until it is clearly below it', () => {
+  const platform = spanned('platform');
+  const ignore = new Set([platform]);
+  const resting = { body: standing() };
+  assert.equal(shouldCollideWithTerrain(resting, platform), true);
+  assert.equal(shouldCollideWithTerrain(resting, platform, { ignore }), false);
+  assert.equal(shouldCollideWithTerrain(resting, spanned('platform'), { ignore }), true);
+  assert.equal(shouldCollideWithTerrain(resting, spanned('ground'), { ignore: new Set([spanned('ground')]) }), true);
+
+  assert.equal(hasClearedPlatform(standing({ bottom: 104 }), platform, 10), false);
+  assert.equal(hasClearedPlatform(standing({ bottom: 111 }), platform, 10), true);
+  assert.equal(hasClearedPlatform(standing({ left: 210, right: 240 }), platform, 10), true);
+  platform.active = false;
+  assert.equal(hasClearedPlatform(standing(), platform, 10), true);
 });

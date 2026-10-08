@@ -1,10 +1,11 @@
 import Phaser from 'phaser';
-import levelData from '../data/levels/babilandia.json';
+import { getGroundSpans, getLevel, PLATFORM_STYLE_TEXTURES } from '../data/levels/index.js';
 import gameData from '../data/game-data.json';
 import { EnemyController } from '../game/EnemyController.js';
 import { enemyUsesPlatformCollision } from '../game/EnemyAnimations.js';
 import { BABITO_ANIMATION_CLIPS } from '../game/BabitoAnimations.js';
 import { PlayerController } from '../game/PlayerController.js';
+import { createJungleScenery } from '../game/jungleScenery.js';
 import { shouldCollideWithTerrain } from '../game/platformCollision.js';
 import { isPowerProjectile, makeImpact } from '../game/PowerSystem.js';
 import {
@@ -37,11 +38,16 @@ import {
 const CAMERA_LOOK_AHEAD = 110;
 const CAMERA_LOOK_AHEAD_SPEED = 240;
 const CAMERA_VERTICAL_OFFSET = 40;
-const PLACED_COIN_REWARD_PREFIX = 'babilandia:coin:';
+const DROP_HINT_EARLIEST_MS = 4600;
+const DROP_HINT_REST_MS = 650;
 
 export class GameScene extends Phaser.Scene {
   constructor() {
     super('GameScene');
+  }
+
+  init(data = {}) {
+    this.requestedLevelId = data?.level ?? null;
   }
 
   create() {
@@ -52,7 +58,13 @@ export class GameScene extends Phaser.Scene {
       return;
     }
 
-    this.level = levelData;
+    let qaLevelId = null;
+    if (import.meta.env.DEV && typeof location !== 'undefined') {
+      qaLevelId = new URLSearchParams(location.search).get('qaLevel');
+    }
+    // The saved progress scene decides which level CONTINUAR resumes.
+    this.levelConfig = getLevel(this.requestedLevelId ?? qaLevelId ?? this.save.progress?.scene);
+    this.level = this.levelConfig.data;
     this.qaCombat = false;
     this.qaCheckpointId = null;
     this.qaCheckpointActive = false;
@@ -110,14 +122,16 @@ export class GameScene extends Phaser.Scene {
 
     this.physics.world.setBounds(0, 0, this.level.worldWidth, 620);
     this.cameras.main.setBounds(0, 0, this.level.worldWidth, 540);
-    this.cameras.main.setBackgroundColor('#7cccf1');
-    this.background = addPixelBackground(this, 'babilandia', {
+    this.cameras.main.setBackgroundColor(this.levelConfig.cameraColor);
+    this.background = addPixelBackground(this, this.levelConfig.theme, {
       depth: -50,
-      assetKey: BACKGROUND_ASSETS.babilandiaV2.key,
+      assetKey: BACKGROUND_ASSETS[this.levelConfig.backgroundAsset]?.key,
       assetOverscan: 1.1,
+      showGround: this.levelConfig.theme === 'babilandia',
     });
     this.createWorldDecoration({ showSkyline: !this.background.assetKey });
     this.createPlatforms();
+    this.createSprings();
     this.createCheckpoints();
 
     const qaCheckpoint = this.level.checkpoints.find(
@@ -206,12 +220,12 @@ export class GameScene extends Phaser.Scene {
     this.createPauseKeys();
 
     if (!this.qaCheckpointActive && !this.qaEnemyType) {
-      this.store.setProgress({ scene: 'babilandia', checkpoint: savedCheckpoint.id });
+      this.store.setProgress({ scene: this.levelConfig.progressScene, checkpoint: savedCheckpoint.id });
     }
-    announce('Babilandia. Muévete, salta, derrota a los Bicharracos y recoge monedas.');
-    const controlsHint = this.touchControls
+    announce(this.levelConfig.announcement);
+    const controlsHint = this.levelConfig.introToast ?? (this.touchControls
       ? '◀ ▶ para moverte · ↑ para saltar (mantén para subir más) · ✦ para atacar'
-      : 'A/D o ←/→ para moverte · W/↑/ESPACIO para saltar · J/X para atacar';
+      : 'A/D o ←/→ para moverte · W/↑/ESPACIO para saltar · J/X para atacar');
     showToast(this, controlsHint, {
       duration: 4200,
       y: 82,
@@ -220,8 +234,10 @@ export class GameScene extends Phaser.Scene {
 
   createPlatforms() {
     this.platforms = this.physics.add.staticGroup();
+    const { tiles } = this.levelConfig;
     for (const platform of this.level.platforms) {
-      const texture = platform.kind === 'ground' ? 'tile_ground' : 'tile_platform';
+      const texture = PLATFORM_STYLE_TEXTURES[platform.style]
+        ?? (platform.kind === 'ground' ? tiles.ground : tiles.platform);
       const tile = this.add.tileSprite(platform.x, platform.y, platform.width, platform.height, texture)
         .setDepth(4);
       tile.setData({ isPlatform: true, kind: platform.kind });
@@ -230,6 +246,13 @@ export class GameScene extends Phaser.Scene {
   }
 
   createWorldDecoration({ showSkyline = true } = {}) {
+    if (this.levelConfig.theme === 'jungle') {
+      this.scenery = createJungleScenery(this, this.level);
+      for (const definition of this.level.tutorialSigns ?? []) {
+        this.createTutorialSign(definition);
+      }
+      return;
+    }
     if (showSkyline) {
       const skyline = this.add.graphics().setDepth(-5);
       for (let x = 180; x < this.level.worldWidth; x += 520) {
@@ -343,7 +366,7 @@ export class GameScene extends Phaser.Scene {
     const claimed = new Set(this.save.progress?.claimedRewards ?? []);
     const reducedMotion = prefersReducedMotion();
     for (const definition of this.level.coins ?? []) {
-      const rewardId = `${PLACED_COIN_REWARD_PREFIX}${definition.id}`;
+      const rewardId = `${this.levelConfig.coinRewardPrefix}${definition.id}`;
       const alreadyClaimed = claimed.has(rewardId);
       const coin = this.placedCoins.create(definition.x, definition.y, 'coin')
         .setDepth(12)
@@ -376,11 +399,18 @@ export class GameScene extends Phaser.Scene {
     return { collected, total };
   }
 
+  /** Continuous base ground under a walker, so it never steps into a pit. */
+  getWalkBounds(definition) {
+    if (definition.type === 'vuela') return null;
+    return getGroundSpans(this.level.platforms)
+      .find((span) => definition.x >= span.left && definition.x <= span.right) ?? null;
+  }
+
   createEnemies() {
     for (const definition of this.level.enemies) {
       const controller = new EnemyController(
         this,
-        definition,
+        { ...definition, walkBounds: this.getWalkBounds(definition) },
         this.player.body,
         (enemy, dropCount) => this.handleEnemyDefeat(enemy, dropCount),
       );
@@ -394,6 +424,44 @@ export class GameScene extends Phaser.Scene {
           shouldCollideWithTerrain,
         );
       }
+    }
+  }
+
+  createSprings() {
+    this.springs = this.physics.add.staticGroup();
+    for (const definition of this.level.springs ?? []) {
+      const placement = placeOnSurface(this.level.platforms, {
+        x: definition.x, width: 40, originX: 0.5, originY: 1,
+      });
+      if (!placement) continue;
+      const spring = this.springs.create(placement.x, placement.y, 'spring_mushroom')
+        .setOrigin(0.5, 1)
+        .setDepth(7)
+        .setData({ launchHeight: definition.launchHeight ?? 240 });
+      spring.refreshBody();
+      // Only the cap is bouncy: a narrow, low body reads exactly like the art.
+      spring.body.setSize(38, 14).setOffset(5, 4);
+    }
+  }
+
+  canBounceOnSpring(spring) {
+    const body = this.player?.body?.body;
+    if (!body || !spring?.active || this.player.isDead) return false;
+    // Land on the cap from above; walking into the stem does nothing.
+    return body.velocity.y > 0 && body.prev.y + body.height <= spring.body.top + 10;
+  }
+
+  bounceOnSpring(spring) {
+    const launched = this.player.launchFromSpring(spring.getData('launchHeight'));
+    if (!launched) return;
+    this.registry.get('audio')?.play('jump');
+    spawnDust(this, spring.x, spring.y - 18, { count: 6, spread: 18, color: 0xffb3c2, depth: 13 });
+    if (!prefersReducedMotion()) {
+      this.tweens.killTweensOf(spring);
+      spring.setScale(1);
+      this.tweens.add({
+        targets: spring, scaleY: 0.72, scaleX: 1.14, duration: 70, yoyo: true, ease: 'Quad.easeOut',
+      });
     }
   }
 
@@ -452,6 +520,12 @@ export class GameScene extends Phaser.Scene {
       this.activateCheckpoint(flag.getData('checkpoint'), flag);
     });
     this.physics.add.overlap(this.player.body, this.portal, () => this.tryEnterBoss());
+    this.physics.add.overlap(
+      this.player.body,
+      this.springs,
+      (_playerBody, spring) => this.bounceOnSpring(spring),
+      (_playerBody, spring) => this.canBounceOnSpring(spring),
+    );
   }
 
   handleEnemyDefeat(enemy, dropCount) {
@@ -533,7 +607,7 @@ export class GameScene extends Phaser.Scene {
     this.player.restoreHealth();
     this.registry.get('audio')?.play('checkpoint');
     if (!this.qaCheckpointActive) {
-      this.store.setProgress({ checkpoint: checkpoint.id, scene: 'babilandia' });
+      this.store.setProgress({ checkpoint: checkpoint.id, scene: this.levelConfig.progressScene });
     }
     this.checkpointSprites.children.iterate((entry) => entry?.clearTint());
     flag.setTint(0xffe36e);
@@ -624,8 +698,9 @@ export class GameScene extends Phaser.Scene {
     }
     this.transitioning = true;
     this.player.setEnabled(false);
-    this.store.setProgress({ scene: 'boss1', checkpoint: 'boss_gate' });
-    transitionToScene(this, 'BossScene', {}, { announcement: 'Comienza el combate contra Babito Corrupto' });
+    const { boss } = this.levelConfig;
+    this.store.setProgress({ scene: boss.progressScene, checkpoint: boss.checkpoint });
+    transitionToScene(this, boss.scene, {}, { announcement: boss.announcement });
   }
 
   togglePause() {
@@ -667,7 +742,7 @@ export class GameScene extends Phaser.Scene {
     const title = createTitle(this, 'PAUSA', 480, 150, { fontSize: 34, depth: 3002 });
     const coinProgress = this.getPlacedCoinProgress();
     const controls = createBodyText(this,
-      'Mover: A/D o ←/→\nSaltar: W / ↑ / Espacio (mantén para más altura)\nAtacar: J / X · Pausa: P / Esc',
+      'Mover: A/D o ←/→ · Bajar: S / ↓\nSaltar: W / ↑ / Espacio (mantén para más altura)\nAtacar: J / X · Pausa: P / Esc',
       480,
       226,
       { fontSize: 17, depth: 3002, lineSpacing: 8 },
@@ -759,6 +834,7 @@ export class GameScene extends Phaser.Scene {
     if (this.fallRecoveryPending || this.gameOverContainer) return;
     this.fallRecoveryPending = true;
     this.pauseButton?.setEnabled(false);
+    this.scenery?.splash(this.player.body.x);
     this.player.takeDamage(this.player.body.x, 1);
     if (this.player.health > 0) {
       this.player.setEnabled(false);
@@ -794,6 +870,25 @@ export class GameScene extends Phaser.Scene {
     this.cameras.main.setFollowOffset(-this.cameraLookAhead, CAMERA_VERTICAL_OFFSET);
   }
 
+  /** Teaches ↓ the first time the player rests on a platform, once per visit. */
+  updateDropHint(frameDelta) {
+    if (this.dropHintShown || !this.player?.enabled) return;
+    if (this.player.hasDroppedThrough) {
+      this.dropHintShown = true;
+      return;
+    }
+    // Never replace the opening controls toast.
+    if (this.gameplayTime < DROP_HINT_EARLIEST_MS) return;
+    const resting = this.player.isStandingOnOneWayPlatform();
+    this.platformRestMs = resting ? (this.platformRestMs ?? 0) + frameDelta : 0;
+    if (this.platformRestMs < DROP_HINT_REST_MS) return;
+    this.dropHintShown = true;
+    showToast(this, this.touchControls ? '▼ para bajar de la plataforma' : 'S/↓ para bajar de la plataforma', {
+      duration: 1800,
+      y: 82,
+    });
+  }
+
   update(_time, delta) {
     if (this.paused || this.gameOverContainer || this.transitioning) return;
 
@@ -823,6 +918,8 @@ export class GameScene extends Phaser.Scene {
     }
     this.enemyControllers.forEach((enemy) => enemy.update());
     this.updateCameraLookAhead(frameDelta);
+    this.updateDropHint(frameDelta);
+    this.scenery?.update(this.cameras.main);
     if (this.player?.body.y > 575) this.handleFall();
     this.progressText?.setText(`ENCUENTROS  ${this.defeatedEnemies}/${this.level.enemies.length}`);
   }

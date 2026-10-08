@@ -1,6 +1,6 @@
 # Criterios de aceptación
 
-Estos criterios validan el vertical slice 0.2 descrito en [INTERACTIONS.md](INTERACTIONS.md); [CHANGELOG.md](CHANGELOG.md) relaciona cada ampliación con su commit. La Jungla, Ciudad Bicharraca, La Oscuridad, Boss Total y el final no forman parte del contenido jugable exigido en esta versión.
+Estos criterios validan el vertical slice 0.2 descrito en [INTERACTIONS.md](INTERACTIONS.md); [CHANGELOG.md](CHANGELOG.md) relaciona cada ampliación con su commit. La Jungla y La Oscuridad (Fase 2) son jugables; Ciudad Bicharraca, Boss Total y el final no forman parte del contenido jugable exigido en esta versión.
 
 ## Build y arranque
 
@@ -19,7 +19,19 @@ Estos criterios validan el vertical slice 0.2 descrito en [INTERACTIONS.md](INTE
 - La selección de poder, checkpoint, monedas, compras, equipamiento y progreso sobreviven a una recarga.
 - La recompensa de 30 monedas de Babito Corrupto solo se puede reclamar una vez, incluso al comenzar otra aventura.
 - Tienda muestra `CONTINUAR AL MAPA` como CTA principal y persiste `map` antes de iniciar la transición.
-- Mapa presenta Babilandia como una acción jugable, permite rejugarla desde `start` sin borrar poder, finalización ni colección, vuelve a Tienda o Título y abre los avances estáticos de Jungla y Ciudad; cada avance permite volver al Mapa.
+- Mapa presenta Babilandia como una acción jugable, permite rejugarla desde `start` sin borrar poder, finalización ni colección, vuelve a Tienda o Título y abre el avance estático de Ciudad, que permite volver al Mapa.
+- La Jungla aparece bloqueada hasta completar la Fase 1; después se juega desde `start`. `CONTINUAR` reanuda La Jungla en su checkpoint guardado o La Oscuridad desde el inicio del combate.
+- Vencer a La Oscuridad guarda `boss2Defeated` y `phase2Complete`, concede 40 monedas una sola vez y lleva a Tienda y Mapa, donde La Jungla figura como completa y rejugable.
+
+## La Jungla y La Oscuridad
+
+- Todos los fosos de La Jungla se saltan (≤ 160 px) o se cruzan por puentes; caer al agua resta un corazón y devuelve al último checkpoint.
+- COME y DA VUELTAS nunca caen a un foso ni se atascan contra un pilar de ruinas; un enemigo que acabara bajo el mundo vuelve a su posición inicial.
+- Una seta saltarina lanza al Babito al caer sobre ella: unos 250–270 px manteniendo el salto y al menos el 60 % sin mantenerlo. Toda plataforma elevada es alcanzable.
+- El velo de oscuridad del último tramo nunca oculta al Babito: un halo lo acompaña.
+- La Oscuridad solo recibe daño mientras está `EXPUESTA`; en la sombra los disparos la atraviesan sin consumirse. Un farolillo encendido no bloquea disparos.
+- Cada patrón muestra un aviso previo; los meteoritos dejan al menos 90 px libres entre impactos y la zona oscura avisa antes de brotar.
+- Un bot con 250 ms de reacción vence el combate con Fuego, Rayo y Roca, y completa La Jungla con los tres poderes.
 
 ## Menús e input
 
@@ -44,14 +56,14 @@ Estos criterios validan el vertical slice 0.2 descrito en [INTERACTIONS.md](INTE
 
 ## Babilandia
 
-- `A`/`D` o flechas mueven; `W`, `↑` o `Espacio` saltan; `J` o `X` atacan.
+- `A`/`D` o flechas mueven; `W`, `↑` o `Espacio` saltan; `S` o `↓` bajan de una plataforma elevada; `J` o `X` atacan.
 - El salto conserva coyote time (110 ms), buffer (130 ms) y altura variable: el salto completo sube unos 138 px, un toque aproximadamente la mitad y la caída es más rápida que la subida. Cambiar de dirección no produce derrape y soltar la dirección en el suelo frena en menos de 24 px.
 - Movimiento y salto miden lo mismo a 60 y a 144 Hz.
 - Todas las plataformas elevadas de Babilandia son alcanzables desde el suelo o desde otra plataforma, con al menos un 10 % de margen de altura.
 - El daño aplica retroceso con un pequeño salto, una breve congelación, bloqueo horizontal de 220 ms, parpadeo e invulnerabilidad temporal.
 - El HUD muestra 3 corazones máximos, Babicoins, poder y teclas, encuentros y pausa.
 - El suelo base permanece sólido al saltar, caer o aproximarse de lado.
-- Una plataforma elevada se atraviesa desde abajo durante el ascenso, no bloquea lateralmente a un cuerpo que ya está debajo y sostiene al Babito al descender desde arriba o permanecer quieto sobre ella.
+- Una plataforma elevada se atraviesa desde abajo durante el ascenso, no bloquea lateralmente a un cuerpo que ya está debajo y sostiene al Babito al descender desde arriba o permanecer quieto sobre ella. Con `S`, `↓` o el pad `▼` el Babito cae a través de la plataforma en la que está de pie, incluso con un toque de un solo frame; sobre el suelo base no ocurre nada, y la plataforma vuelve a sostenerlo al saltar de nuevo encima.
 - Un proyectil que toca terreno se destruye. Ningún poder destruye, oculta, desplaza ni desactiva el suelo o las plataformas.
 - El fondo es decorativo: la colisión depende exclusivamente de plataformas físicas independientes.
 - Cada cartel tutorial tiene una superficie física bajo el poste, su base coincide exactamente con esa superficie y el texto queda dentro de la tabla. Ninguno atraviesa terreno, flota o queda oculto por DA VUELTAS/checkpoints.
@@ -105,7 +117,8 @@ Estos criterios validan el vertical slice 0.2 descrito en [INTERACTIONS.md](INTE
 
 ## Límites conocidos aceptados
 
-- Jungla y Ciudad son avances, no fases jugables; Boss 2, Boss 3 y final son roadmap.
+- Ciudad es un avance, no una fase jugable; Boss 3 y el final son roadmap.
+- La Jungla y La Oscuridad usan arte procedural; la Manzana de Poder recuperada todavía no desbloquea un poder nuevo.
 - DA VUELTAS mantiene un spritesheet procedural; VUELA y COME ya usan arte raster de producción.
 - Audio se genera con Web Audio y no incluye control de volumen.
 - Los botones y anuncios principales tienen soporte de teclado/lector, pero no se declara conformidad de accesibilidad completa para todo el texto dibujado en canvas.

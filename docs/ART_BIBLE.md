@@ -31,7 +31,8 @@ Las láminas son concept art, no spritesheets finales. No se recortan automátic
 | DA VUELTAS | Spritesheet procedural temporal | [EnemyAnimations.js](../src/game/EnemyAnimations.js) |
 | Babito | Atlas procedural de 64 px, 51 poses y capas cosméticas sincronizadas | [BabitoAnimations.js](../src/game/BabitoAnimations.js) y [BabitoAvatar.js](../src/game/BabitoAvatar.js) |
 | Boss, tenderos y Árbol | PNG raster de personaje con poses o composición runtime | `public/assets/characters/` |
-| Jungla | Composición procedural de avance | Roadmap de arte |
+| Jungla | Nivel jugable con fondo, losetas, agua, cascada, lianas y ruinas procedurales; sin raster de producción todavía | [jungleScenery.js](../src/game/jungleScenery.js) y [createTextures.js](../src/game/createTextures.js) |
+| La Oscuridad | Sprite procedural fiel a `bosses_canonical.png`: masa negra, borde violeta, tentáculos y ojos rasgados, sin boca | [createTextures.js](../src/game/createTextures.js) |
 
 Los fondos no contienen colisión. El tercio inferior debe evitar falsas plataformas, bordes transitables o salientes que compitan con el terreno real.
 

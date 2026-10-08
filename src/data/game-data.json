@@ -36,7 +36,8 @@
   },
   "bosses": ["babito_corrupto", "la_oscuridad", "boss_total"],
   "bossData": {
-    "babito_corrupto": { "name": "BABITO CORRUPTO", "health": 16, "patterns": ["FIREBALL", "FROM_ABOVE", "FURY_CHARGE"], "rewardCoins": 30, "vulnerableMs": 1900 }
+    "babito_corrupto": { "name": "BABITO CORRUPTO", "health": 16, "patterns": ["FIREBALL", "FROM_ABOVE", "FURY_CHARGE"], "rewardCoins": 30, "vulnerableMs": 1900 },
+    "la_oscuridad": { "name": "LA OSCURIDAD", "health": 20, "patterns": ["SHADOW_GLIDE", "SHADOW_RAIN", "DARK_WAVE"], "rewardCoins": 40, "exposedMs": 2200, "lanternLitMs": 14000 }
   },
   "bodySizes": {
     "small": { "label": "Pequeño", "renderScale": 1.0, "hitbox": "standard" },

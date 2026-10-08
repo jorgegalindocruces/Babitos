@@ -29,7 +29,9 @@ const CONTINUE_DESTINATIONS = Object.freeze({
   map: Object.freeze({ scene: 'WorldMapScene', label: 'MAPA' }),
   'world-map': Object.freeze({ scene: 'WorldMapScene', label: 'MAPA' }),
   worldmap: Object.freeze({ scene: 'WorldMapScene', label: 'MAPA' }),
-  jungle: Object.freeze({ scene: 'ComingSoonScene', label: 'JUNGLA' }),
+  jungla: Object.freeze({ scene: 'GameScene', label: 'JUNGLA' }),
+  jungle: Object.freeze({ scene: 'GameScene', label: 'JUNGLA' }),
+  boss2: Object.freeze({ scene: 'DarknessBossScene', label: 'LA OSCURIDAD' }),
   city: Object.freeze({ scene: 'ComingSoonScene', label: 'CIUDAD' }),
 });
 
@@ -320,9 +322,9 @@ export class TitleScene extends Phaser.Scene {
       [
         'MOVER     A / D   o   ← / →',
         'SALTAR    W / ↑ / ESPACIO',
+        'BAJAR     S / ↓  (plataformas)',
         'ATACAR    J / X',
         'PAUSA     P / ESC',
-        '',
         'MENÚS     RATÓN / TÁCTIL / TAB + ENTER',
       ].join('\n'),
       480,
@@ -354,7 +356,7 @@ export class TitleScene extends Phaser.Scene {
 
     this.controlsOverlay = { objects: [blocker, panel, title, copy, hint, close] };
     close.focusAccessible();
-    announce('Controles. Usa A y D o flechas para moverte, espacio para saltar y J o X para atacar.');
+    announce('Controles. Usa A y D o flechas para moverte, espacio para saltar, S o flecha abajo para bajar de una plataforma y J o X para atacar.');
   }
 
   closeControls() {

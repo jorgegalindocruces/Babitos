@@ -24,6 +24,8 @@ const TEXTURES = {
 };
 
 const DA_VUELTAS_ENGAGE_RANGE = 460;
+// Below the playable floor: a walker that somehow fell is sent home.
+const ENEMY_FALL_RESET_Y = 600;
 
 const VISUAL_SIZES = Object.freeze({
   come: Object.freeze({ width: 118, height: 118 }),
@@ -58,6 +60,9 @@ export class EnemyController {
     this.player = playerBody;
     this.onDefeat = onDefeat;
     this.home = new Phaser.Math.Vector2(definition.x, definition.y);
+    // Horizontal extent of the ground segment a walker lives on. Pits beyond
+    // it are never crossed: COME waits at the edge instead of jumping in.
+    this.walkBounds = definition.walkBounds ?? null;
     this.direction = definition.flip ? -1 : 1;
     this.health = this.config.health;
     this.dead = false;
@@ -230,6 +235,11 @@ export class EnemyController {
       this.applyQaPresentation();
       return;
     }
+    if (this.sprite.y > ENEMY_FALL_RESET_Y) {
+      this.resetToHome();
+      return;
+    }
+    this.keepInsideWalkBounds();
     if (this.isHurt) {
       this.updateVisualAnimation();
       this.syncVisual();
@@ -238,15 +248,38 @@ export class EnemyController {
     if (this.type === 'come') this.updateCome();
     else if (this.type === 'vuela') this.updateVuela();
     else this.updateDaVueltas();
+    this.keepInsideWalkBounds();
     this.updateVisualAnimation();
     this.syncVisual();
+  }
+
+  /** Stops (or turns a patrol/spin around) at the edge of the walk bounds. */
+  keepInsideWalkBounds() {
+    if (!this.walkBounds || !this.sprite.body) return;
+    const halfWidth = this.sprite.body.width / 2;
+    const minX = this.walkBounds.left + halfWidth;
+    const maxX = this.walkBounds.right - halfWidth;
+    const velocityX = this.sprite.body.velocity.x;
+    const outward = (this.sprite.x <= minX && velocityX < 0) || (this.sprite.x >= maxX && velocityX > 0);
+    if (!outward) return;
+    this.sprite.setX(Phaser.Math.Clamp(this.sprite.x, minX, maxX));
+    const turnsAround = this.state === 'PATROL' || this.state === 'SPIN';
+    if (turnsAround) {
+      this.direction = this.sprite.x <= minX ? 1 : -1;
+      this.sprite.setVelocityX(Math.abs(velocityX) * this.direction);
+    } else {
+      this.sprite.setVelocityX(0);
+    }
   }
 
   updateCome() {
     const distance = this.player.x - this.sprite.x;
     const absolute = Math.abs(distance);
     if (this.state === 'PATROL') {
-      this.direction = getEnemyPatrolDirection(this.sprite.x, this.home.x, 180, this.direction);
+      this.direction = getEnemyWallDirection(
+        this.sprite.body.blocked,
+        getEnemyPatrolDirection(this.sprite.x, this.home.x, 180, this.direction),
+      );
       this.sprite.setVelocityX(this.direction * this.config.speed * 0.72);
       if (absolute < 330) this.setState('CHASE');
     } else if (this.state === 'CHASE') {
@@ -318,7 +351,10 @@ export class EnemyController {
   updateDaVueltas() {
     const distance = this.player.x - this.sprite.x;
     if (this.state === 'PATROL') {
-      this.direction = getEnemyPatrolDirection(this.sprite.x, this.home.x, 170, this.direction);
+      this.direction = getEnemyWallDirection(
+        this.sprite.body.blocked,
+        getEnemyPatrolDirection(this.sprite.x, this.home.x, 170, this.direction),
+      );
       this.sprite.setAngularVelocity(0).setVelocityX(this.direction * this.config.speed);
       // Only wind up when the Babito is close enough to read the threat; a
       // spin aimed at empty space off-screen teaches nothing.

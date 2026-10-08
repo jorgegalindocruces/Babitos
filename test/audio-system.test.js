@@ -257,5 +257,5 @@ test('exports stable cue and music theme catalogs for UI wiring', () => {
     'boss',
     'purchase',
   ]);
-  assert.deepEqual(MUSIC_THEMES, ['title', 'babilandia', 'boss', 'shop', 'ending']);
+  assert.deepEqual(MUSIC_THEMES, ['title', 'babilandia', 'boss', 'shop', 'jungle', 'darkness', 'ending']);
 });

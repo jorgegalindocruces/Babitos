@@ -15,6 +15,7 @@ const DEV_QA_SCENES = new Set([
   'IntroScene',
   'GameScene',
   'BossScene',
+  'DarknessBossScene',
   'ShopScene',
   'WorldMapScene',
   'ComingSoonScene',
