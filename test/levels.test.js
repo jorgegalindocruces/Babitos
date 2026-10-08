@@ -12,8 +12,8 @@ import {
 import { SaveStore, createMemoryStorage } from '../src/state/SaveStore.js';
 import { isJungleUnlocked, startPhaseTwo } from '../src/state/progressionFlow.js';
 
-// A running full jump covers ~230 px; pits stay well inside that.
-const MAX_FAIR_PIT = 170;
+// The authored contract keeps every unsupported hop at or below 160 px.
+const MAX_FAIR_PIT = 160;
 
 function spanAt(spans, x) {
   return spans.find((span) => x >= span.left && x <= span.right);
@@ -78,6 +78,18 @@ test('La Jungla checkpoints, walkers, springs and portal stand on solid ground',
   for (const spring of jungla.springs) assert.ok(spanAt(spans, spring.x), spring.id);
   assert.ok(spanAt(spans, jungla.bossPortal.x), 'portal');
   assert.ok(jungla.enemies.length > LEVELS.babilandia.data.enemies.length, 'world 2 adds encounters');
+});
+
+test('La Jungla keeps its complete authored Phase 2 composition', () => {
+  assert.equal(jungla.worldWidth, 6400);
+  assert.equal(jungla.checkpoints.length, 4);
+  assert.deepEqual(jungla.checkpoints.map(({ id }) => id), ['start', 'lianas', 'ruinas', 'penumbra']);
+  assert.equal(jungla.enemies.length, 8);
+  assert.equal(jungla.coins.length, 30);
+  assert.equal(jungla.springs.length, 2);
+  assert.equal(jungla.tutorialSigns.length, 7);
+  assert.deepEqual(jungla.darkness, { startX: 4000, endX: 6000, maxAlpha: 0.42 });
+  assert.deepEqual(jungla.bossPortal, { x: 6230, y: 480 });
 });
 
 test('La Oscuridad is a light-vulnerable boss with a one-time reward', () => {

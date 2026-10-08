@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import babilandia from '../src/data/levels/babilandia.json' with { type: 'json' };
+import jungla from '../src/data/levels/jungla.json' with { type: 'json' };
 import {
   findSupportingSurface,
   getSurfaceBounds,
@@ -119,4 +120,25 @@ test('every Babilandia tutorial sign is data-driven and physically supported', (
       && boardBounds.bottom > surface.surfaceY;
     assert.equal(overlaps, false, 'the DA VUELTAS board must not intersect another platform');
   }
+});
+
+test('every La Jungla tutorial sign is data-driven and physically supported', () => {
+  const ids = new Set();
+
+  for (const sign of jungla.tutorialSigns) {
+    assert.ok(sign.id && sign.text, 'each tutorial sign needs an id and text');
+    assert.equal(Object.hasOwn(sign, 'y'), false, `${sign.id} must not store a manual y`);
+    assert.equal(ids.has(sign.id), false, `duplicate tutorial sign id ${sign.id}`);
+    ids.add(sign.id);
+
+    const placement = placeOnSurface(jungla.platforms, {
+      x: sign.x,
+      width: TUTORIAL_SIGN_STYLE.postWidth,
+      originY: 1,
+    });
+    assert.ok(placement, `${sign.id} has no supporting platform`);
+    assert.equal(placement.y, placement.surfaceY, `${sign.id} must touch its support`);
+  }
+
+  assert.equal(ids.size, 7, 'the complete Jungle tutorial sign set must remain present');
 });

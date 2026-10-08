@@ -11,6 +11,7 @@ import {
   enterWorldMap,
   replayPhaseOne,
   resolveComingSoonRequest,
+  startPhaseTwo,
 } from '../src/state/progressionFlow.js';
 
 function createCompletedPhaseOneStore() {
@@ -114,4 +115,60 @@ test('ComingSoonScene no longer advertises the playable Jungle as unreleased', a
   assert.match(sceneSource, /Las Fases 1 y 2 ya están disponibles/u);
   assert.doesNotMatch(sceneSource, /createJunglePreview|MUNDO 2|termina en la Fase 1/u);
   assert.match(bootSource, /requestedWorld === 'jungle'.*requestedWorld === 'jungla'.*'city'/su);
+});
+
+test('Phase 2 persists through Jungle, boss reward, shop, map and replay', () => {
+  const storage = createMemoryStorage();
+  const store = new SaveStore({ storage });
+  store.setName('Luz');
+  store.setSelectedPower('rock');
+  store.setProgress({
+    scene: 'map',
+    checkpoint: 'boss_gate',
+    boss1Defeated: true,
+    phase1Complete: true,
+  });
+
+  const jungleStart = startPhaseTwo(store);
+  assert.equal(jungleStart.scene, 'jungla');
+  assert.equal(jungleStart.checkpoint, 'start');
+  store.setProgress({ scene: 'jungla', checkpoint: 'ruinas' });
+
+  const inJungle = new SaveStore({ storage });
+  assert.equal(inJungle.getState().progress.scene, 'jungla');
+  assert.equal(inJungle.getState().progress.checkpoint, 'ruinas');
+
+  inJungle.setProgress({
+    scene: 'shop',
+    checkpoint: 'portal_oscuro',
+    boss2Defeated: true,
+    phase2Complete: true,
+  });
+  const firstReward = inJungle.claimReward('boss2_reward', 40);
+  assert.equal(firstReward.ok, true);
+  assert.equal(firstReward.claimed, true);
+  assert.equal(firstReward.coins, 40);
+  const repeatedReward = inJungle.claimReward('boss2_reward', 40);
+  assert.equal(repeatedReward.ok, true);
+  assert.equal(repeatedReward.claimed, false);
+  assert.equal(repeatedReward.coins, 40);
+  enterWorldMap(inJungle);
+
+  const completed = new SaveStore({ storage });
+  const completedSave = completed.getState();
+  assert.equal(completedSave.name, 'Luz');
+  assert.equal(completedSave.selectedPower, 'rock');
+  assert.equal(completedSave.coins, 40);
+  assert.equal(completedSave.progress.scene, 'map');
+  assert.equal(completedSave.progress.boss2Defeated, true);
+  assert.equal(completedSave.progress.phase2Complete, true);
+  assert.deepEqual(completedSave.progress.claimedRewards, ['boss2_reward']);
+
+  const replay = startPhaseTwo(completed);
+  assert.equal(replay.scene, 'jungla');
+  assert.equal(replay.checkpoint, 'start');
+  assert.equal(replay.phase2Complete, true);
+  assert.deepEqual(replay.claimedRewards, ['boss2_reward']);
+  assert.equal(completed.getState().selectedPower, 'rock');
+  assert.equal(completed.getState().coins, 40);
 });

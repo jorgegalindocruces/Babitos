@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import gameData from '../data/game-data.json';
 import { BabitoAvatar } from '../game/BabitoAvatar.js';
+import { getVolleyPositions } from '../game/bossPatternGeometry.js';
 import { PlayerController } from '../game/PlayerController.js';
 import { shouldCollideWithTerrain } from '../game/platformCollision.js';
 import { createTextures, TEXTURE_KEYS } from '../game/createTextures.js';
@@ -609,11 +610,16 @@ export class DarknessBossScene extends Phaser.Scene {
       const nonce = this.setBossState(STATE.SHADOW_RAIN);
       this.showPatternCue('METEORITOS OSCUROS', 'Las marcas del suelo avisan dónde caen');
       const volley = (count, delay) => this.scheduleForState(nonce, delay, () => {
-        const center = Phaser.Math.Clamp(this.player.body.x, 80, ARENA_WIDTH - 80);
-        const spacing = RAIN_SPACING;
         const offset = Phaser.Math.Between(-30, 30);
-        for (let index = 0; index < count; index += 1) {
-          const dropX = Phaser.Math.Clamp(center + offset + (index - (count - 1) / 2) * spacing, 40, ARENA_WIDTH - 40);
+        const positions = getVolleyPositions({
+          center: this.player.body.x,
+          count,
+          spacing: RAIN_SPACING,
+          minX: 40,
+          maxX: ARENA_WIDTH - 40,
+          offset,
+        });
+        for (const dropX of positions) {
           this.spawnShadowDrop(nonce, dropX);
         }
       });
