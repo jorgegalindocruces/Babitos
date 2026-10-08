@@ -7,6 +7,18 @@ Este archivo relaciona las iteraciones entregadas con sus cambios observables, c
 - Mantener sincronizados `README.md`, `INTERACTIONS.md`, `GAME_DESIGN.md`, `IMPLEMENTATION_SPEC.md` y `ACCEPTANCE_CRITERIA.md` cuando cambien flujo, controles, estados, persistencia o contenido jugable.
 - Añadir una entrada aquí por cada cambio observable, con el commit final y las pruebas realizadas.
 
+## Acceso al mapa y rejugada de la Fase 1 — 2026-10-08
+
+Commit [`6889c92`](https://github.com/jorgegalindocruces/Babitos/commit/6889c92):
+
+- convirtió la salida de Tienda en el CTA principal `CONTINUAR AL MAPA`, lo colocó primero en el orden accesible y guardó `scene: 'map'` antes del fundido;
+- hizo visible la acción de la tarjeta completada de Babilandia con `REJUGAR DESDE EL INICIO`, en lugar de mostrar únicamente un estado `COMPLETADO` que parecía inactivo;
+- inició cada rejugada con `scene: 'babilandia'` y `checkpoint: 'start'`, conservando poder, finalización, recompensas, monedas, aspecto y colección;
+- movió el control HTML de audio a una esquina segura en viewports bajos para que no intercepte el CTA inferior;
+- centralizó las transiciones persistentes en `progressionFlow.js` y añadió una regresión que recarga el guardado después de Tienda → Mapa y después de Mapa → Fase 1.
+
+QA visual e interactiva: recorrido completo con clic real en escritorio y 667 × 375, orden accesible correcto, aparición en el inicio de Babilandia y consola sin errores. Pruebas: 76 casos automáticos, compilación de producción y `git diff --check`.
+
 ## Babito ampliado y plataformas unidireccionales — 2026-10-08
 
 Commit [`a360fd9`](https://github.com/jorgegalindocruces/Babitos/commit/a360fd9):
