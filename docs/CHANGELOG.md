@@ -9,7 +9,7 @@ Este archivo relaciona las iteraciones entregadas con sus cambios observables, c
 
 ## Babito sin sombra corporal ni lectura de calzoncillo — 2026-10-09
 
-Commit pendiente. La referencia aprobada continúa gobernando la silueta, el rostro y las proporciones del Babito, pero queda supersedida en su franja inferior oscura. El renderer deja de pintar `palette.shade` sobre el cuerpo en todas las paletas y los 51 frames: barriga, raíces de los pies y pies comparten `palette.main`, y el contorno inferior se abre en dos uniones estrechas para evitar una cinturilla, un calzoncillo o un pantalón. La exportación editorial de la landing se regenera desde el mismo renderer.
+Commit [`0dc8b0a`](https://github.com/jorgegalindocruces/Babitos/commit/0dc8b0a). La referencia aprobada continúa gobernando la silueta, el rostro y las proporciones del Babito, pero queda supersedida en su franja inferior oscura. El renderer deja de pintar `palette.shade` sobre el cuerpo en todas las paletas y los 51 frames: barriga, raíces de los pies y pies comparten `palette.main`, y el contorno inferior se abre en dos uniones estrechas para evitar una cinturilla, un calzoncillo o un pantalón. La exportación editorial de la landing se regenera desde el mismo renderer.
 
 Validación: 118 pruebas automáticas —incluida la matriz de 561 combinaciones de paleta y frame—, build de producción, `git diff --check` y QA visual sin errores de consola en Creador (cian y rosa) y `GameScene` (caminar y atacar).
 
