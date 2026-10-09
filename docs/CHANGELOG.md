@@ -7,6 +7,12 @@ Este archivo relaciona las iteraciones entregadas con sus cambios observables, c
 - Mantener sincronizados `README.md`, `INTERACTIONS.md`, `GAME_DESIGN.md`, `IMPLEMENTATION_SPEC.md` y `ACCEPTANCE_CRITERIA.md` cuando cambien flujo, controles, estados, persistencia o contenido jugable.
 - Añadir una entrada aquí por cada cambio observable, con el commit final y las pruebas realizadas.
 
+## Babito sin sombra corporal ni lectura de calzoncillo — 2026-10-09
+
+Commit pendiente. La referencia aprobada continúa gobernando la silueta, el rostro y las proporciones del Babito, pero queda supersedida en su franja inferior oscura. El renderer deja de pintar `palette.shade` sobre el cuerpo en todas las paletas y los 51 frames: barriga, raíces de los pies y pies comparten `palette.main`, y el contorno inferior se abre en dos uniones estrechas para evitar una cinturilla, un calzoncillo o un pantalón. La exportación editorial de la landing se regenera desde el mismo renderer.
+
+Validación: 118 pruebas automáticas —incluida la matriz de 561 combinaciones de paleta y frame—, build de producción, `git diff --check` y QA visual sin errores de consola en Creador (cian y rosa) y `GameScene` (caminar y atacar).
+
 ## Babito sin banda inferior de sombra — 2026-10-08
 
 Commit [`60126f3`](https://github.com/jorgegalindocruces/Babitos/commit/60126f3). Se elimina la lectura accidental de pantalón en el Babito base: vientre e interior de los pies comparten ahora el color principal de forma continua, mientras la sombra de volumen queda limitada al lateral lejano del cuerpo. El ajuste conserva silueta, paletas desbloqueables, 51 frames, siete capas, tamaños, baseline, hitbox y guardados.

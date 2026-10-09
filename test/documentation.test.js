@@ -229,6 +229,10 @@ test('scope and critical gameplay invariants are explicit', async () => {
   assert.match(interactions, /cuerpo rasterizado mide 47 × 45 px[\s\S]*ojos normales 4 × 9 px/u);
   assert.match(interactions, /`#7CDBF9`[\s\S]*`#A8EDFF`[\s\S]*`#2BBFE5`/u);
   assert.match(interactions, /`#FF7196`[\s\S]*`#07111E`/u);
+  assert.match(interactions, /ninguna variante pinta `palette\.shade` sobre el cuerpo/u);
+  assert.match(interactions, /contorno inferior se abre en dos raíces estrechas/u);
+  assert.match(acceptance, /barriga, raíces de los pies y pies comparten `palette\.main`/u);
+  assert.match(masterPrompt, /banda inferior queda expresamente supersedida/u);
   assert.match(interactions, /`\?qa=TitleScene`[\s\S]*`DarknessBossScene`/u);
   assert.match(interactions, /`&qaLevel=jungla`/u);
   assert.match(interactions, /`&qaOneHit=1`[\s\S]*`DarknessBossScene`/u);

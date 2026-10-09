@@ -448,7 +448,7 @@ function sparkle(ctx, x, y, color = COLORS.yellowLight) {
   rect(ctx, x - 1, y - 1, 3, 3, COLORS.white);
 }
 
-function drawBabitoBody(ctx, palette, pose = {}) {
+export function drawBabitoBody(ctx, palette, pose = {}) {
   const leftFootX = Number(pose.feet?.left?.x) || 0;
   const rightFootX = Number(pose.feet?.right?.x) || 0;
   const leftFootY = Number(pose.feet?.left?.y) || 0;
@@ -459,19 +459,24 @@ function drawBabitoBody(ctx, palette, pose = {}) {
   // They still move independently, preserving every contact and airborne pose.
   rect(ctx, 14 + leftFootX, 37 + leftFootY, 10, 7, COLORS.ink);
   rect(ctx, 27 + rightFootX, 37 + rightFootY, 9, 7, COLORS.ink);
-  rect(ctx, 15 + leftFootX, 38 + leftFootY, 8, 5, palette.main);
-  rect(ctx, 28 + rightFootX, 38 + rightFootY, 7, 5, palette.main);
 
   // A broad, tip-trimmed scanline body follows the approved base: flat crown,
   // stepped shoulders and one continuous cheek-to-belly curve.
   outlinedRoundedBody(ctx, centerX, centerY, radiusX, radiusY, COLORS.ink, palette.main, 2);
+  // Refill the feet after the body so their roots stay open. The shared colour
+  // crosses the lower outline at both joins instead of leaving a dark waistband
+  // that visually separates the belly from the legs.
+  rect(ctx, 18 + leftFootX, 37 + leftFootY, 4, 3, palette.main);
+  rect(ctx, 15 + leftFootX, 39 + leftFootY, 8, 4, palette.main);
+  rect(ctx, 29 + rightFootX, 37 + rightFootY, 4, 3, palette.main);
+  rect(ctx, 28 + rightFootX, 39 + rightFootY, 7, 4, palette.main);
   rect(ctx, 13, 11, 8, 2, palette.light);
   rect(ctx, 11, 14, 3, 8, palette.light);
   rect(ctx, 15, 12, 4, 1, '#ffffff');
-  // Keep depth on the far side only. A darker horizontal lower band reads as
-  // trousers at gameplay scale, so belly and feet share the body colour.
-  rect(ctx, 38, 22, 2, 4, palette.shade);
-  rect(ctx, 37, 26, 2, 5, palette.shade);
+  // Keep the whole body and both feet on one uninterrupted flat colour.
+  // Even a small darker patch near the hip merges with the lower contour at
+  // gameplay scale and reads as underwear. The upper-left highlight provides
+  // enough volume without introducing a second colour around the legs.
   rect(ctx, 12, 26, 3, 2, COLORS.blush);
   rect(ctx, 35, 26, 3, 2, COLORS.blush);
 }

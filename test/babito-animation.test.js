@@ -20,6 +20,7 @@ import {
   BABITO_RENDER_SIZE,
   BABITO_SPRING_HAND_RADIUS,
   BABITO_TEXTURE_SIZE,
+  drawBabitoBody,
   getBabitoBodyScanlineWidths,
   getBabitoSpringHandCenterX,
   getBabitoTransformedBounds,
@@ -41,6 +42,30 @@ const EXPECTED_CLIPS = Object.freeze({
   hurt: { start: 40, frameCount: 5, fps: 14, loop: false },
   dead: { start: 45, frameCount: 6, fps: 8, loop: false },
 });
+
+function createRasterCanvasContext(size = 48) {
+  const pixels = Array.from({ length: size }, () => Array(size).fill(null));
+  let fillStyle = '';
+  return {
+    canvas: {},
+    pixels,
+    get fillStyle() {
+      return fillStyle;
+    },
+    set fillStyle(value) {
+      fillStyle = value;
+    },
+    fillRect(x, y, width, height) {
+      const startX = Math.round(x);
+      const startY = Math.round(y);
+      for (let pixelY = startY; pixelY < startY + height; pixelY += 1) {
+        for (let pixelX = startX; pixelX < startX + width; pixelX += 1) {
+          if (pixels[pixelY]?.[pixelX] !== undefined) pixels[pixelY][pixelX] = fillStyle;
+        }
+      }
+    },
+  };
+}
 
 test('Babito exposes eight distinct sequential clips on an eight-column atlas', () => {
   assert.equal(BABITO_ANIMATION_COLUMNS, 8);
@@ -213,6 +238,73 @@ test('the base silhouette keeps the approved round Babito proportions', () => {
     shade: '#2bbfe5',
     tint: 0x7cdbf9,
   });
+});
+
+test('every palette and animation frame keeps one uninterrupted body colour', () => {
+  const masksByFrame = new Map();
+  const ink = '#07111e';
+  const blush = '#ff7196';
+  const glint = '#ffffff';
+
+  for (const [body, palette] of Object.entries(BABITO_PALETTES)) {
+    for (const pose of BABITO_FRAME_POSES) {
+      const context = createRasterCanvasContext();
+      drawBabitoBody(context, palette, pose);
+      const pixels = context.pixels.flat();
+
+      assert.equal(
+        pixels.includes(palette.shade),
+        false,
+        `${body}:${pose.frame} reintroduced a darker patch that can read as underwear`,
+      );
+
+      for (let y = 31; y < context.pixels.length; y += 1) {
+        for (const color of context.pixels[y]) {
+          assert.ok(
+            color === null || color === ink || color === palette.main,
+            `${body}:${pose.frame} has a secondary tone in the belly or legs`,
+          );
+        }
+      }
+
+      const leftRootY = 37 + (Number(pose.feet?.left?.y) || 0);
+      const leftRootX = 18 + (Number(pose.feet?.left?.x) || 0);
+      const rightRootY = 37 + (Number(pose.feet?.right?.y) || 0);
+      const rightRootX = 29 + (Number(pose.feet?.right?.x) || 0);
+      assert.equal(
+        context.pixels[leftRootY]?.[leftRootX],
+        palette.main,
+        `${body}:${pose.frame} closes the left foot root with an underwear-like outline`,
+      );
+      assert.equal(
+        context.pixels[rightRootY]?.[rightRootX],
+        palette.main,
+        `${body}:${pose.frame} closes the right foot root with an underwear-like outline`,
+      );
+
+      const roleMask = pixels.map((color) => {
+        if (color === null) return 'transparent';
+        if (color === ink) return 'ink';
+        if (color === blush) return 'blush';
+        if (color === glint) return 'glint';
+        if (color === palette.main) return 'main';
+        if (color === palette.light) return 'light';
+        return `unexpected:${color}`;
+      });
+      assert.equal(
+        roleMask.some((role) => role.startsWith('unexpected:')),
+        false,
+        `${body}:${pose.frame} contains an undocumented body tone`,
+      );
+
+      if (!masksByFrame.has(pose.frame)) masksByFrame.set(pose.frame, roleMask.join(','));
+      else assert.equal(
+        roleMask.join(','),
+        masksByFrame.get(pose.frame),
+        `${body}:${pose.frame} must preserve the canonical tonal geometry`,
+      );
+    }
+  }
 });
 
 test('larger Babito sizes keep integer render dimensions and one shared baseline', () => {

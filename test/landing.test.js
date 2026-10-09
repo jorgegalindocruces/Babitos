@@ -179,7 +179,6 @@ test('the landing Babito is a crisp export of the canonical game palette', () =>
   assert.deepEqual([asset.width, asset.height], [320, 320]);
 
   const colors = new Set();
-  const shadePixels = [];
   for (let y = 0; y < asset.height; y += 1) {
     for (let x = 0; x < asset.width; x += 1) {
       const offset = (y * asset.width + x) * 4;
@@ -188,7 +187,6 @@ test('the landing Babito is a crisp export of the canonical game palette', () =>
       if (pixel[3]) {
         const rgba = pixel.join(',');
         colors.add(rgba);
-        if (rgba === '43,191,229,255') shadePixels.push({ x, y });
       }
 
       // The 80 px canonical source is enlarged exactly 4× with nearest pixels.
@@ -207,19 +205,27 @@ test('the landing Babito is a crisp export of the canonical game palette', () =>
     }
   }
 
-  for (const canonicalColor of [
+  const expectedColors = [
     '124,219,249,255', // body
     '168,237,255,255', // highlight
-    '43,191,229,255', // shade
     '255,113,150,255', // cheeks
     '7,17,30,255', // outline
-  ]) {
+    '255,198,46,255', // straw hat
+    '239,51,79,255', // hat band
+    '255,241,128,255', // hat glint
+  ];
+  for (const canonicalColor of expectedColors) {
     assert.ok(colors.has(canonicalColor), `missing canonical color ${canonicalColor}`);
   }
+  assert.deepEqual(
+    [...colors].sort(),
+    [...expectedColors].sort(),
+    'the editorial export must use only the documented pixel palette',
+  );
 
-  assert.ok(shadePixels.length > 0, 'the far-side volume shade must remain present');
-  assert.ok(
-    shadePixels.every(({ y }) => y < 200),
-    'the volume shade must stay lateral and never form trousers across the belly or feet',
+  assert.equal(
+    colors.has('43,191,229,255'),
+    false,
+    'the editorial export cannot reintroduce the darker blue underwear patch',
   );
 });
