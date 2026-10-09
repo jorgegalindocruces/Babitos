@@ -7,6 +7,18 @@ Este archivo relaciona las iteraciones entregadas con sus cambios observables, c
 - Mantener sincronizados `README.md`, `INTERACTIONS.md`, `GAME_DESIGN.md`, `IMPLEMENTATION_SPEC.md` y `ACCEPTANCE_CRITERIA.md` cuando cambien flujo, controles, estados, persistencia o contenido jugable.
 - Añadir una entrada aquí por cada cambio observable, con el commit final y las pruebas realizadas.
 
+## Estados completos y siluetas pixeladas del Babito — 2026-10-09
+
+Commit [`4f31baf`](https://github.com/jorgegalindocruces/Babitos/commit/4f31baf). La animación del protagonista deja de depender de poses casi idénticas y de un override QA que podía ocultar el estado real:
+
+- **Nueve estados y 54 poses**: se añade `land` con impacto, asentamiento y recuperación. La prioridad común es `dead` → `hurt` → `attack` → `jump`/`fall` → `land` → `idle`/`walk`/`run`.
+- **Acciones inmediatas**: salto normal o de seta, ataque, daño, KO y respawn seleccionan su pose en el mismo frame; cada ataque aceptado reinicia el *one-shot* completo, incluso con el cooldown corto de Rayo. El reloj visual se congela durante *hit-stop*.
+- **Pixel art legible**: aletas de reposo, apertura, guardia, elevación, subida, extensión, golpe y caída tienen geometría propia. Los brazos de muelle siguen esos destinos sin perder el zigzag; los pies distinguen planta, punta, elevación, recogida, caída, impacto y KO. Ataque, salto, caída y muerte ya no comparten la misma máscara.
+- **Apoyo estable**: `idle`, caminar, correr apoyado, aterrizar y atacar compensan squash e inclinación para mantener el pie de contacto en una baseline exacta. La hitbox de 28 × 40, las siete capas, tamaños, paletas y guardados no cambian; el cuerpo continúa sin sombra inferior ni lectura de calzoncillo.
+- **QA fiable**: `qaMotion` sin `qaFrame` anima a velocidad real; con `qaFrame` congela el frame local; cualquier input real libera el override. La exportación [babito.png](../public/assets/landing/babito.png) vuelve a salir del renderer compartido.
+
+Validación: 122 pruebas automáticas, build de producción, `git diff --check`, hoja completa de las 54 poses con brazos normales y de muelle, y QA visual en `GameScene` para salto, ataque activo, aterrizaje, KO y liberación del override; consola sin avisos ni errores.
+
 ## Babito sin sombra corporal ni lectura de calzoncillo — 2026-10-09
 
 Commit [`0dc8b0a`](https://github.com/jorgegalindocruces/Babitos/commit/0dc8b0a). La referencia aprobada continúa gobernando la silueta, el rostro y las proporciones del Babito, pero queda supersedida en su franja inferior oscura. El renderer deja de pintar `palette.shade` sobre el cuerpo en todas las paletas y los 51 frames: barriga, raíces de los pies y pies comparten `palette.main`, y el contorno inferior se abre en dos uniones estrechas para evitar una cinturilla, un calzoncillo o un pantalón. La exportación editorial de la landing se regenera desde el mismo renderer.
