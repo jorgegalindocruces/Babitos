@@ -3,7 +3,7 @@ import { getGroundSpans, getLevel, PLATFORM_STYLE_TEXTURES } from '../data/level
 import gameData from '../data/game-data.json';
 import { EnemyController } from '../game/EnemyController.js';
 import { enemyUsesPlatformCollision } from '../game/EnemyAnimations.js';
-import { BABITO_ANIMATION_CLIPS } from '../game/BabitoAnimations.js';
+import { updateBabitoQaMotionOverride } from '../game/BabitoAnimations.js';
 import { PlayerController } from '../game/PlayerController.js';
 import { createJungleScenery } from '../game/jungleScenery.js';
 import { shouldCollideWithTerrain } from '../game/platformCollision.js';
@@ -70,6 +70,7 @@ export class GameScene extends Phaser.Scene {
     this.qaCheckpointActive = false;
     this.qaMotion = null;
     this.qaMotionFrame = null;
+    this.qaMotionElapsedMs = 0;
     this.qaSize = null;
     this.qaEnemyType = null;
     this.qaEnemyState = null;
@@ -91,7 +92,7 @@ export class GameScene extends Phaser.Scene {
         ? null
         : Number(requestedEnemyFrameParam);
       this.qaMotion = [
-        'idle', 'walk', 'run', 'jump', 'fall', 'attack', 'hurt', 'dead',
+        'idle', 'walk', 'run', 'jump', 'fall', 'land', 'attack', 'hurt', 'dead',
       ].includes(requestedMotion) ? requestedMotion : null;
       this.qaMotionFrame = requestedFrame != null
         && Number.isInteger(requestedFrame)
@@ -904,16 +905,30 @@ export class GameScene extends Phaser.Scene {
 
     this.player?.update(this.gameplayTime);
     if (this.qaMotion) {
-      const qaVelocity = this.qaMotion === 'run'
-        ? { x: 280, y: 0 }
-        : (this.qaMotion === 'walk'
-          ? { x: 135, y: 0 }
-          : { x: 0, y: this.qaMotion === 'jump' ? -260 : 220 });
-      this.player.avatar.setMotion(this.qaMotion, qaVelocity);
-      if (this.qaMotionFrame != null) {
-        const clip = BABITO_ANIMATION_CLIPS[this.qaMotion];
-        const localFrame = Math.min(this.qaMotionFrame, clip.frameCount - 1);
-        this.player.avatar.motionElapsedMs = (localFrame * 1000) / clip.fps;
+      const qaOverride = updateBabitoQaMotionOverride({
+        state: this.qaMotion,
+        localFrame: this.qaMotionFrame,
+        elapsedMs: this.qaMotionElapsedMs,
+        deltaMs: frameDelta,
+        hasGameplayInput: this.player.hasGameplayInputThisFrame,
+      });
+      this.qaMotion = qaOverride.state;
+      this.qaMotionFrame = qaOverride.localFrame;
+      this.qaMotionElapsedMs = qaOverride.elapsedMs;
+
+      if (this.qaMotion) {
+        const qaVelocity = this.qaMotion === 'run'
+          ? { x: 280, y: 0 }
+          : (this.qaMotion === 'walk'
+            ? { x: 135, y: 0 }
+            : (this.qaMotion === 'jump'
+              ? { x: 0, y: -260 }
+              : { x: 0, y: this.qaMotion === 'fall' ? 220 : 0 }));
+        this.player.avatar.setMotion(this.qaMotion, qaVelocity);
+        // BabitoAvatar advances once more in POST_UPDATE. Restore the elapsed
+        // value immediately before this scene frame so a free-running QA clip
+        // advances once (not twice), while qaFrame remains exactly frozen.
+        this.player.avatar.motionElapsedMs = qaOverride.elapsedMs - frameDelta;
       }
     }
     this.enemyControllers.forEach((enemy) => enemy.update());

@@ -11,8 +11,9 @@ const CLIP_DEFINITIONS = Object.freeze([
   ['idle', 6, 6, true],
   ['walk', 8, 10, true],
   ['run', 8, 14, true],
-  ['jump', 6, 12, false],
+  ['jump', 6, 15, false],
   ['fall', 6, 10, true],
+  ['land', 3, 16, false],
   ['attack', 6, 16, false],
   ['hurt', 5, 14, false],
   ['dead', 6, 8, false],
@@ -98,13 +99,18 @@ const POSE_SEQUENCES = Object.freeze({
     freezePose({ scaleX: 1.01, scaleY: 0.99, offset: [0, 1], lean: -2, feet: [-2, 1, 2, 1, 'braced'], arms: ['wide', 'high'], expression: 'determined' }),
     freezePose({ scaleX: 1.03, scaleY: 0.97, offset: [0, -1], lean: 1, feet: [-1, -1, 1, -1, 'flutter'], arms: ['high', 'wide'], expression: 'surprised' }),
   ]),
+  land: Object.freeze([
+    freezePose({ scaleX: 1.12, scaleY: 0.86, offset: [0, 2], feet: [-2, 0, 2, 0, 'impact'], arms: ['down', 'down'], expression: 'determined' }),
+    freezePose({ scaleX: 1.07, scaleY: 0.93, offset: [0, 1], feet: [-1, 0, 1, 0, 'settle'], arms: ['soft-out', 'soft-out'], expression: 'smile' }),
+    freezePose({ scaleX: 1.01, scaleY: 0.99, feet: [0, 0, 0, 0, 'recover'], arms: ['rest', 'rest'], expression: 'smile' }),
+  ]),
   attack: Object.freeze([
     freezePose({ scaleX: 1.06, scaleY: 0.95, offset: [-2, 1], lean: -5, feet: [-2, 0, 2, 0, 'brace'], arms: ['windup', 'windup'], expression: 'focus' }),
     freezePose({ scaleX: 0.98, scaleY: 1.03, offset: [-1, -1], lean: -3, feet: [-2, 0, 1, 0, 'brace-forward'], arms: ['guard', 'charge'], expression: 'attack' }),
     freezePose({ scaleX: 1.09, scaleY: 0.92, offset: [3, 0], lean: 7, feet: [-1, 0, 3, 0, 'lunge'], arms: ['counter', 'strike'], expression: 'attack' }),
     freezePose({ scaleX: 1.12, scaleY: 0.9, offset: [5, 0], lean: 9, feet: [0, 0, 4, 0, 'full-lunge'], arms: ['counter-high', 'strike-extended'], expression: 'attack' }),
     freezePose({ scaleX: 1.03, scaleY: 0.98, offset: [2, -1], lean: 3, feet: [-1, 0, 2, 0, 'recoil'], arms: ['recover', 'recover'], expression: 'determined' }),
-    freezePose({ offset: [0, 0], feet: [0, 0, 0, 0, 'planted'], arms: ['rest', 'rest'], expression: 'smile' }),
+    freezePose({ scaleX: 1.01, scaleY: 0.99, offset: [1, 0], lean: 1, feet: [0, 0, 1, 0, 'recover-guard'], arms: ['guard', 'recover'], expression: 'determined' }),
   ]),
   hurt: Object.freeze([
     freezePose({ scaleX: 1.08, scaleY: 0.91, offset: [3, -1], lean: 8, feet: [-1, 0, 2, 0, 'knockback'], arms: ['flail', 'flail'], expression: 'hurt' }),
@@ -203,4 +209,62 @@ export function selectBabitoLocomotionState(velocityX = 0, options = {}) {
   const speed = Number.isFinite(velocity) ? Math.abs(velocity) : 0;
   if (speed <= idleMax) return 'idle';
   return speed >= runMin ? 'run' : 'walk';
+}
+
+/**
+ * Resolves the one visual state that owns the Babito on this gameplay frame.
+ * One-shot actions outrank airborne and locomotion states, so residual
+ * velocity can never erase an attack, damage reaction or KO pose.
+ */
+export function resolveBabitoMotionState({
+  isDead = false,
+  isHurt = false,
+  isAttacking = false,
+  isLanding = false,
+  jumpedThisFrame = false,
+  grounded = true,
+  velocityX = 0,
+  velocityY = 0,
+} = {}) {
+  if (isDead) return 'dead';
+  if (isHurt) return 'hurt';
+  if (isAttacking) return 'attack';
+  if (jumpedThisFrame || !grounded) return Number(velocityY) < 0 ? 'jump' : 'fall';
+  if (isLanding) return 'land';
+  return selectBabitoLocomotionState(velocityX);
+}
+
+/**
+ * Advances a development-only pose override. A real gameplay input always
+ * releases the override, so a QA URL can never make the playable character
+ * appear stuck after the tester starts interacting.
+ */
+export function updateBabitoQaMotionOverride({
+  state = null,
+  localFrame = null,
+  elapsedMs = 0,
+  deltaMs = 0,
+  hasGameplayInput = false,
+} = {}) {
+  const normalizedState = typeof state === 'string' ? state.trim().toLowerCase() : '';
+  const clip = Object.hasOwn(BABITO_ANIMATION_CLIPS, normalizedState)
+    ? BABITO_ANIMATION_CLIPS[normalizedState]
+    : null;
+  if (!clip || hasGameplayInput) {
+    return Object.freeze({ state: null, localFrame: null, elapsedMs: 0 });
+  }
+
+  const requestedFrame = localFrame == null ? Number.NaN : Number(localFrame);
+  const safeLocalFrame = Number.isInteger(requestedFrame) && requestedFrame >= 0
+    ? Math.min(requestedFrame, clip.frameCount - 1)
+    : null;
+  const safeElapsed = Number.isFinite(Number(elapsedMs)) ? Math.max(0, Number(elapsedMs)) : 0;
+  const safeDelta = Number.isFinite(Number(deltaMs)) ? Math.max(0, Number(deltaMs)) : 0;
+  return Object.freeze({
+    state: normalizedState,
+    localFrame: safeLocalFrame,
+    elapsedMs: safeLocalFrame == null
+      ? safeElapsed + safeDelta
+      : (safeLocalFrame * 1000) / clip.fps,
+  });
 }

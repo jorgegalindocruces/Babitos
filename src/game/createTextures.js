@@ -30,7 +30,7 @@ const BABITO_DESIGN_GEOMETRY = Object.freeze({
   body: Object.freeze({ centerX: 24, centerY: 23, radiusX: 17, radiusY: 17 }),
   normalEyes: Object.freeze({ width: 3, height: 7, gap: 8 }),
   feet: Object.freeze({ maxWidth: 10, authoredHeight: 7, exposedHeight: 4 }),
-  restingFin: Object.freeze({ minX: 1, maxX: 14, minY: 21, maxY: 36 }),
+  restingFin: Object.freeze({ minX: 3, maxX: 13, minY: 21, maxY: 36 }),
 });
 
 function scaleBabitoMetric(value) {
@@ -86,29 +86,67 @@ export const BABITO_AUTHORED_ART_BOUNDS = Object.freeze({
 });
 
 const BABITO_POSE_TRANSFORMS = Object.freeze({
-  default: Object.freeze({ scaleX: 0.72, scaleY: 0.72, offsetX: 0.72, offsetY: 0.72, lean: 0.62 }),
-  attack: Object.freeze({ scaleX: 0.55, scaleY: 0.6, offsetX: 0.25, offsetY: 0.4, lean: 0.32 }),
-  hurt: Object.freeze({ scaleX: 0.55, scaleY: 0.68, offsetX: 0.35, offsetY: 0.65, lean: 0.45 }),
+  default: Object.freeze({ scaleX: 0.82, scaleY: 0.82, offsetX: 0.82, offsetY: 0.78, lean: 0.76 }),
+  land: Object.freeze({ scaleX: 0.76, scaleY: 0.84, offsetX: 0.72, offsetY: 0.68, lean: 0.7 }),
+  attack: Object.freeze({ scaleX: 0.57, scaleY: 0.68, offsetX: 0.22, offsetY: 0.48, lean: 0.42 }),
+  hurt: Object.freeze({ scaleX: 0.64, scaleY: 0.74, offsetX: 0.42, offsetY: 0.7, lean: 0.56 }),
   // KO stays visibly flattened, but its width, rotation and fall are capped so
   // the final silhouette neither clips the atlas nor sinks into the platform.
-  dead: Object.freeze({ scaleX: 0.2, scaleY: 0.72, offsetX: 0, offsetY: 0.2, lean: 0.22 }),
+  dead: Object.freeze({ scaleX: 0.23, scaleY: 0.78, offsetX: 0.03, offsetY: 0.24, lean: 0.275 }),
 });
+
+const BABITO_GROUNDED_STATES = new Set(['idle', 'walk', 'run', 'land', 'attack']);
+const BABITO_TEXTURE_FOOT_BASELINE = BABITO_TEXTURE_SIZE / 2
+  + (44 * BABITO_DETAIL_SCALE - BABITO_ART_SIZE / 2) * BABITO_ART_SCALE;
 
 export function getBabitoSpringHandCenterX(state = 'idle', phase = 0) {
   if (state !== 'attack') return 42;
   const safePhase = Number.isFinite(Number(phase)) ? Math.trunc(Number(phase)) : 0;
-  return [39, 41, 43, 44, 42, 40][Math.max(0, Math.min(5, safePhase))];
+  return [41, 44, 44, 44, 43, 43][Math.max(0, Math.min(5, safePhase))];
 }
 
 function getBabitoPoseTransform(pose = {}) {
   const profile = BABITO_POSE_TRANSFORMS[pose.state] ?? BABITO_POSE_TRANSFORMS.default;
-  return {
+  const transform = {
     scaleX: BABITO_ART_SCALE * (1 + (Number(pose.scaleX ?? 1) - 1) * profile.scaleX),
     scaleY: BABITO_ART_SCALE * (1 + (Number(pose.scaleY ?? 1) - 1) * profile.scaleY),
     offsetX: Number(pose.offset?.x ?? 0) * profile.offsetX * BABITO_DETAIL_SCALE,
     offsetY: Number(pose.offset?.y ?? 0) * profile.offsetY * BABITO_DETAIL_SCALE,
     rotation: (Number(pose.lean ?? 0) * profile.lean * Math.PI) / 180,
   };
+
+  const stance = String(pose.feet?.stance ?? '');
+  if (BABITO_GROUNDED_STATES.has(pose.state) && !stance.includes('airborne')) {
+    transform.offsetY = BABITO_TEXTURE_FOOT_BASELINE
+      - BABITO_TEXTURE_SIZE / 2
+      - getBabitoTransformedFootBottom(pose, transform);
+  }
+  return transform;
+}
+
+function getBabitoTransformedFootBottom(pose, transform) {
+  let maxY = Number.NEGATIVE_INFINITY;
+  for (const side of ['left', 'right']) {
+    const foot = getBabitoFootGeometry(pose, side);
+    for (const x of [foot.x, foot.x + foot.width]) {
+      for (const y of [foot.y, foot.y + foot.height]) {
+        const localX = x * BABITO_DETAIL_SCALE - BABITO_ART_SIZE / 2;
+        const localY = y * BABITO_DETAIL_SCALE - BABITO_ART_SIZE / 2;
+        const transformedY = localX * transform.scaleX * Math.sin(transform.rotation)
+          + localY * transform.scaleY * Math.cos(transform.rotation);
+        maxY = Math.max(maxY, transformedY);
+      }
+    }
+  }
+  return maxY;
+}
+
+/** Texture-space support line after squash, lean and per-foot geometry. */
+export function getBabitoPoseFootBaseline(pose = {}) {
+  const transform = getBabitoPoseTransform(pose);
+  return BABITO_TEXTURE_SIZE / 2
+    + transform.offsetY
+    + getBabitoTransformedFootBottom(pose, transform);
 }
 
 /** Conservative atlas-space bounds used by regression tests and art tooling. */
@@ -448,17 +486,86 @@ function sparkle(ctx, x, y, color = COLORS.yellowLight) {
   rect(ctx, x - 1, y - 1, 3, 3, COLORS.white);
 }
 
+export function getBabitoFootShape(pose = {}, side = 'left') {
+  const state = String(pose.state ?? 'idle');
+  const stance = String(pose.feet?.stance ?? 'planted');
+  const localFrame = Number(pose.localFrame) || 0;
+  const normalizedSide = side === 'right' ? 'right' : 'left';
+  const sideNamed = stance.includes(normalizedSide);
+
+  if (state === 'dead' && localFrame >= 3) return 'fallen';
+  if (state === 'land' || ['impact', 'settle', 'crouch'].some((name) => stance.includes(name))) {
+    return 'impact';
+  }
+  if (state === 'fall') return 'falling';
+  if (state === 'jump' && localFrame >= 2) return 'tucked';
+  if (stance.includes('airborne') || stance.includes('apex')) return 'tucked';
+  if (sideNamed && (stance.includes('lift') || stance.includes('pass') || stance.includes('drive'))) {
+    return 'lifted';
+  }
+  if (sideNamed && (stance.includes('reach') || stance.includes('strike'))) return 'toe';
+  if (state === 'attack' && normalizedSide === 'right' && localFrame >= 2 && localFrame <= 4) {
+    return 'toe';
+  }
+  return 'plant';
+}
+
+function getBabitoFootGeometry(pose, side) {
+  const isLeft = side === 'left';
+  const source = pose.feet?.[side] ?? {};
+  const shape = getBabitoFootShape(pose, side);
+  const baseX = isLeft ? 14 : 27;
+  const authoredWidth = isLeft ? 10 : 9;
+  const geometry = {
+    plant: { width: authoredWidth, height: 7, shiftX: 0, shiftY: 0 },
+    toe: { width: 8, height: 6, shiftX: isLeft ? -1 : 2, shiftY: 1 },
+    lifted: { width: 7, height: 5, shiftX: 1, shiftY: -2 },
+    tucked: { width: 7, height: 5, shiftX: isLeft ? 2 : 0, shiftY: -3 },
+    falling: { width: 7, height: 8, shiftX: isLeft ? 2 : 0, shiftY: -1 },
+    impact: { width: authoredWidth, height: 5, shiftX: 0, shiftY: 2 },
+    fallen: { width: authoredWidth, height: 4, shiftX: isLeft ? -1 : 1, shiftY: 3 },
+  }[shape];
+  return {
+    ...geometry,
+    shape,
+    x: baseX + (Number(source.x) || 0) + geometry.shiftX,
+    y: 37 + (Number(source.y) || 0) + geometry.shiftY,
+    rootX: (isLeft ? 18 : 29) + (Number(source.x) || 0),
+    rootY: 37 + (Number(source.y) || 0),
+  };
+}
+
+function drawBabitoFootOutline(ctx, geometry) {
+  rect(ctx, geometry.x, geometry.y, geometry.width, geometry.height, COLORS.ink);
+}
+
+function drawBabitoFootFill(ctx, geometry, color) {
+  const innerX = geometry.x + 1;
+  const innerY = geometry.y + Math.min(2, Math.max(1, geometry.height - 3));
+  rect(
+    ctx,
+    innerX,
+    innerY,
+    Math.max(2, geometry.width - 2),
+    Math.max(2, geometry.height - (innerY - geometry.y) - 1),
+    color,
+  );
+
+  // Open a narrow same-colour root through the body's lower outline. Keeping
+  // this bridge on every stance prevents a dark waistband from reappearing.
+  const rootWidth = Math.min(4, Math.max(2, geometry.width - 3));
+  rect(ctx, geometry.rootX, geometry.rootY, rootWidth, Math.min(3, geometry.height), color);
+}
+
 export function drawBabitoBody(ctx, palette, pose = {}) {
-  const leftFootX = Number(pose.feet?.left?.x) || 0;
-  const rightFootX = Number(pose.feet?.right?.x) || 0;
-  const leftFootY = Number(pose.feet?.left?.y) || 0;
-  const rightFootY = Number(pose.feet?.right?.y) || 0;
   const { centerX, centerY, radiusX, radiusY } = BABITO_DESIGN_GEOMETRY.body;
+  const leftFoot = getBabitoFootGeometry(pose, 'left');
+  const rightFoot = getBabitoFootGeometry(pose, 'right');
 
   // Short feet sit behind the lower curve like the approved 32 px sprite.
-  // They still move independently, preserving every contact and airborne pose.
-  rect(ctx, 14 + leftFootX, 37 + leftFootY, 10, 7, COLORS.ink);
-  rect(ctx, 27 + rightFootX, 37 + rightFootY, 9, 7, COLORS.ink);
+  // Width and height now also encode contact, lift, tuck, fall and impact.
+  drawBabitoFootOutline(ctx, leftFoot);
+  drawBabitoFootOutline(ctx, rightFoot);
 
   // A broad, tip-trimmed scanline body follows the approved base: flat crown,
   // stepped shoulders and one continuous cheek-to-belly curve.
@@ -466,10 +573,8 @@ export function drawBabitoBody(ctx, palette, pose = {}) {
   // Refill the feet after the body so their roots stay open. The shared colour
   // crosses the lower outline at both joins instead of leaving a dark waistband
   // that visually separates the belly from the legs.
-  rect(ctx, 18 + leftFootX, 37 + leftFootY, 4, 3, palette.main);
-  rect(ctx, 15 + leftFootX, 39 + leftFootY, 8, 4, palette.main);
-  rect(ctx, 29 + rightFootX, 37 + rightFootY, 4, 3, palette.main);
-  rect(ctx, 28 + rightFootX, 39 + rightFootY, 7, 4, palette.main);
+  drawBabitoFootFill(ctx, leftFoot, palette.main);
+  drawBabitoFootFill(ctx, rightFoot, palette.main);
   rect(ctx, 13, 11, 8, 2, palette.light);
   rect(ctx, 11, 14, 3, 8, palette.light);
   rect(ctx, 15, 12, 4, 1, '#ffffff');
@@ -625,100 +730,146 @@ function drawArm(ctx, x0, y0, x1, y1) {
 }
 
 function drawBabitoFin(ctx, side, pose = 'rest', fillColor = '#ffffff') {
-  const mirror = (x) => (side < 0 ? x : BABITO_DESIGN_SIZE - x);
   const mirroredRect = (x, y, width, height, color) => {
     rect(ctx, side < 0 ? x : BABITO_DESIGN_SIZE - x - width, y, width, height, color);
   };
 
-  if (pose === 'rest') {
-    // Hand-authored scanlines reproduce the short downward fin of the approved
-    // 32 px base without polygon antialiasing turning it into a round earmuff.
-    mirroredRect(9, 21, 4, 2, COLORS.ink);
-    mirroredRect(5, 23, 8, 2, COLORS.ink);
-    mirroredRect(1, 25, 12, 5, COLORS.ink);
-    mirroredRect(3, 30, 10, 4, COLORS.ink);
-    mirroredRect(6, 34, 6, 2, COLORS.ink);
-    mirroredRect(8, 23, 4, 1, fillColor);
-    mirroredRect(5, 24, 7, 2, fillColor);
-    mirroredRect(3, 26, 9, 4, fillColor);
-    mirroredRect(5, 30, 7, 3, fillColor);
-    mirroredRect(7, 33, 4, 1, fillColor);
-    return;
+  // Every silhouette is assembled from integer bands. Unlike a transformed
+  // polygon, these retain a hard pixel edge after the 4/3 detail raster and
+  // make each authored descriptor readable beyond the round body.
+  const bands = {
+    rest: [
+      [9, 21, 4, 2], [6, 23, 7, 2], [3, 25, 10, 5], [4, 30, 9, 4], [7, 34, 5, 2],
+    ],
+    soft: [
+      [8, 20, 6, 2], [4, 22, 10, 3], [2, 25, 12, 5], [4, 30, 10, 4], [7, 34, 6, 2],
+    ],
+    raised: [
+      [10, 20, 5, 10], [7, 13, 7, 10], [5, 9, 6, 7], [7, 7, 5, 4],
+    ],
+    guard: [
+      [10, 22, 5, 9], [6, 17, 8, 8], [4, 15, 6, 5], [5, 24, 9, 5],
+    ],
+    forward: [
+      [9, 20, 6, 10], [4, 21, 10, 8], [1, 23, 7, 5],
+    ],
+    strike: [
+      [9, 19, 6, 11], [3, 20, 11, 9], [1, 22, 7, 5],
+    ],
+    'strike-extended': [
+      [9, 18, 6, 12], [2, 19, 12, 10], [1, 20, 8, 8],
+    ],
+    down: [
+      [10, 23, 5, 10], [8, 29, 6, 10], [7, 35, 6, 7],
+    ],
+    wide: [
+      [9, 19, 6, 12], [3, 16, 11, 10], [0, 16, 7, 7],
+    ],
+    high: [
+      [10, 20, 5, 10], [5, 13, 9, 10], [2, 10, 7, 7],
+    ],
+    up: [
+      [10, 19, 5, 11], [8, 10, 6, 12], [8, 5, 5, 7],
+    ],
+    flat: [
+      [10, 27, 5, 8], [5, 30, 10, 8], [1, 34, 8, 6],
+    ],
+  }[pose] ?? [
+    [9, 21, 4, 2], [6, 23, 7, 2], [3, 25, 10, 5], [4, 30, 9, 4],
+  ];
+  for (const [x, y, width, height] of bands) {
+    mirroredRect(x, y, width, height, COLORS.ink);
   }
+  for (const [x, y, width, height] of bands) {
+    if (width < 4 || height < 3) continue;
+    mirroredRect(x + 1, y + 1, width - 2, height - 2, fillColor);
+  }
+}
 
-  const pointsByPose = {
-    rest: [[13, 21], [8, 22], [4, 27], [5, 33], [9, 34], [14, 29]],
-    raised: [[14, 27], [9, 22], [7, 14], [10, 11], [14, 20]],
-    attack: [[14, 21], [8, 20], [4, 23], [8, 27], [14, 28]],
-    down: [[14, 24], [10, 27], [8, 37], [11, 39], [15, 30]],
-    wide: [[14, 23], [9, 19], [4, 17], [6, 25], [14, 30]],
-    flat: [[15, 28], [10, 31], [5, 35], [9, 37], [15, 32]],
+export function resolveBabitoFinPose(value, side = -1) {
+  const descriptor = String(value ?? 'rest').trim().toLowerCase();
+  if (descriptor.includes('strike-extended')) return 'strike-extended';
+  if (descriptor.includes('strike')) return 'strike';
+  if (descriptor.includes('soft-out')) return 'soft';
+  if (descriptor.includes('flat')) return 'flat';
+  if (descriptor.includes('down') || descriptor.includes('droop')) return 'down';
+  if (descriptor.includes('drive-up') || descriptor === 'up') return 'up';
+  if (descriptor.includes('high')) return 'high';
+  if (descriptor.includes('wide')) return 'wide';
+  if (descriptor.includes('charge') || descriptor.includes('forward')) return 'forward';
+  if (descriptor.includes('guard')) return 'guard';
+  if (descriptor.includes('windup') || descriptor.includes('back')) return 'raised';
+  if (descriptor.includes('counter')) return side < 0 ? 'raised' : 'guard';
+  if (descriptor.includes('recover')) return 'guard';
+  if (descriptor.includes('flail')) return side < 0 ? 'high' : 'wide';
+  return 'rest';
+}
+
+function getBabitoSpringHandCenter(pose, side) {
+  const positions = {
+    rest: [6, 17],
+    soft: [4, 22],
+    raised: [7, 10],
+    guard: [5, 17],
+    forward: [4, 23],
+    strike: [4, 22],
+    'strike-extended': [4, 21],
+    down: [8, 39],
+    wide: [1, 17],
+    high: [3, 11],
+    up: [9, 7],
+    flat: [3, 36],
   };
-  const insetByPose = {
-    rest: [[12, 23], [9, 24], [6, 27], [7, 31], [9, 32], [12, 28]],
-    raised: [[13, 25], [10, 21], [9, 16], [10, 14], [12, 21]],
-    attack: [[13, 23], [9, 22], [7, 23], [9, 25], [13, 26]],
-    down: [[13, 26], [11, 28], [10, 35], [11, 37], [13, 29]],
-    wide: [[13, 24], [10, 21], [7, 20], [8, 24], [13, 28]],
-    flat: [[14, 29], [11, 32], [8, 34], [10, 35], [14, 31]],
+  const [leftX, y] = positions[pose] ?? positions.rest;
+  return { x: side < 0 ? leftX : BABITO_DESIGN_SIZE - leftX, y };
+}
+
+function drawBabitoSpringArm(ctx, side, pose, fillColor) {
+  const anchor = { x: side < 0 ? 13 : 35, y: 27 };
+  const hand = getBabitoSpringHandCenter(pose, side);
+  const direction = side < 0 ? -1 : 1;
+  const middleY = Math.round((anchor.y + hand.y) / 2);
+  const first = { x: anchor.x + direction * 4, y: middleY + 2 };
+  const second = {
+    x: Math.round((anchor.x + hand.x) / 2) - direction * 2,
+    y: middleY - 2,
   };
-  polygon(ctx, pointsByPose[pose].map(([x, y]) => [mirror(x), y]), COLORS.ink);
-  polygon(ctx, insetByPose[pose].map(([x, y]) => [mirror(x), y]), fillColor);
+  for (const thickness of [5, 2]) {
+    const color = thickness === 5 ? COLORS.ink : fillColor;
+    pixelLine(ctx, anchor.x, anchor.y, first.x, first.y, color, thickness);
+    pixelLine(ctx, first.x, first.y, second.x, second.y, color, thickness);
+    pixelLine(ctx, second.x, second.y, hand.x, hand.y, color, thickness);
+  }
+  ellipse(ctx, hand.x, hand.y, BABITO_SPRING_HAND_RADIUS, BABITO_SPRING_HAND_RADIUS, COLORS.ink);
+  ellipse(ctx, hand.x, hand.y, 2, 2, fillColor);
 }
 
 function drawBabitoArms(ctx, style, framePose = {}, fillColor = '#ffffff') {
   const motion = framePose.state ?? 'idle';
-  const phase = framePose.localFrame ?? 0;
-
-  const resolveFinPose = (value, side) => {
-    const descriptor = String(value ?? 'rest');
-    if (descriptor.includes('flat')) return 'flat';
-    if (descriptor.includes('down') || descriptor.includes('droop')) return 'down';
-    if (descriptor.includes('wide') || descriptor.includes('high') || descriptor.includes('up')) return 'wide';
-    if (
-      descriptor.includes('strike')
-      || descriptor.includes('charge')
-      || descriptor.includes('forward')
-    ) return 'attack';
-    if (descriptor.includes('back') || descriptor.includes('guard') || descriptor.includes('windup')) {
-      return 'raised';
-    }
-    if (descriptor.includes('flail')) return side < 0 ? 'raised' : 'wide';
-    if (descriptor.includes('counter') || descriptor.includes('recover')) return 'raised';
-    if (descriptor.includes('soft-out')) return 'rest';
-    return 'rest';
-  };
+  const leftDescriptor = framePose.arms?.left;
+  const rightDescriptor = framePose.arms?.right;
+  let leftPose = resolveBabitoFinPose(leftDescriptor, -1);
+  let rightPose = resolveBabitoFinPose(rightDescriptor, 1);
 
   if (style === 'spring') {
-    // Keep the unmistakable zig-zag silhouette while the shared frame offsets
-    // still give it the same timing as every other cosmetic arm choice.
-    const handX = getBabitoSpringHandCenterX(motion, phase);
-    pixelLine(ctx, 13, 27, 9, 24, COLORS.ink, 5);
-    pixelLine(ctx, 9, 24, 12, 21, COLORS.ink, 5);
-    pixelLine(ctx, 12, 21, 6, 17, COLORS.ink, 5);
-    pixelLine(ctx, 35, 27, 39, 24, COLORS.ink, 5);
-    pixelLine(ctx, 39, 24, 36, 21, COLORS.ink, 5);
-    pixelLine(ctx, 36, 21, handX, 17, COLORS.ink, 5);
-    pixelLine(ctx, 13, 27, 9, 24, fillColor, 2);
-    pixelLine(ctx, 9, 24, 12, 21, fillColor, 2);
-    pixelLine(ctx, 12, 21, 6, 17, fillColor, 2);
-    pixelLine(ctx, 35, 27, 39, 24, fillColor, 2);
-    pixelLine(ctx, 39, 24, 36, 21, fillColor, 2);
-    pixelLine(ctx, 36, 21, handX, 17, fillColor, 2);
-    ellipse(ctx, 6, 17, BABITO_SPRING_HAND_RADIUS, BABITO_SPRING_HAND_RADIUS, COLORS.ink);
-    ellipse(ctx, handX, 17, BABITO_SPRING_HAND_RADIUS, BABITO_SPRING_HAND_RADIUS, COLORS.ink);
-    ellipse(ctx, 6, 17, 2, 2, fillColor);
-    ellipse(ctx, handX, 17, 2, 2, fillColor);
+    // Spring cosmetics keep their zig-zag identity but now inherit the same
+    // descriptor endpoints as the round fins in every animation state.
+    drawBabitoSpringArm(ctx, -1, leftPose, fillColor);
+    drawBabitoSpringArm(ctx, 1, rightPose, fillColor);
     return;
   }
 
-  let leftPose = resolveFinPose(framePose.arms?.left, -1);
-  let rightPose = resolveFinPose(framePose.arms?.right, 1);
   // Hero/raised are cosmetic silhouettes, not frozen animation poses. They
   // keep their characteristic lift while still following every action beat.
-  if (style === 'raised' || style === 'hero') {
+  if (style === 'raised') {
     if (leftPose === 'rest') leftPose = 'raised';
     if (rightPose === 'rest') rightPose = 'raised';
+  } else if (style === 'hero') {
+    if (leftPose === 'rest') leftPose = 'guard';
+    if (rightPose === 'rest') rightPose = 'high';
+  } else if (style === 'attack' && motion === 'attack') {
+    if (leftPose === 'rest') leftPose = 'guard';
+    if (rightPose === 'rest') rightPose = 'strike';
   }
   drawBabitoFin(ctx, -1, leftPose, fillColor);
   drawBabitoFin(ctx, 1, rightPose, fillColor);

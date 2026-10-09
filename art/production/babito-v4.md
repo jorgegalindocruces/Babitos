@@ -2,7 +2,7 @@
 
 ## Estado
 
-Contrato visual vigente desde el 8 de octubre de 2026 y revisado el 9 de octubre de 2026. Sustituye a [Babito canónico v3](babito-v3.md), cuya ficha se conserva como historial, y corrige la lectura todavía estrecha, angulosa y con ápice superior de aquella versión. No cambia animación, personalización, física ni guardados.
+Contrato visual vigente desde el 8 de octubre de 2026 y revisado el 9 de octubre de 2026. Sustituye a [Babito canónico v3](babito-v3.md), cuya ficha se conserva como historial, y corrige la lectura todavía estrecha, angulosa y con ápice superior de aquella versión. La revisión actual amplía la animación con `land`, sin cambiar personalización, física, hitbox ni guardados.
 
 ## Referencia y proceso
 
@@ -12,7 +12,7 @@ El rediseño se dibujó con primitivas Canvas deterministas en [`createTextures.
 
 ## Rejillas y celda fuente
 
-- El sistema conserva una rejilla de diseño lógica de 48 unidades para no reescribir las 51 poses ni los cosméticos.
+- El sistema conserva una rejilla de diseño lógica de 48 unidades para compartir geometría entre las 54 poses y todos los cosméticos.
 - `BABITO_DETAIL_SCALE = 4 / 3` rasteriza esas coordenadas a una rejilla real de detalle de 64 px.
 - Cada frame ocupa una celda fuente transparente de 80 × 80 px (`BABITO_TEXTURE_SIZE` y `BABITO_RENDER_SIZE`), con margen para aletas, movimiento y accesorios.
 - Pequeño, normal y grande usan escalas `0.8`, `1` y `1.2`, por lo que sus cajas visibles siguen midiendo 64, 80 y 96 px. En tamaño normal cada píxel fuente se muestra 1:1.
@@ -25,17 +25,19 @@ El rediseño se dibujó con primitivas Canvas deterministas en [`createTextures.
 - Aletas de reposo más largas y caídas que en v3. El ancho total de la silueta con ambas aletas no supera 1,4 veces el ancho del cuerpo.
 - Pies cortos pero visibles, integrados en la curva inferior y anclados a la misma línea de apoyo en todos los tamaños. El contorno inferior se abre únicamente en dos raíces estrechas, una por pie, para unirlos al vientre sin dibujar una cinturilla horizontal.
 - Paleta cian: cuerpo `#7CDBF9`, luz `#A8EDFF`, sombra declarada `#2BBFE5`, rubor `#FF7196` y contorno `#07111E`. La sombra sigue formando parte de la definición de paleta, pero no se pinta sobre el cuerpo del Babito.
-- Barriga, raíces de los pies e interior de ambos pies usan `palette.main` de forma continua en todas las paletas y los 51 frames. `palette.shade` no se usa en el cuerpo: ni el bajo ni los laterales pueden introducir un segundo tono que se lea como cinturilla, calzoncillo o pantalón.
+- Barriga, raíces de los pies e interior de ambos pies usan `palette.main` de forma continua en todas las paletas y los 54 frames. `palette.shade` no se usa en el cuerpo: ni el bajo ni los laterales pueden introducir un segundo tono que se lea como cinturilla, calzoncillo o pantalón.
 - La opción base no equipa sombrero; las selecciones y guardados existentes se conservan.
 
 ## Animación e integración
 
-Se conservan los 51 frames definidos en [`BabitoAnimations.js`](../../src/game/BabitoAnimations.js): `idle` (6), `walk` (8), `run` (8), `jump` (6), `fall` (6), `attack` (6), `hurt` (5) y `dead` (6). [`BabitoAvatar.js`](../../src/game/BabitoAvatar.js) mantiene siete capas (`body`, `eyes`, `mouth`, `arms`, `headAccessory`, `glasses` y `neckAccessory`) compartiendo frame, giro y transformación. El rediseño no cambia la hitbox, estados, ventanas de combate ni persistencia.
+El atlas contiene 54 frames definidos en [`BabitoAnimations.js`](../../src/game/BabitoAnimations.js): `idle` (6), `walk` (8), `run` (8), `jump` (6), `fall` (6), `land` (3), `attack` (6), `hurt` (5) y `dead` (6). `land` añade impacto, asentamiento y recuperación sin mover la baseline. [`BabitoAvatar.js`](../../src/game/BabitoAvatar.js) mantiene siete capas (`body`, `eyes`, `mouth`, `arms`, `headAccessory`, `glasses` y `neckAccessory`) compartiendo frame, giro y transformación. La prioridad runtime es `dead` → `hurt` → `attack` → aire (`jump`/`fall`) → `land` → locomoción; cada *one-shot* arranca desde su primera pose en cuanto se activa y puede reiniciarse inmediatamente ante una acción nueva. La ampliación no cambia hitbox, ventanas de combate ni persistencia.
+
+Las aletas ya no colapsan descriptores distintos en una única forma: reposo, apertura suave, guardia, elevación, subida, extensión, golpe y caída tienen bandas de píxel propias. Los brazos de muelle conservan el zigzag equipado, pero siguen esos mismos destinos en los nueve estados. Los pies alternan planta, punta, elevación, recogida, caída, impacto y pose vencida; en los estados apoyados el pie de contacto se compensa tras squash e inclinación para conservar una única línea de suelo.
 
 `drawBabitoCompositeFrame()` compone un frame con el mismo renderer para usos editoriales. [`public/assets/landing/babito.png`](../../public/assets/landing/babito.png) se exporta a 320 × 320 desde la celda fuente de 80 px, con transparencia binaria, paleta limitada y nearest 4×.
 
 ## Verificación
 
-- [`babito-animation.test.js`](../../test/babito-animation.test.js) bloquea celda y render de 80 px, detalle 4/3, cuerpo de 47 × 45, ojos, aletas, bounds, 51 poses, escalas y baseline; además recorre todas las combinaciones de paleta y frame para impedir un tono secundario en barriga, raíces o pies.
+- [`babito-animation.test.js`](../../test/babito-animation.test.js) bloquea celda y render de 80 px, detalle 4/3, cuerpo de 47 × 45, ojos, descriptores de aletas y pies, bounds —incluidos los muelles extendidos—, 54 poses, nueve estados, prioridad, reinicio de *one-shots*, escalas y baseline exacta por pose apoyada; además recorre todas las combinaciones de paleta y frame para impedir un tono secundario en barriga, raíces o pies.
 - [`landing.test.js`](../../test/landing.test.js) comprueba 320 × 320, alpha binario, bloques nearest 4×, colores canónicos y ausencia de la sombra oscura en la exportación web.
-- La revisión visual cubre Creador y `GameScene` en `idle`, caminar, ataque y KO, con y sin accesorio de cabeza, y confirma corona plana, silueta redonda, pies apoyados y cosméticos sin recorte.
+- La revisión visual cubre Creador y `GameScene` en los nueve estados, incluido `land`, con y sin accesorio de cabeza, y confirma corona plana, silueta redonda, pies apoyados y cosméticos sin recorte. En QA, `qaMotion` sin `qaFrame` anima el clip, `qaFrame` congela la pose local y cualquier input real libera el override.

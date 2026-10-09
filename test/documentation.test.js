@@ -224,7 +224,9 @@ test('scope and critical gameplay invariants are explicit', async () => {
   assert.match(interactions, /Las plataformas elevadas son unidireccionales/u);
   assert.match(interactions, /cajas de render enteras de 64, 80 y 96 px/u);
   assert.match(interactions, /todos los clips se anclan por los pies a la superficie física/u);
-  assert.match(interactions, /`idle` \(6 frames\), `walk` \(8\), `run` \(8\), `jump` \(6\), `fall` \(6\), `attack` \(6\), `hurt` \(5\) y `dead` \(6\)/u);
+  assert.match(interactions, /`idle` \(6 frames\), `walk` \(8\), `run` \(8\), `jump` \(6\), `fall` \(6\), `land` \(3\), `attack` \(6\), `hurt` \(5\) y `dead` \(6\)/u);
+  assert.match(interactions, /prioridad visual es `dead` → `hurt` → `attack` → aire[\s\S]*→ `land` → locomoción/u);
+  assert.match(interactions, /Sin `qaFrame`, el clip avanza[\s\S]*input real[\s\S]*libera el override/u);
   assert.match(interactions, /Caminar y correr son ciclos diferentes/u);
   assert.match(interactions, /cuerpo rasterizado mide 47 × 45 px[\s\S]*ojos normales 4 × 9 px/u);
   assert.match(interactions, /`#7CDBF9`[\s\S]*`#A8EDFF`[\s\S]*`#2BBFE5`/u);

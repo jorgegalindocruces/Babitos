@@ -3,7 +3,7 @@ import gameData from '../data/game-data.json';
 import { BabitoAvatar } from './BabitoAvatar.js';
 import {
   getBabitoAnimationDurationMs,
-  selectBabitoLocomotionState,
+  resolveBabitoMotionState,
 } from './BabitoAnimations.js';
 import { getPower, launchPower } from './PowerSystem.js';
 import {
@@ -21,6 +21,7 @@ import { hitStop, spawnDust } from '../ui/effects.js';
 const ATTACK_ANIMATION_MS = getBabitoAnimationDurationMs('attack');
 const HURT_ANIMATION_MS = getBabitoAnimationDurationMs('hurt');
 const DEAD_ANIMATION_MS = getBabitoAnimationDurationMs('dead');
+const LAND_ANIMATION_MS = getBabitoAnimationDurationMs('land');
 const RESPAWN_INVULNERABILITY_MS = 1500;
 // A small downward nudge makes ↓ read as an intentional drop, not a slip.
 const DROP_THROUGH_VELOCITY = 140;
@@ -70,6 +71,7 @@ export class PlayerController {
     this.nextAttackAt = 0;
     this.attackUntil = -Infinity;
     this.hurtUntil = -Infinity;
+    this.landUntil = -Infinity;
     this.controlLockedUntil = -Infinity;
     this.lastUpdateAt = null;
     this.jumpHeldSinceJump = false;
@@ -81,6 +83,7 @@ export class PlayerController {
     this.droppingThrough = new Set();
     this.hasDroppedThrough = false;
     this.keyboardPressed = { jump: false, attack: false, drop: false };
+    this.hasGameplayInputThisFrame = false;
     this.suppressedUntilKeyUp = new Set();
     this.keyReleaseHandlers = new Map();
     this.keyPressHandlers = new Map();
@@ -210,6 +213,7 @@ export class PlayerController {
   }
 
   update(time) {
+    this.hasGameplayInputThisFrame = false;
     if (!this.body.active) return;
     const dtSeconds = this.lastUpdateAt == null ? 0 : Math.max(0, (time - this.lastUpdateAt) / 1000);
     this.lastUpdateAt = time;
@@ -248,6 +252,9 @@ export class PlayerController {
     const virtualAttack = this.consumeVirtualPress('attack');
     const jumpPressed = queuedJump || justDownJump || virtualJump;
     const attackPressed = queuedAttack || justDownAttack || virtualAttack;
+    this.hasGameplayInputThisFrame = Boolean(
+      left || right || jumpPressed || attackPressed || dropPressed,
+    );
 
     if (jumpPressed) this.jumpBufferedUntil = time + this.config.jumpBufferMs;
 
@@ -269,6 +276,8 @@ export class PlayerController {
         this.lastGroundedAt = -Infinity;
         this.jumpBufferedUntil = -Infinity;
         this.jumpHeldSinceJump = true;
+        this.landUntil = -Infinity;
+        this.avatar.setMotion?.('jump', this.body.body.velocity, { restart: true });
         this.avatar.pulseJump?.();
         this.audio?.play('jump');
         spawnDust(this.scene, this.body.x, this.body.body.bottom, { count: 4, spread: 10 });
@@ -322,17 +331,24 @@ export class PlayerController {
       }
     }
 
+    const landedThisFrame = grounded
+      && !this.wasGrounded
+      && !jumpedThisFrame
+      && this.previousVerticalVelocity > 40;
+    if (landedThisFrame) this.landUntil = time + LAND_ANIMATION_MS;
+
     // Animation priority is intentionally independent from movement input.
     // A fatal/hurt/attack pose must not be overwritten by residual velocity.
-    const motion = this.isDead
-      ? 'dead'
-      : (time < this.hurtUntil
-        ? 'hurt'
-        : (time < this.attackUntil
-          ? 'attack'
-          : (jumpedThisFrame || !grounded
-            ? (this.body.body.velocity.y < 0 ? 'jump' : 'fall')
-            : selectBabitoLocomotionState(this.body.body.velocity.x))));
+    const motion = resolveBabitoMotionState({
+      isDead: this.isDead,
+      isHurt: time < this.hurtUntil,
+      isAttacking: time < this.attackUntil,
+      isLanding: time < this.landUntil,
+      jumpedThisFrame,
+      grounded,
+      velocityX: this.body.body.velocity.x,
+      velocityY: this.body.body.velocity.y,
+    });
     this.syncBodyVisual(motion);
 
     const blinking = time < this.invulnerableUntil && Math.floor(time / 75) % 2 === 0;
@@ -344,11 +360,16 @@ export class PlayerController {
   syncBodyVisual(motion = null) {
     if (!this.body?.active || !this.avatar?.active) return;
     const grounded = this.body.body.blocked.down || this.body.body.touching.down;
-    const resolvedMotion = motion ?? (this.isDead
-      ? 'dead'
-      : (!grounded
-        ? (this.body.body.velocity.y < 0 ? 'jump' : 'fall')
-        : selectBabitoLocomotionState(this.body.body.velocity.x)));
+    const time = getGameplayTime(this.scene);
+    const resolvedMotion = motion ?? resolveBabitoMotionState({
+      isDead: this.isDead,
+      isHurt: time < this.hurtUntil,
+      isAttacking: time < this.attackUntil,
+      isLanding: time < this.landUntil,
+      grounded,
+      velocityX: this.body.body.velocity.x,
+      velocityY: this.body.body.velocity.y,
+    });
     this.avatar.setPosition(this.body.x, this.body.y + 2);
     this.avatar.setFacing(this.facing);
     this.avatar.setMotion?.(resolvedMotion, this.body.body.velocity);
@@ -377,6 +398,8 @@ export class PlayerController {
     this.springGuaranteedTopY = this.body.y - height * SPRING_MIN_RISE_RATIO;
     this.lastGroundedAt = -Infinity;
     this.jumpBufferedUntil = -Infinity;
+    this.landUntil = -Infinity;
+    this.avatar.setMotion?.('jump', this.body.body.velocity, { restart: true });
     this.avatar.pulseJump?.();
     return true;
   }
@@ -416,10 +439,11 @@ export class PlayerController {
       facing: this.facing,
       powerId: power.id,
     });
-    this.attackUntil = time + Math.min(ATTACK_ANIMATION_MS, power.cooldownMs);
+    this.attackUntil = time + ATTACK_ANIMATION_MS;
     const detune = power.id === 'lightning' ? 160 : (power.id === 'rock' ? -170 : 0);
     this.audio?.play('attack', { detune });
     this.avatar.setFacing(this.facing);
+    this.avatar.setMotion?.('attack', this.body.body.velocity, { restart: true });
     this.avatar.pulseAttack?.();
     return projectile;
   }
@@ -442,6 +466,8 @@ export class PlayerController {
     this.avatar.cancelMotionPulses?.();
     const knockback = this.body.x < sourceX ? -220 : 220;
     this.body.setVelocity(knockback, -265);
+    this.landUntil = -Infinity;
+    this.avatar.setMotion?.('hurt', this.body.body.velocity, { restart: true });
     this.scene.cameras.main.shake(110, 0.006);
     hitStop(this.scene, 80);
     this.audio?.play('hit');
@@ -456,10 +482,11 @@ export class PlayerController {
     this.setEnabled(false);
     this.attackUntil = -Infinity;
     this.hurtUntil = -Infinity;
+    this.landUntil = -Infinity;
     this.avatar.cancelMotionPulses?.();
     this.body.setAcceleration(0);
     this.body.setVelocity(0, -180);
-    this.avatar.setMotion?.('dead', this.body.body.velocity);
+    this.avatar.setMotion?.('dead', this.body.body.velocity, { restart: true });
     this.scene.time.delayedCall(DEAD_ANIMATION_MS, () => this.onGameOver?.());
   }
 
@@ -479,6 +506,7 @@ export class PlayerController {
     this.invulnerableUntil = getGameplayTime(this.scene) + RESPAWN_INVULNERABILITY_MS;
     this.attackUntil = -Infinity;
     this.hurtUntil = -Infinity;
+    this.landUntil = -Infinity;
     this.controlLockedUntil = -Infinity;
     this.droppingThrough.clear();
     this.jumpHeldSinceJump = false;
@@ -486,7 +514,7 @@ export class PlayerController {
     this.previousVerticalVelocity = 0;
     this.clearPendingInput();
     this.avatar.cancelMotionPulses?.();
-    this.avatar.setMotion?.('idle', { x: 0, y: 0 });
+    this.avatar.setMotion?.('idle', { x: 0, y: 0 }, { restart: true });
     this.body.enableBody(true, this.checkpoint.x, this.checkpoint.y, true, true);
     this.body.setAcceleration(0);
     this.body.setVelocity(0);

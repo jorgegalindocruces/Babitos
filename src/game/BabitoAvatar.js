@@ -29,6 +29,8 @@ const MOTION_ALIASES = Object.freeze({
   walking: 'walk',
   airborne: 'jump',
   falling: 'fall',
+  landing: 'land',
+  landed: 'land',
   shooting: 'attack',
   shoot: 'attack',
   hit: 'hurt',
@@ -339,7 +341,7 @@ export class BabitoAvatar extends Phaser.GameObjects.Container {
    * Selects a lightweight procedural pose. This does not replace the stored
    * cosmetic arm choice; leaving the temporary state restores it.
    *
-   * Supported states: idle, walk, run, jump, fall, attack, hurt, dead.
+   * Supported states: idle, walk, run, jump, fall, land, attack, hurt, dead.
    * @param {string} state
    * @param {{x?: number, y?: number}|Phaser.Math.Vector2} [velocity]
    * @param {{restart?: boolean}} [options]
@@ -425,7 +427,10 @@ export class BabitoAvatar extends Phaser.GameObjects.Container {
   }
 
   _applyMotion(_time = 0, delta = 16.67) {
-    if (!this.scene?.time?.paused) {
+    const motionClockPaused = Boolean(
+      this.scene?.time?.paused || this.scene?.physics?.world?.isPaused,
+    );
+    if (!motionClockPaused) {
       this.motionElapsedMs += Math.max(0, Number(delta) || 0);
     }
 

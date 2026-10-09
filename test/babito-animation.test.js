@@ -8,9 +8,11 @@ import {
   BABITO_FRAME_POSES,
   getBabitoAnimationDurationMs,
   getBabitoAnimationPose,
+  resolveBabitoMotionState,
   sampleBabitoAnimationFrame,
   sampleBabitoAnimationPose,
   selectBabitoLocomotionState,
+  updateBabitoQaMotionOverride,
 } from '../src/game/BabitoAnimations.js';
 import {
   BABITO_AUTHORED_ART_BOUNDS,
@@ -22,8 +24,11 @@ import {
   BABITO_TEXTURE_SIZE,
   drawBabitoBody,
   getBabitoBodyScanlineWidths,
+  getBabitoFootShape,
+  getBabitoPoseFootBaseline,
   getBabitoSpringHandCenterX,
   getBabitoTransformedBounds,
+  resolveBabitoFinPose,
 } from '../src/game/createTextures.js';
 import {
   BABITO_ART_BASELINE,
@@ -36,11 +41,12 @@ const EXPECTED_CLIPS = Object.freeze({
   idle: { start: 0, frameCount: 6, fps: 6, loop: true },
   walk: { start: 6, frameCount: 8, fps: 10, loop: true },
   run: { start: 14, frameCount: 8, fps: 14, loop: true },
-  jump: { start: 22, frameCount: 6, fps: 12, loop: false },
+  jump: { start: 22, frameCount: 6, fps: 15, loop: false },
   fall: { start: 28, frameCount: 6, fps: 10, loop: true },
-  attack: { start: 34, frameCount: 6, fps: 16, loop: false },
-  hurt: { start: 40, frameCount: 5, fps: 14, loop: false },
-  dead: { start: 45, frameCount: 6, fps: 8, loop: false },
+  land: { start: 34, frameCount: 3, fps: 16, loop: false },
+  attack: { start: 37, frameCount: 6, fps: 16, loop: false },
+  hurt: { start: 43, frameCount: 5, fps: 14, loop: false },
+  dead: { start: 48, frameCount: 6, fps: 8, loop: false },
 });
 
 function createRasterCanvasContext(size = 48) {
@@ -67,10 +73,10 @@ function createRasterCanvasContext(size = 48) {
   };
 }
 
-test('Babito exposes eight distinct sequential clips on an eight-column atlas', () => {
+test('Babito exposes nine distinct sequential clips on an eight-column atlas', () => {
   assert.equal(BABITO_ANIMATION_COLUMNS, 8);
   assert.deepEqual(BABITO_ANIMATION_CLIPS, EXPECTED_CLIPS);
-  assert.equal(BABITO_ANIMATION_FRAME_COUNT, 51);
+  assert.equal(BABITO_ANIMATION_FRAME_COUNT, 54);
 
   const coveredFrames = Object.values(BABITO_ANIMATION_CLIPS).flatMap((clip) => (
     Array.from({ length: clip.frameCount }, (_, offset) => clip.start + offset)
@@ -91,17 +97,19 @@ test('movement loops while action clips hold their authored final frame', () => 
   assert.equal(sampleBabitoAnimationFrame('fall', 600), 28);
 
   assert.equal(sampleBabitoAnimationFrame('jump', 9999), 27);
-  assert.equal(sampleBabitoAnimationFrame('attack', 9999), 39);
-  assert.equal(sampleBabitoAnimationFrame('hurt', 9999), 44);
-  assert.equal(sampleBabitoAnimationFrame('dead', 9999), 50);
+  assert.equal(sampleBabitoAnimationFrame('land', 9999), 36);
+  assert.equal(sampleBabitoAnimationFrame('attack', 9999), 42);
+  assert.equal(sampleBabitoAnimationFrame('hurt', 9999), 47);
+  assert.equal(sampleBabitoAnimationFrame('dead', 9999), 53);
 });
 
 test('duration helper follows clip timing and safe speed multipliers', () => {
   assert.equal(getBabitoAnimationDurationMs('idle'), 1000);
   assert.equal(getBabitoAnimationDurationMs('walk'), 800);
   assert.equal(getBabitoAnimationDurationMs('run'), 572);
-  assert.equal(getBabitoAnimationDurationMs('jump'), 500);
+  assert.equal(getBabitoAnimationDurationMs('jump'), 400);
   assert.equal(getBabitoAnimationDurationMs('fall'), 600);
+  assert.equal(getBabitoAnimationDurationMs('land'), 188);
   assert.equal(getBabitoAnimationDurationMs('attack'), 375);
   assert.equal(getBabitoAnimationDurationMs('hurt'), 358);
   assert.equal(getBabitoAnimationDurationMs('dead'), 750);
@@ -182,7 +190,114 @@ test('horizontal speed selects idle, walk and a genuinely distinct run state', (
   assert.equal(selectBabitoLocomotionState(80, null), 'walk');
 });
 
-test('the richer layered renderer stays crisp and keeps spring hands inside the authored art', () => {
+test('gameplay motion resolver preserves action priority and every traversal state', () => {
+  assert.equal(resolveBabitoMotionState(), 'idle');
+  assert.equal(resolveBabitoMotionState({ velocityX: 80 }), 'walk');
+  assert.equal(resolveBabitoMotionState({ velocityX: -260 }), 'run');
+  assert.equal(resolveBabitoMotionState({ grounded: false, velocityY: -1 }), 'jump');
+  assert.equal(resolveBabitoMotionState({ jumpedThisFrame: true, velocityY: -690 }), 'jump');
+  assert.equal(resolveBabitoMotionState({ grounded: false, velocityY: 0 }), 'fall');
+  assert.equal(resolveBabitoMotionState({ isLanding: true }), 'land');
+
+  assert.equal(resolveBabitoMotionState({
+    isLanding: true,
+    grounded: false,
+    velocityY: -40,
+  }), 'jump', 'airborne traversal must cancel a stale landing window');
+  assert.equal(resolveBabitoMotionState({
+    isAttacking: true,
+    isLanding: true,
+    grounded: false,
+    velocityY: -40,
+  }), 'attack');
+  assert.equal(resolveBabitoMotionState({
+    isHurt: true,
+    isAttacking: true,
+    grounded: false,
+    velocityY: -40,
+  }), 'hurt');
+  assert.equal(resolveBabitoMotionState({
+    isDead: true,
+    isHurt: true,
+    isAttacking: true,
+  }), 'dead');
+});
+
+test('QA motion animates freely, freezes an explicit frame and releases on gameplay input', () => {
+  const first = updateBabitoQaMotionOverride({
+    state: ' attack ',
+    elapsedMs: 0,
+    deltaMs: 62.5,
+  });
+  assert.deepEqual(first, { state: 'attack', localFrame: null, elapsedMs: 62.5 });
+  assert.equal(Object.isFrozen(first), true);
+
+  const second = updateBabitoQaMotionOverride({
+    state: first.state,
+    localFrame: first.localFrame,
+    elapsedMs: first.elapsedMs,
+    deltaMs: 62.5,
+  });
+  assert.deepEqual(second, { state: 'attack', localFrame: null, elapsedMs: 125 });
+  assert.equal(sampleBabitoAnimationFrame(second.state, second.elapsedMs), 39);
+
+  const frozen = updateBabitoQaMotionOverride({
+    state: 'land',
+    localFrame: 99,
+    elapsedMs: 900,
+    deltaMs: 500,
+  });
+  assert.deepEqual(frozen, { state: 'land', localFrame: 2, elapsedMs: 125 });
+  assert.equal(sampleBabitoAnimationFrame(frozen.state, frozen.elapsedMs), 36);
+
+  assert.deepEqual(updateBabitoQaMotionOverride({
+    state: 'jump',
+    localFrame: 3,
+    elapsedMs: 100,
+    deltaMs: 16,
+    hasGameplayInput: true,
+  }), { state: null, localFrame: null, elapsedMs: 0 });
+  assert.deepEqual(
+    updateBabitoQaMotionOverride({ state: 'unknown', elapsedMs: 100, deltaMs: 16 }),
+    { state: null, localFrame: null, elapsedMs: 0 },
+  );
+  assert.deepEqual(
+    updateBabitoQaMotionOverride({ state: '__proto__', elapsedMs: 100, deltaMs: 16 }),
+    { state: null, localFrame: null, elapsedMs: 0 },
+  );
+});
+
+test('foot stances and arm descriptors resolve to distinct pixel silhouettes', () => {
+  const pose = (state, localFrame) => {
+    const clip = BABITO_ANIMATION_CLIPS[state];
+    return BABITO_FRAME_POSES[clip.start + localFrame];
+  };
+
+  assert.equal(getBabitoFootShape(pose('idle', 0), 'left'), 'plant');
+  assert.equal(getBabitoFootShape(pose('walk', 3), 'right'), 'lifted');
+  assert.equal(getBabitoFootShape(pose('run', 0), 'left'), 'toe');
+  assert.equal(getBabitoFootShape(pose('jump', 0), 'left'), 'impact');
+  assert.equal(getBabitoFootShape(pose('jump', 2), 'right'), 'tucked');
+  assert.equal(getBabitoFootShape(pose('fall', 0), 'left'), 'falling');
+  assert.equal(getBabitoFootShape(pose('land', 1), 'right'), 'impact');
+  assert.equal(getBabitoFootShape(pose('attack', 3), 'right'), 'toe');
+  assert.equal(getBabitoFootShape(pose('dead', 3), 'left'), 'fallen');
+
+  assert.equal(resolveBabitoFinPose('soft-out', -1), 'soft');
+  assert.equal(resolveBabitoFinPose('drive-up', 1), 'up');
+  assert.equal(resolveBabitoFinPose('strike-extended', 1), 'strike-extended');
+  assert.equal(resolveBabitoFinPose('strike', 1), 'strike');
+  assert.equal(resolveBabitoFinPose('charge', 1), 'forward');
+  assert.equal(resolveBabitoFinPose('guard', -1), 'guard');
+  assert.equal(resolveBabitoFinPose('windup', -1), 'raised');
+  assert.equal(resolveBabitoFinPose('counter', -1), 'raised');
+  assert.equal(resolveBabitoFinPose('counter', 1), 'guard');
+  assert.equal(resolveBabitoFinPose('flail', -1), 'high');
+  assert.equal(resolveBabitoFinPose('flail', 1), 'wide');
+  assert.equal(resolveBabitoFinPose(null, 1), 'rest');
+});
+
+test('the richer layered renderer stays crisp and keeps extended spring hands inside each cell', () => {
   assert.equal(BABITO_TEXTURE_SIZE, 80);
   assert.equal(BABITO_RENDER_SIZE, 80);
   assert.equal(BABITO_DETAIL_SCALE, 4 / 3);
@@ -191,15 +306,25 @@ test('the richer layered renderer stays crisp and keeps spring hands inside the 
     { length: BABITO_ANIMATION_CLIPS.attack.frameCount },
     (_, phase) => getBabitoSpringHandCenterX('attack', phase),
   );
-  assert.deepEqual(attackCenters, [39, 41, 43, 44, 42, 40]);
-  assert.ok(
-    Math.round(Math.max(...attackCenters) * BABITO_DETAIL_SCALE)
-      + Math.round(BABITO_SPRING_HAND_RADIUS * BABITO_DETAIL_SCALE)
-      <= BABITO_AUTHORED_ART_BOUNDS.maxX,
-  );
+  assert.deepEqual(attackCenters, [41, 44, 44, 44, 43, 43]);
+  const attackClip = BABITO_ANIMATION_CLIPS.attack;
+  for (const pose of BABITO_FRAME_POSES.slice(
+    attackClip.start,
+    attackClip.start + attackClip.frameCount,
+  )) {
+    const springBounds = {
+      ...BABITO_AUTHORED_ART_BOUNDS,
+      maxX: Math.round(getBabitoSpringHandCenterX('attack', pose.localFrame) * BABITO_DETAIL_SCALE)
+        + Math.round(BABITO_SPRING_HAND_RADIUS * BABITO_DETAIL_SCALE),
+    };
+    assert.ok(
+      getBabitoTransformedBounds(pose, springBounds).maxX <= BABITO_TEXTURE_SIZE,
+      `spring attack ${pose.localFrame} clips on the right`,
+    );
+  }
   assert.equal(getBabitoSpringHandCenterX('walk', 7), 42);
-  assert.equal(getBabitoSpringHandCenterX('attack', 2.8), 43);
-  assert.equal(getBabitoSpringHandCenterX('attack', Number.NaN), 39);
+  assert.equal(getBabitoSpringHandCenterX('attack', 2.8), 44);
+  assert.equal(getBabitoSpringHandCenterX('attack', Number.NaN), 41);
 
   for (const pose of BABITO_FRAME_POSES) {
     const bounds = getBabitoTransformedBounds(pose, BABITO_AUTHORED_ART_BOUNDS);
@@ -207,6 +332,18 @@ test('the richer layered renderer stays crisp and keeps spring hands inside the 
     assert.ok(bounds.maxX <= BABITO_TEXTURE_SIZE, `${pose.state}:${pose.localFrame} clips on the right`);
     assert.ok(bounds.minY >= 0, `${pose.state}:${pose.localFrame} clips on the top`);
     assert.ok(bounds.maxY <= BABITO_TEXTURE_SIZE, `${pose.state}:${pose.localFrame} clips on the bottom`);
+  }
+});
+
+test('grounded animation poses keep one exact support line', () => {
+  const idleBaseline = getBabitoPoseFootBaseline(BABITO_FRAME_POSES[0]);
+  for (const pose of BABITO_FRAME_POSES) {
+    if (!['idle', 'walk', 'run', 'land', 'attack'].includes(pose.state)) continue;
+    if (pose.feet.stance.includes('airborne')) continue;
+    assert.ok(
+      Math.abs(getBabitoPoseFootBaseline(pose) - idleBaseline) < 1e-9,
+      `${pose.state}:${pose.localFrame} moves its supporting foot off the baseline`,
+    );
   }
 });
 
