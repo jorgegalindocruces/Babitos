@@ -116,6 +116,10 @@ export class BossScene extends Phaser.Scene {
     this.nextBlockedFeedbackAt = 0;
     this.nextContactDamageAt = 0;
     this.paused = false;
+    // Phaser reuses this scene instance: overlays from a previous visit must
+    // not survive into a replay, or pause would silently stop working.
+    this.pauseOverlay = null;
+    this.gameOverContainer = null;
     this.encounterSuspended = false;
     this.gameOverShown = false;
     this.transitioning = false;

@@ -35,9 +35,9 @@ Las tres referencias de La Jungla gobiernan ya personajes jugables. Garbanzo Loc
 | COME | Spritesheet raster por estados | [enemy-come-sheet-v3.png](../public/assets/characters/enemy-come-sheet-v3.png) |
 | VUELA | Spritesheet raster de 36 poses, alpha binario y celdas de 256 px | [enemy-vuela-v4.md](../art/production/enemy-vuela-v4.md) |
 | DA VUELTAS | Spritesheet procedural temporal | [EnemyAnimations.js](../src/game/EnemyAnimations.js) |
-| Garbanzo Loco | Spritesheet raster de 8 poses, 4 × 2, alpha binario y celdas de 256 px | [jungle-enemy-sheets-v1.md](../art/production/jungle-enemy-sheets-v1.md) |
-| Árbol Pocho | Spritesheet raster de 8 poses, 4 × 2, alpha binario y celdas de 256 px | [jungle-enemy-sheets-v1.md](../art/production/jungle-enemy-sheets-v1.md) |
-| Sapo Pota | Spritesheet raster de 8 poses, 4 × 2, alpha binario y celdas de 256 px | [jungle-enemy-sheets-v1.md](../art/production/jungle-enemy-sheets-v1.md) |
+| Garbanzo Loco | Spritesheet raster v2 de 8 poses, 4 × 2, alpha binario, celdas de 256 px de alto y pivote común | [jungle-enemy-sheets-v2.md](../art/production/jungle-enemy-sheets-v2.md) |
+| Árbol Pocho | Spritesheet raster v2 de 8 poses, 4 × 2, alpha binario, celdas de 256 px de alto y pivote común | [jungle-enemy-sheets-v2.md](../art/production/jungle-enemy-sheets-v2.md) |
+| Sapo Pota | Spritesheet raster v2 de 8 poses, 4 × 2, alpha binario, celdas de 256 px de alto y pivote común | [jungle-enemy-sheets-v2.md](../art/production/jungle-enemy-sheets-v2.md) |
 | Babito | Atlas procedural canónico con celdas de 80 px, raster de detalle de 64 px, 54 poses y capas cosméticas sincronizadas | [babito-v4.md](../art/production/babito-v4.md) |
 | Boss, tenderos y Árbol | PNG raster de personaje con poses o composición runtime | `public/assets/characters/` |
 | Jungla | Nivel jugable con fondo, losetas, agua, cascada, lianas y ruinas procedurales; sin raster de producción todavía | [jungleScenery.js](../src/game/jungleScenery.js) y [createTextures.js](../src/game/createTextures.js) |
@@ -55,6 +55,7 @@ Los fondos no contienen colisión. El tercio inferior debe evitar falsas platafo
 - Garbanzo Loco: `idle`, `walk`, `windup`, `attack`, `hurt`, `recover` y `defeat`; la anticipación y la estocada horizontal con lanza deben distinguirse con claridad, y el escudo-vaina permanece en su silueta.
 - Árbol Pocho: `idle`, `wake`, `angry`, `punch_left`, `punch_right`, `recover`, `hurt` y `defeat`; en reposo se lee como árbol tranquilo, al despertar abre el ojo y los dos golpes de rama conservan direcciones distintas.
 - Sapo Pota: `underwater`, `emerge`, `idle`, `windup`, `vomit`, `recover`, `hurt`, `submerge` y `defeat`; los ojos bajo el agua, la gran apertura de boca y la trayectoria tóxica comunican cada ventana sin depender del HUD.
+- Ninguna pose de La Jungla se corta en el borde de su celda ni salta lateral o verticalmente al cambiar de clip: raíces del Árbol, pies de Garbanzo y asiento del Sapo permanecen en su sitio. El área de daño de cada ataque termina donde termina el arma pintada.
 - Babito Corrupto: poses diferenciadas para intro, bola de fuego, ataque superior, embestida, `RECOVER` y purificación.
 - La Oscuridad: ondulación continua en sombra, fundido y recolocación durante `SHIFT`, siluetas legibles para rasante, meteoritos, zona oscura y apagado, anillo dorado en `EXPOSED` y disipación en luciérnagas al quedar `DISPELLED`.
 

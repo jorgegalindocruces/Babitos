@@ -128,6 +128,13 @@ export class DarknessBossScene extends Phaser.Scene {
     this.encounterTimers = new Set();
     this.physicsLinks = [];
     this.paused = false;
+    // Phaser reuses this scene instance: overlays from a previous visit must
+    // not survive into a replay (stale panels blocked pause and the victory
+    // dialogue the second time La Oscuridad was beaten).
+    this.pauseOverlay = null;
+    this.gameOverContainer = null;
+    this.victoryPanel = null;
+    this.apple = null;
     this.encounterSuspended = false;
     this.gameOverShown = false;
     this.transitioning = false;

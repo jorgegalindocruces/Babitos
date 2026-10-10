@@ -51,9 +51,9 @@ Los poderes no se compran. Babicoins equivalen a apariencia; Manzanas de Poder e
 - COME: rojo, boca enorme, ojos saltones, mayor que el Babito, terrestre y muerde.
 - VUELA: murciélago morado, menor que el Babito, aparece solo o en pareja, vuela y ataca en picado.
 - DA VUELTAS: bola verde con pinchos, rueda y después queda mareado. Solo es vulnerable durante ese estado.
-- Garbanzo Loco: guerrero de La Jungla con lanza, tres plumas y escudo-vaina; patrulla, persigue y anticipa una estocada horizontal.
-- Árbol Pocho: árbol camuflado con un gran ojo azul; despierta por proximidad, golpea con la rama del lado correspondiente y deja una recuperación vulnerable.
-- Sapo Pota: sapo grande y resistente ligado al agua; emerge, anticipa una vomitera tóxica horizontal y vuelve a sumergirse.
+- Garbanzo Loco: guerrero de La Jungla con lanza, tres plumas y escudo-vaina; patrulla, persigue y anticipa una estocada horizontal cuya dirección queda fijada; saltar por encima de él la esquiva.
+- Árbol Pocho: árbol camuflado con un gran ojo azul; despierta por proximidad, anticipa con los brazos alzados, golpea con la rama del lado correspondiente y deja una recuperación vulnerable.
+- Sapo Pota: sapo grande y resistente ligado al agua; emerge medio sumergido, anticipa una vomitera tóxica horizontal y vuelve a sumergirse.
 
 Cada enemigo puede soltar 0, 1 o 2 monedas. En las dos fases, solo el ataque activo de cada enemigo causa daño y el portal se abre al superar todos los enemigos: seis en Babilandia y diez, agrupados en seis secuencias, en La Jungla. DA VUELTAS apunta su giro hacia el Babito; la lanza, las ramas y la vomitera también se anticipan para que cada peligro sea legible.
 

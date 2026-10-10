@@ -30,9 +30,9 @@
   ],
   "tutorialSigns": [
     { "id": "pits", "x": 520, "text": "SALTA EL RÍO · CAER CUESTA UN CORAZÓN" },
-    { "id": "garbanzo", "x": 1090, "text": "LA LANZA SE ESQUIVA SALTANDO" },
-    { "id": "spring", "x": 1300, "text": "SETA SALTARINA: MANTÉN SALTO" },
-    { "id": "bridges", "x": 2200, "text": "SAPO POTA ACECHA BAJO EL AGUA" },
+    { "id": "garbanzo", "x": 1040, "text": "LA LANZA SE ESQUIVA SALTANDO" },
+    { "id": "spring", "x": 1280, "text": "SETA SALTARINA: MANTÉN SALTO" },
+    { "id": "bridges", "x": 2220, "text": "SAPO POTA ACECHA BAJO EL AGUA" },
     { "id": "ruins", "x": 3020, "text": "LOS ÁRBOLES TAMBIÉN DESPIERTAN" },
     { "id": "darkness", "x": 4300, "text": "LA LUZ SE APAGA MÁS ADELANTE" },
     { "id": "portal", "x": 6020, "text": "LA OSCURIDAD ESPERA TRAS EL PORTAL" }
@@ -41,17 +41,17 @@
     { "id": "start", "x": 130, "y": 480 },
     { "id": "lianas", "x": 1760, "y": 480 },
     { "id": "ruinas", "x": 3830, "y": 480 },
-    { "id": "penumbra", "x": 5150, "y": 480 }
+    { "id": "penumbra", "x": 5220, "y": 480 }
   ],
   "enemies": [
     { "id": "garbanzo_inicio", "type": "garbanzo_loco", "x": 1220, "y": 420 },
-    { "id": "arbol_vegetacion", "type": "arbol_pocho", "x": 1920, "y": 405 },
-    { "id": "sapo_laguna", "type": "sapo_pota", "x": 2490, "y": 438, "volleyCount": 1, "waterlineY": 501, "detectRange": 250, "attackRange": 240 },
-    { "id": "garbanzo_ruinas", "type": "garbanzo_loco", "x": 3270, "y": 420 },
-    { "id": "arbol_ruinas", "type": "arbol_pocho", "x": 3750, "y": 405 },
-    { "id": "sapo_penumbra", "type": "sapo_pota", "x": 4065, "y": 438, "volleyCount": 2, "waterlineY": 501, "detectRange": 200, "attackRange": 200 },
+    { "id": "arbol_vegetacion", "type": "arbol_pocho", "x": 2030, "y": 405 },
+    { "id": "sapo_laguna", "type": "sapo_pota", "x": 2545, "y": 458, "volleyCount": 1, "waterlineY": 494, "detectRange": 270, "attackRange": 270 },
+    { "id": "garbanzo_ruinas", "type": "garbanzo_loco", "x": 3240, "y": 420 },
+    { "id": "arbol_ruinas", "type": "arbol_pocho", "x": 3500, "y": 405 },
+    { "id": "sapo_penumbra", "type": "sapo_pota", "x": 4065, "y": 458, "volleyCount": 2, "waterlineY": 494, "detectRange": 200, "attackRange": 200 },
     { "id": "garbanzo_penumbra", "type": "garbanzo_loco", "x": 4490, "y": 420 },
-    { "id": "sapo_final", "type": "sapo_pota", "x": 4990, "y": 438, "volleyCount": 3, "waterlineY": 501, "detectRange": 150, "attackRange": 150 },
+    { "id": "sapo_final", "type": "sapo_pota", "x": 4990, "y": 458, "volleyCount": 3, "waterlineY": 494, "detectRange": 150, "attackRange": 150 },
     { "id": "garbanzo_final", "type": "garbanzo_loco", "x": 5570, "y": 420 },
     { "id": "arbol_final", "type": "arbol_pocho", "x": 5890, "y": 405 }
   ],

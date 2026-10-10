@@ -33,6 +33,10 @@ export const LEVELS = Object.freeze({
     coinRewardPrefix: 'jungla:coin:',
     announcement: 'La Jungla. Salta los fosos del río, usa las setas y derrota a los Bicharracos.',
     introToast: 'LA JUNGLA · Caer al río cuesta un corazón',
+    // Rope bridges and branches are thin walkways: Babito shots (including
+    // lobbed rocks) cross them like the toxic vomit does. Only solid ground
+    // and ruin pillars stop a projectile.
+    walkwaysStopShots: false,
     tiles: Object.freeze({ ground: 'tile_jungle_ground', platform: 'tile_branch' }),
     boss: Object.freeze({
       scene: 'DarknessBossScene',
@@ -42,6 +46,9 @@ export const LEVELS = Object.freeze({
     }),
   }),
 });
+
+/** Top edge of the river water drawn in every La Jungla pit. */
+export const JUNGLE_WATER_SURFACE_Y = 494;
 
 export const PLATFORM_STYLE_TEXTURES = Object.freeze({
   branch: 'tile_branch',
@@ -66,6 +73,27 @@ export function getGroundSpans(platforms = []) {
     else spans.push({ ...segment });
   }
   return spans;
+}
+
+/**
+ * Stretches a walker can patrol: ground spans with the solid styled ground
+ * (ruin pillars) cut out, since a walker can neither cross nor climb them.
+ */
+export function getWalkSpans(platforms = []) {
+  const obstacles = platforms
+    .filter((platform) => platform.kind === 'ground' && platform.style)
+    .map((platform) => ({ left: platform.x - platform.width / 2, right: platform.x + platform.width / 2 }));
+  let spans = getGroundSpans(platforms);
+  for (const obstacle of obstacles) {
+    spans = spans.flatMap((span) => {
+      if (obstacle.right <= span.left || obstacle.left >= span.right) return [span];
+      return [
+        { left: span.left, right: obstacle.left },
+        { left: obstacle.right, right: span.right },
+      ].filter((piece) => piece.right > piece.left);
+    });
+  }
+  return spans.sort((first, second) => first.left - second.left);
 }
 
 /** Maps a saved progress scene (or a level id) to its playable level. */

@@ -1,8 +1,8 @@
 import Phaser from 'phaser';
-import { getGroundSpans } from '../data/levels/index.js';
+import { getGroundSpans, JUNGLE_WATER_SURFACE_Y } from '../data/levels/index.js';
 import { createAmbientMotes, prefersReducedMotion } from '../ui/effects.js';
 
-const WATER_SURFACE_Y = 494;
+const WATER_SURFACE_Y = JUNGLE_WATER_SURFACE_Y;
 const WATER_TEXTURE = 'jungle_water';
 const WATERFALL_TEXTURE = 'jungle_waterfall';
 const LIGHT_TEXTURE = 'jungle_soft_light';

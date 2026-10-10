@@ -23,25 +23,28 @@ export const ENEMY_SHEET_ASSETS = Object.freeze({
     xBounds: makeBounds([0, 64, 128, 192, 256, 320, 384]),
     yBounds: makeBounds([0, 64, 128, 192, 256, 320]),
   }),
+  // La Jungla v2 atlases keep v1's 256px-tall cells and baselines, but use
+  // wider cells so long poses (spear thrust, vomit, fallen tree) are never
+  // sliced, and every pose shares one horizontal pivot at the cell centre.
   garbanzo_loco: Object.freeze({
-    key: 'enemy_garbanzo_loco_sheet_v1',
-    url: 'assets/characters/enemy-garbanzo-loco-sheet-v1.png',
-    revision: 'v1',
-    xBounds: makeBounds([0, 256, 512, 768, 1024]),
+    key: 'enemy_garbanzo_loco_sheet_v2',
+    url: 'assets/characters/enemy-garbanzo-loco-sheet-v2.png',
+    revision: 'v2',
+    xBounds: makeBounds([0, 352, 704, 1056, 1408]),
     yBounds: makeBounds([0, 256, 512]),
   }),
   arbol_pocho: Object.freeze({
-    key: 'enemy_arbol_pocho_sheet_v1',
-    url: 'assets/characters/enemy-arbol-pocho-sheet-v1.png',
-    revision: 'v1',
-    xBounds: makeBounds([0, 256, 512, 768, 1024]),
+    key: 'enemy_arbol_pocho_sheet_v2',
+    url: 'assets/characters/enemy-arbol-pocho-sheet-v2.png',
+    revision: 'v2',
+    xBounds: makeBounds([0, 288, 576, 864, 1152]),
     yBounds: makeBounds([0, 256, 512]),
   }),
   sapo_pota: Object.freeze({
-    key: 'enemy_sapo_pota_sheet_v1',
-    url: 'assets/characters/enemy-sapo-pota-sheet-v1.png',
-    revision: 'v1',
-    xBounds: makeBounds([0, 256, 512, 768, 1024]),
+    key: 'enemy_sapo_pota_sheet_v2',
+    url: 'assets/characters/enemy-sapo-pota-sheet-v2.png',
+    revision: 'v2',
+    xBounds: makeBounds([0, 400, 800, 1200, 1600]),
     yBounds: makeBounds([0, 256, 512]),
   }),
 });
@@ -190,6 +193,16 @@ const ENEMY_STATE_TINTS = Object.freeze({
 export function getEnemyAnimationKey(type, clip) {
   const revision = ENEMY_SHEET_ASSETS[type]?.revision ?? 'v3';
   return `enemy-${type}-${clip}-${revision}`;
+}
+
+/** Size of one atlas cell; Jungle cells are wider than they are tall. */
+export function getEnemyCellSize(type) {
+  const asset = ENEMY_SHEET_ASSETS[type];
+  if (!asset) return null;
+  return {
+    width: asset.xBounds[1] - asset.xBounds[0],
+    height: asset.yBounds[1] - asset.yBounds[0],
+  };
 }
 
 export function getEnemyFrameName(type, row, column) {

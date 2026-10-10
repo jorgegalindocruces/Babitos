@@ -1,5 +1,9 @@
 import Phaser from 'phaser';
-import { getGroundSpans, getLevel, PLATFORM_STYLE_TEXTURES } from '../data/levels/index.js';
+import {
+  getLevel,
+  getWalkSpans,
+  PLATFORM_STYLE_TEXTURES,
+} from '../data/levels/index.js';
 import gameData from '../data/game-data.json';
 import { EnemyController } from '../game/EnemyController.js';
 import {
@@ -50,6 +54,11 @@ const CAMERA_LOOK_AHEAD_SPEED = 240;
 const CAMERA_VERTICAL_OFFSET = 40;
 const DROP_HINT_EARLIEST_MS = 4600;
 const DROP_HINT_REST_MS = 650;
+// Dropped coins slow down on their own, so a bounce never slides one off a
+// ledge into a pit (Arcade bodies otherwise keep their speed on the ground).
+const DROPPED_COIN_DRAG_X = 240;
+// A Sapo's coins land at least this far from the edge of their bank/bridge.
+const WATER_DROP_EDGE_MARGIN = 32;
 
 export class GameScene extends Phaser.Scene {
   constructor() {
@@ -128,6 +137,15 @@ export class GameScene extends Phaser.Scene {
     this.paused = false;
     this.transitioning = false;
     this.fallRecoveryPending = false;
+    // Phaser reuses this scene instance. A Game Over overlay left by a visit
+    // that ended through TÍTULO would otherwise freeze the next level start.
+    this.gameOverContainer = null;
+    this.pauseOverlay = null;
+    this.touchControls = null;
+    this.activeCheckpointId = null;
+    this.nextPortalWarningAt = 0;
+    this.dropHintShown = false;
+    this.platformRestMs = 0;
     this.hitStopRemaining = 0;
     this.cameraLookAhead = CAMERA_LOOK_AHEAD;
 
@@ -229,7 +247,7 @@ export class GameScene extends Phaser.Scene {
       firstEnemy.home.x = 350;
       firstEnemy.sprite.setX(350);
       firstEnemy.sprite.body.reset(350, firstEnemy.sprite.y);
-      firstEnemy.walkBounds = getGroundSpans(this.level.platforms)
+      firstEnemy.walkBounds = getWalkSpans(this.level.platforms)
         .find((span) => 350 >= span.left && 350 <= span.right) ?? null;
     }
     this.createBossPortal();
@@ -418,10 +436,13 @@ export class GameScene extends Phaser.Scene {
     return { collected, total };
   }
 
-  /** Continuous base ground under a walker, so it never steps into a pit. */
+  /**
+   * Continuous base ground under a walker, cut at ruin pillars, so it never
+   * steps into a pit or presses against a pillar it cannot cross.
+   */
   getWalkBounds(definition) {
     if (!enemyUsesPlatformCollision(definition.type)) return null;
-    return getGroundSpans(this.level.platforms)
+    return getWalkSpans(this.level.platforms)
       .find((span) => definition.x >= span.left && definition.x <= span.right) ?? null;
   }
 
@@ -439,6 +460,8 @@ export class GameScene extends Phaser.Scene {
       );
       this.enemyControllers.push(controller);
       this.enemySprites.add(controller.sprite);
+      // The group just reset gravity/immovability to its defaults.
+      controller.configureBody();
       if (enemyUsesPlatformCollision(controller.type)) {
         this.physics.add.collider(
           controller.sprite,
@@ -569,7 +592,12 @@ export class GameScene extends Phaser.Scene {
       if (!projectile?.active) return;
       makeImpact(this, projectile.x, projectile.y, 0xffcf3c);
       projectile.destroy();
-    }, (first, second) => isPowerProjectile(first) || isPowerProjectile(second));
+    }, (first, second) => {
+      const projectile = isPowerProjectile(first) ? first : (isPowerProjectile(second) ? second : null);
+      if (!projectile) return false;
+      const terrain = projectile === first ? second : first;
+      return this.levelConfig.walkwaysStopShots !== false || terrain?.getData?.('kind') === 'ground';
+    });
     this.physics.add.collider(this.enemyProjectiles, this.platforms, (first, second) => {
       const projectile = isEnemyProjectile(first) ? first : (isEnemyProjectile(second) ? second : null);
       if (!projectile?.active) return;
@@ -597,7 +625,13 @@ export class GameScene extends Phaser.Scene {
         });
       }
       projectile.destroy();
-    }, (first, second) => isPowerProjectile(first) || isPowerProjectile(second));
+    }, (first, second) => {
+      const projectile = isPowerProjectile(first) ? first : (isPowerProjectile(second) ? second : null);
+      const enemySprite = projectile === first ? second : first;
+      // A fully submerged Sapo leaves only its eyes above water: shots pass.
+      return Boolean(projectile)
+        && enemySprite?.getData?.('controller')?.blocksPlayerProjectiles?.() !== false;
+    });
     this.physics.add.overlap(this.player.body, this.enemySprites, (_playerBody, enemySprite) => {
       const controller = enemySprite.getData('controller');
       if (controller?.canHurtPlayer()) this.player.takeDamage(enemySprite.x, controller.config.damage);
@@ -638,7 +672,7 @@ export class GameScene extends Phaser.Scene {
     const waterDrop = enemy.type === 'sapo_pota'
       ? placeOnNearestSurface(this.level.platforms, {
         x: enemy.sprite.x,
-        width: 44,
+        width: WATER_DROP_EDGE_MARGIN * 2,
         height: 20,
         originY: 0.5,
         gap: 12,
@@ -652,7 +686,8 @@ export class GameScene extends Phaser.Scene {
         .setDepth(12)
         .setBounce(0.62)
         .setCollideWorldBounds(true)
-        .setVelocity(Phaser.Math.Between(-85, 85), Phaser.Math.Between(-300, -220));
+        .setVelocity(Phaser.Math.Between(-85, 85), Phaser.Math.Between(-300, -220))
+        .setDragX(DROPPED_COIN_DRAG_X);
       coin.body.setCircle(9, 1, 1);
     }
     if (dropCount === 0) showToast(this, `${enemy.config.name} no soltó monedas esta vez.`, { duration: 900 });
@@ -739,7 +774,9 @@ export class GameScene extends Phaser.Scene {
     this.healthText = createLabel(this, '♥ ♥ ♥', 230, 31, { fontSize: '16px', color: 0xff557b, depth: 1001 });
     this.coinText = createLabel(this, `●B  ${this.save.coins}`, 390, 31, { fontSize: '14px', color: 0xffcf3c, depth: 1001 });
     const power = gameData.powers.find((entry) => entry.id === this.save.selectedPower);
-    this.powerText = createLabel(this, `${power?.name?.toUpperCase() ?? 'PODER'}  ·  J / X`, 575, 31, {
+    // Touch players attack with the ✦ pad, not with keys they do not have.
+    const attackHint = prefersTouchControls() ? '✦' : 'J / X';
+    this.powerText = createLabel(this, `${power?.name?.toUpperCase() ?? 'PODER'}  ·  ${attackHint}`, 575, 31, {
       fontSize: '12px', color: Number.parseInt((power?.color ?? '#71e5ff').slice(1), 16), depth: 1001,
     });
     this.progressText = createLabel(this, `ENEMIGOS  0/${this.level.enemies.length}`, 748, 31, {
@@ -852,7 +889,9 @@ export class GameScene extends Phaser.Scene {
     const title = createTitle(this, 'PAUSA', 480, 150, { fontSize: 34, depth: 3002 });
     const coinProgress = this.getPlacedCoinProgress();
     const controls = createBodyText(this,
-      'Mover: A/D o ←/→ · Bajar: S / ↓\nSaltar: W / ↑ / Espacio (mantén para más altura)\nAtacar: J / X · Pausa: P / Esc',
+      this.touchControls
+        ? 'Mover: ◀ ▶ · Bajar: ▼\nSaltar: ↑ (mantén para más altura)\nAtacar: ✦ · Pausa: Ⅱ PAUSA'
+        : 'Mover: A/D o ←/→ · Bajar: S / ↓\nSaltar: W / ↑ / Espacio (mantén para más altura)\nAtacar: J / X · Pausa: P / Esc',
       480,
       226,
       { fontSize: 17, depth: 3002, lineSpacing: 8 },

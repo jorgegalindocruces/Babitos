@@ -4,6 +4,7 @@ import { configureTextQuality } from '../ui/textQuality.js';
 import {
   ENEMY_ANIMATION_CLIPS,
   ENEMY_SHEET_ASSETS,
+  getEnemyCellSize,
   getEnemyClipDurationMs,
   getEnemyAnimationKey,
   getEnemyClipForState,
@@ -18,6 +19,10 @@ import { getEnemyPatrolDirection, getEnemyWallDirection } from './EnemyBehavior.
 import {
   getEnemyVisualAnchor,
   getEnemyVisualTop,
+  getSapoBodyCenterY,
+  getSapoMouthY,
+  SAPO_BODY_SIZE,
+  SAPO_VISUAL_DEPTH,
   shouldFlipEnemyVisual,
 } from './EnemyPresentation.js';
 
@@ -49,12 +54,31 @@ const VISUAL_SIZES = Object.freeze({
   // 256px atlas cells render at an exact 1/4 scale for crisp pixel edges.
   vuela: Object.freeze({ width: 64, height: 64 }),
   da_vueltas: Object.freeze({ width: 82, height: 82 }),
-  // Half of the authored 256px cell: crisp nearest-neighbour scaling and a
-  // silhouette that reads slightly taller than the 80px Babito avatar.
-  garbanzo_loco: Object.freeze({ width: 128, height: 128 }),
-  arbol_pocho: Object.freeze({ width: 172, height: 172 }),
-  sapo_pota: Object.freeze({ width: 148, height: 148 }),
 });
+
+// La Jungla cells are wider than tall, so they render by a uniform scale of
+// the 256px cell height rather than a square display size. Garbanzo uses an
+// exact 1/2 for crisp nearest-neighbour pixels and reads slightly taller than
+// the 80px Babito avatar.
+export const JUNGLE_VISUAL_SCALES = Object.freeze({
+  garbanzo_loco: 0.5,
+  arbol_pocho: 172 / 256,
+  sapo_pota: 148 / 256,
+});
+
+export function getEnemyVisualSize(type) {
+  const scale = JUNGLE_VISUAL_SCALES[type];
+  if (scale == null) return VISUAL_SIZES[type];
+  const cell = getEnemyCellSize(type);
+  return { width: cell.width * scale, height: cell.height * scale };
+}
+
+// Once the Babito is in reach the Árbol commits to a punch: before the branch
+// strikes it holds its raised-arms pose tinted amber as the anticipation.
+const ARBOL_CHARGE_TINT = 0xffcf4a;
+// Vertical distance between body centres at which Garbanzo's horizontal spear
+// can still meet the Babito (standing, landing or on a low bridge step).
+const GARBANZO_LEVEL_TOLERANCE = 72;
 
 function getPositiveNumber(value, fallback) {
   const numeric = Number(value);
@@ -105,7 +129,12 @@ export class EnemyController {
       1,
       3,
     );
-    this.home = new Phaser.Math.Vector2(definition.x, definition.y);
+    // Sapo Pota lives on the river surface: its body centre derives from the
+    // waterline so data, presentation and hit area can never disagree.
+    const homeY = this.type === 'sapo_pota' && this.waterlineY != null
+      ? getSapoBodyCenterY(this.waterlineY)
+      : definition.y;
+    this.home = new Phaser.Math.Vector2(definition.x, homeY);
     // Horizontal extent of the ground segment a walker lives on. Pits beyond
     // it are never crossed: COME waits at the edge instead of jumping in.
     this.walkBounds = definition.walkBounds ?? null;
@@ -117,9 +146,52 @@ export class EnemyController {
     this.nextDecisionAt = this.now + Phaser.Math.Between(800, 1400);
     this.attackEventSent = false;
     this.hurtReturnState = null;
+    this.hurtResumeStartedAt = null;
+    this.punchChargeStartedAt = null;
 
-    this.sprite = scene.physics.add.sprite(definition.x, definition.y, TEXTURES[this.type]);
+    this.sprite = scene.physics.add.sprite(this.home.x, this.home.y, TEXTURES[this.type]);
     this.sprite.setDepth(9).setData('controller', this).setVisible(false);
+    this.configureBody();
+    const visualSize = getEnemyVisualSize(this.type);
+    const sheet = ENEMY_SHEET_ASSETS[this.type];
+    this.visual = scene.add.sprite(
+      this.home.x,
+      this.home.y,
+      sheet.key,
+      getEnemyFrameName(this.type, 0, 0),
+    ).setDepth(this.type === 'sapo_pota' ? SAPO_VISUAL_DEPTH : 10)
+      .setDisplaySize(visualSize.width, visualSize.height);
+    const visualAnchor = this.getVisualAnchor();
+    this.visual.setOrigin(0.5, visualAnchor.originY);
+    this.visualBaseScale = { x: this.visual.scaleX, y: this.visual.scaleY };
+    this.activeClip = null;
+    this.hurtUntil = 0;
+    this.qaPresentation = null;
+    this.playVisualClip(getEnemyClipForState(this.type, this.state));
+    this.syncVisual();
+
+    const showDebugState = import.meta.env.DEV
+      && typeof location !== 'undefined'
+      && new URLSearchParams(location.search).get('debugAI') === '1';
+    this.stateBadge = null;
+    if (showDebugState) {
+      this.stateBadge = scene.add.text(definition.x, definition.y - 48, this.state, {
+        fontFamily: 'Silkscreen, monospace', fontSize: '12px', color: '#dff8ff',
+        backgroundColor: '#071326bb', padding: { x: 4, y: 2 },
+      }).setOrigin(0.5).setDepth(20).setAlpha(0.78);
+      configureTextQuality(this.stateBadge);
+    }
+  }
+
+  /**
+   * Applies the per-type Arcade body. An Arcade Group resets gravity, bounce,
+   * world bounds and immovability of every member it adds, so the scene calls
+   * this again after grouping; otherwise rooted and aquatic enemies would
+   * slowly sink through the floor under world gravity.
+   */
+  configureBody() {
+    this.sprite.body.allowGravity = true;
+    this.sprite.setImmovable(false);
     this.sprite.setCollideWorldBounds(true);
     this.sprite.setBounce(this.type === 'da_vueltas' ? 0.45 : 0);
     if (this.type === 'come') {
@@ -148,39 +220,38 @@ export class EnemyController {
       setWorldBodySize(this.sprite, 74, 150);
     }
     if (this.type === 'sapo_pota') {
-      this.sprite.setDisplaySize(124, 62);
+      this.sprite.setDisplaySize(SAPO_BODY_SIZE.width, SAPO_BODY_SIZE.height);
       this.sprite.body.allowGravity = false;
       this.sprite.setImmovable(true);
-      setWorldBodySize(this.sprite, 112, 58);
+      setWorldBodySize(this.sprite, SAPO_BODY_SIZE.width, SAPO_BODY_SIZE.height);
     }
-    const visualSize = VISUAL_SIZES[this.type];
-    const sheet = ENEMY_SHEET_ASSETS[this.type];
-    this.visual = scene.add.sprite(
-      definition.x,
-      definition.y,
-      sheet.key,
-      getEnemyFrameName(this.type, 0, 0),
-    ).setDepth(10).setDisplaySize(visualSize.width, visualSize.height);
-    const visualAnchor = getEnemyVisualAnchor(this.type, this.sprite);
-    this.visual.setOrigin(0.5, visualAnchor.originY);
-    this.visualBaseScale = { x: this.visual.scaleX, y: this.visual.scaleY };
-    this.activeClip = null;
-    this.hurtUntil = 0;
-    this.qaPresentation = null;
-    this.playVisualClip(getEnemyClipForState(this.type, this.state));
-    this.syncVisual();
+    return this;
+  }
 
-    const showDebugState = import.meta.env.DEV
-      && typeof location !== 'undefined'
-      && new URLSearchParams(location.search).get('debugAI') === '1';
-    this.stateBadge = null;
-    if (showDebugState) {
-      this.stateBadge = scene.add.text(definition.x, definition.y - 48, this.state, {
-        fontFamily: 'Silkscreen, monospace', fontSize: '12px', color: '#dff8ff',
-        backgroundColor: '#071326bb', padding: { x: 4, y: 2 },
-      }).setOrigin(0.5).setDepth(20).setAlpha(0.78);
-      configureTextQuality(this.stateBadge);
-    }
+  getVisualAnchor() {
+    return getEnemyVisualAnchor(this.type, this.sprite, { waterlineY: this.waterlineY });
+  }
+
+  /** Árbol has committed to a punch and is showing its amber anticipation. */
+  get isChargingPunch() {
+    return this.type === 'arbol_pocho' && this.punchChargeStartedAt != null;
+  }
+
+  /** Player shots pass over a Sapo that is fully underwater. */
+  blocksPlayerProjectiles() {
+    if (this.dead) return false;
+    return !(this.type === 'sapo_pota' && this.state === 'UNDERWATER');
+  }
+
+  /**
+   * Garbanzo never leaves its stretch of ground. It only engages a Babito it
+   * could actually reach from there, instead of pressing against a pillar or
+   * the river bank while the Babito stands on the far side.
+   */
+  canReachPlayer(margin = 0) {
+    if (!this.walkBounds) return true;
+    const x = Number(this.player?.x);
+    return x >= this.walkBounds.left - margin && x <= this.walkBounds.right + margin;
   }
 
   setState(next) {
@@ -225,7 +296,9 @@ export class EnemyController {
   applyStateTint() {
     if (!this.visual?.active) return;
     this.visual.clearTint();
-    const tint = getEnemyTintForState(this.type, this.state);
+    const tint = this.isChargingPunch
+      ? ARBOL_CHARGE_TINT
+      : getEnemyTintForState(this.type, this.state);
     if (tint != null) this.visual.setTint(tint);
   }
 
@@ -293,12 +366,9 @@ export class EnemyController {
 
   syncVisual() {
     if (!this.visual?.active || !this.sprite?.active) return;
-    const anchor = getEnemyVisualAnchor(this.type, this.sprite);
-    const visualY = this.type === 'sapo_pota' && this.waterlineY != null
-      ? this.waterlineY
-      : anchor.y;
+    const anchor = this.getVisualAnchor();
     this.visual
-      .setPosition(this.sprite.x, visualY)
+      .setPosition(this.sprite.x, anchor.y)
       .setRotation(this.sprite.rotation)
       // EL ÁRBOL POCHO has authored left/right punches. Mirroring it would
       // swap the telegraphed branch and the actual hit area.
@@ -327,8 +397,13 @@ export class EnemyController {
       return;
     }
     if (this.isJungleEnemy && this.state === 'HURT') {
+      const resumeStartedAt = this.hurtResumeStartedAt;
       this.setState(this.hurtReturnState ?? 'RECOVER');
+      // A hit that returns to the state it interrupted resumes its clock:
+      // repeated hits never extend RECOVER into a permanent vulnerable stun.
+      if (resumeStartedAt != null) this.stateStartedAt = resumeStartedAt;
       this.hurtReturnState = null;
+      this.hurtResumeStartedAt = null;
     }
     if (this.type === 'come') this.updateCome();
     else if (this.type === 'vuela') this.updateVuela();
@@ -494,10 +569,9 @@ export class EnemyController {
       damage: this.tuning('damage', 1),
       intervalMs: 115,
       originOffsetX: 48,
-      // The waterline body is centred high in the pool. Launch at Babito
-      // torso height so standing still is dangerous and jumping is the read.
       originOffsetY: 18,
-      mouthY: (this.waterlineY ?? (this.sprite.y + 68)) - 50,
+      // The glob is born in the open mouth of the vomit pose.
+      mouthY: this.waterlineY != null ? getSapoMouthY(this.waterlineY) : this.sprite.y,
       targetY: Number(this.player?.body?.center?.y ?? this.player?.y),
     }));
     return true;
@@ -507,7 +581,8 @@ export class EnemyController {
     const distance = this.player.x - this.sprite.x;
     const absolute = Math.abs(distance);
     const detectRange = this.tuning('detectRange', 380);
-    const attackRange = this.tuning('attackRange', 122);
+    const attackRange = this.tuning('attackRange', 96);
+    const reachable = this.canReachPlayer(attackRange);
 
     if (this.state === 'PATROL') {
       this.direction = getEnemyWallDirection(
@@ -515,14 +590,17 @@ export class EnemyController {
         getEnemyPatrolDirection(this.sprite.x, this.home.x, 175, this.direction),
       );
       this.sprite.setVelocityX(this.direction * this.tuning('speed', 74) * 0.72);
-      if (absolute < detectRange) this.setState('CHASE');
+      if (absolute < detectRange && reachable) this.setState('CHASE');
     } else if (this.state === 'CHASE') {
       this.direction = getDirection(distance, this.direction);
       this.sprite.setVelocityX(this.direction * this.tuning('speed', 74));
-      if (absolute <= attackRange) this.setState('ATTACK_WINDUP');
-      else if (absolute > detectRange + 150) this.setState('PATROL');
+      // The thrust is horizontal: never wind up under a Babito on a ledge.
+      const level = Math.abs(Number(this.player.y) - this.sprite.y) <= GARBANZO_LEVEL_TOLERANCE;
+      if (absolute <= attackRange && level) this.setState('ATTACK_WINDUP');
+      else if (absolute > detectRange + 150 || !reachable) this.setState('PATROL');
     } else if (this.state === 'ATTACK_WINDUP') {
-      this.direction = getDirection(distance, this.direction);
+      // The thrust direction is locked when the anticipation starts: jumping
+      // over Garbanzo to his back is a real dodge, never a landing in the spear.
       this.sprite.setVelocityX(0);
       this.setVisualScale(1.04, 0.94);
       if (this.elapsed >= this.tuning('windupMs', 520)) this.setState('SPEAR_ATTACK');
@@ -532,7 +610,8 @@ export class EnemyController {
       this.sprite.setVelocityX(this.direction * 42);
       this.emitMeleeAttack('spear', {
         direction: this.direction,
-        reach: attackRange + 12,
+        // Ends at the painted spear tip (82 px from the body centre).
+        reach: this.tuning('spearReach', 60),
         width: 126,
         height: 48,
         offsetY: -8,
@@ -553,7 +632,7 @@ export class EnemyController {
     const distance = this.player.x - this.sprite.x;
     const absolute = Math.abs(distance);
     const detectRange = this.tuning('detectRange', 250);
-    const attackRange = this.tuning('attackRange', 150);
+    const attackRange = this.tuning('attackRange', 96);
     this.sprite.setVelocity(0, 0);
 
     if (this.state === 'TREE_IDLE') {
@@ -564,10 +643,22 @@ export class EnemyController {
       if (this.elapsed >= this.tuning('wakeMs', 680)) this.setState('ANGRY_IDLE');
     } else if (this.state === 'ANGRY_IDLE') {
       this.direction = getDirection(distance, this.direction);
-      this.setVisualScale();
-      if (absolute > detectRange + 110) this.setState('TREE_IDLE');
-      else if (absolute <= attackRange && this.elapsed >= this.tuning('angryIdleMs', 420)) {
-        this.setState(distance < 0 ? 'PUNCH_LEFT' : 'PUNCH_RIGHT');
+      if (this.isChargingPunch) {
+        // Committed anticipation: stepping back now makes the branch whiff
+        // and opens the vulnerable RECOVER window.
+        this.setVisualScale(1.04, 0.97);
+        if (this.now - this.punchChargeStartedAt >= this.tuning('punchWindupMs', 300)) {
+          this.punchChargeStartedAt = null;
+          this.setState(distance < 0 ? 'PUNCH_LEFT' : 'PUNCH_RIGHT');
+        }
+      } else if (absolute > detectRange + 110) {
+        this.setVisualScale();
+        this.setState('TREE_IDLE');
+      } else if (absolute <= attackRange && this.elapsed >= this.tuning('angryIdleMs', 420)) {
+        this.punchChargeStartedAt = this.now;
+        this.applyStateTint();
+      } else {
+        this.setVisualScale();
       }
     } else if (this.state === 'PUNCH_LEFT' || this.state === 'PUNCH_RIGHT') {
       const punchDirection = this.state === 'PUNCH_LEFT' ? -1 : 1;
@@ -575,7 +666,8 @@ export class EnemyController {
       this.direction = punchDirection;
       this.emitMeleeAttack('branch', {
         direction: punchDirection,
-        reach: attackRange + 10,
+        // Ends just past the painted fist (62 px from the trunk centre).
+        reach: this.tuning('punchReach', 34),
         width: 148,
         height: 68,
         // The rooted body's centre sits well above the floor; lower the branch
@@ -638,6 +730,8 @@ export class EnemyController {
     if (this.dead || !this.sprite?.active || this.qaPresentation) return;
     this.hurtUntil = 0;
     this.hurtReturnState = null;
+    this.hurtResumeStartedAt = null;
+    this.punchChargeStartedAt = null;
     this.attackEventSent = false;
     this.sprite.setPosition(this.home.x, this.home.y)
       .setVelocity(0, 0)
@@ -693,6 +787,7 @@ export class EnemyController {
     this.hurtUntil = this.now + hurtDuration;
     if (this.isJungleEnemy) {
       this.hurtReturnState = recoveryState;
+      this.hurtResumeStartedAt = recoveryState === this.state ? this.stateStartedAt : null;
       this.setState('HURT');
     } else {
       if (recoveryState !== this.state) this.setState(recoveryState);

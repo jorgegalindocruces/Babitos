@@ -1,10 +1,12 @@
 # Enemigos de La Jungla · spritesheets v1
 
+> **Sustituida por [jungle-enemy-sheets-v2.md](jungle-enemy-sheets-v2.md).** La v1 cortaba varias poses; se conserva como registro de procedencia y sus PNG están archivados en [`sources/`](sources/).
+
 Los tres enemigos exclusivos de la Fase 2 usan atlas raster transparentes de producción:
 
-- [`enemy-garbanzo-loco-sheet-v1.png`](../../public/assets/characters/enemy-garbanzo-loco-sheet-v1.png)
-- [`enemy-arbol-pocho-sheet-v1.png`](../../public/assets/characters/enemy-arbol-pocho-sheet-v1.png)
-- [`enemy-sapo-pota-sheet-v1.png`](../../public/assets/characters/enemy-sapo-pota-sheet-v1.png)
+- [`enemy-garbanzo-loco-sheet-v1.png`](sources/enemy-garbanzo-loco-sheet-v1.png)
+- [`enemy-arbol-pocho-sheet-v1.png`](sources/enemy-arbol-pocho-sheet-v1.png)
+- [`enemy-sapo-pota-sheet-v1.png`](sources/enemy-sapo-pota-sheet-v1.png)
 
 Cada PNG mide **1024 × 512 px**, distribuido en **4 columnas × 2 filas** de celdas exactas de **256 × 256 px**. Los límites son `x = [0, 256, 512, 768, 1024]` e `y = [0, 256, 512]`. Cada pose conserva un margen transparente mínimo de 4 px respecto a su celda. El alpha del asset runtime es binario (`0` o `255`) y se normalizó con muestreo *nearest-neighbour* para que el escalado en Phaser permanezca nítido.
 

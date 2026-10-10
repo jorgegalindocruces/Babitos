@@ -30,6 +30,7 @@ const CONTEXT_DOCUMENTS = Object.freeze([
   'art/production/ciudad-bicharraca-v1.md',
   'art/production/enemy-vuela-v4.md',
   'art/production/jungle-enemy-sheets-v1.md',
+  'art/production/jungle-enemy-sheets-v2.md',
 ]);
 const ESSENTIAL_LINK_TARGETS = Object.freeze([
   'src/main.js',
@@ -55,9 +56,9 @@ const ESSENTIAL_LINK_TARGETS = Object.freeze([
   'public/assets/landing/credits-lola-momo.webp',
   'public/assets/landing/concept-worlds-environment-reference-only.webp',
   'public/assets/characters/enemy-vuela-sheet-v4.png',
-  'public/assets/characters/enemy-garbanzo-loco-sheet-v1.png',
-  'public/assets/characters/enemy-arbol-pocho-sheet-v1.png',
-  'public/assets/characters/enemy-sapo-pota-sheet-v1.png',
+  'public/assets/characters/enemy-garbanzo-loco-sheet-v2.png',
+  'public/assets/characters/enemy-arbol-pocho-sheet-v2.png',
+  'public/assets/characters/enemy-sapo-pota-sheet-v2.png',
   'public/assets/backgrounds/babilandia-v2.webp',
   'public/assets/backgrounds/boss-arena-v1.webp',
   'public/assets/backgrounds/ciudad-bicharraca-v1.webp',

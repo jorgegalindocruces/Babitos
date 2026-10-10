@@ -7,6 +7,20 @@ Este archivo relaciona las iteraciones entregadas con sus cambios observables, c
 - Mantener sincronizados `README.md`, `INTERACTIONS.md`, `GAME_DESIGN.md`, `IMPLEMENTATION_SPEC.md` y `ACCEPTANCE_CRITERIA.md` cuando cambien flujo, controles, estados, persistencia o contenido jugable.
 - Añadir una entrada aquí por cada cambio observable, con el commit final y las pruebas realizadas.
 
+## Auditoría y correcciones de la Fase 2 — 2026-10-11
+
+Revisión completa de La Jungla, sus tres enemigos, La Oscuridad y la rejugabilidad, con recorridos automáticos en navegador:
+
+- **Atlas v2 de los tres enemigos**: la v1 cortaba la punta de la lanza de Garbanzo, partía en dos al Sapo vomitando, recortaba la copa del Árbol derrotado y dejaba esos fragmentos dentro de la celda vecina. La v2 reubica cada fragmento sin redibujar nada, usa celdas más anchas y un pivote común, de modo que las raíces del Árbol y el cuerpo del Sapo ya no saltan al cambiar de pose. Ver [jungle-enemy-sheets-v2.md](../art/production/jungle-enemy-sheets-v2.md).
+- **Árbol y Sapo ya no se hunden**: el `Arcade.Group` de enemigos reactivaba la gravedad al añadirlos y ambos atravesaban el suelo poco a poco. `configureBody()` se aplica de nuevo tras agrupar.
+- **Golpes que coinciden con el arte**: la estocada alcanzaba 159 px (la lanza pintada llega a 82) y la rama 193 px (el puño, a 62). Ahora cada área termina en el arma visible. El Árbol anticipa cada golpe 300 ms en ámbar, Garbanzo fija la dirección al anticipar, no ataca a un Babito situado en una cornisa ni persigue a uno fuera de su tramo, y los impactos en `RECOVER` ya no prolongan la ventana vulnerable.
+- **Sapo en el agua**: queda medio sumergido detrás del río y de los puentes, sus ojos descansan en la superficie, la vomitera sale de la boca, los disparos pasan por encima cuando está sumergido y el primer sapo ya no tenía un anillo en el que se dejaba ver sin atacar.
+- **Nivel**: checkpoints sin enemigos activos al reaparecer (Árbol de `lianas`, Árbol de `ruinas` y `penumbra`), Sapo de la laguna entre los dos puentes, carteles que ya no se solapan, monedas soltadas que frenan solas y los disparos (también la roca) atraviesan puentes y ramas, lo que hace jugable la laguna con Roca.
+- **Rejugabilidad**: salir por `TÍTULO` tras un Game Over congelaba el siguiente nivel; salir desde la pausa de La Oscuridad desactivaba su pausa; una segunda victoria contra ella no mostraba el panel de salida. Las tres escenas de juego reinician sus overlays al crearse.
+- **Controles táctiles**: HUD y pausa muestran los controles táctiles en lugar de las teclas cuando el juego usa el pad.
+
+Pruebas añadidas: `jungle-enemy-ai.test.js` (lógica real de `EnemyController` con Phaser simulado), `jungle-level-safety.test.js` y nuevas comprobaciones de atlas. QA en navegador: las 24 poses vía `qaEnemy`, ataques con hitboxes superpuestas, recorrido completo de La Jungla por un bot con 250 ms de reacción, victoria, tienda, mapa y rejugado de ambas fases.
+
 ## Garbanzo Loco, Árbol Pocho y Sapo Pota jugables — 2026-10-10
 
 La Jungla deja de reutilizar los enemigos de Babilandia e integra los tres Bicharracos definidos por sus dibujos y fichas aprobadas:

@@ -201,37 +201,70 @@ test('VUELA production atlas has 36 opaque, padded 256px cells', () => {
   }
 });
 
-test('Jungle enemy production sheets have eight transparent, padded 256px poses', () => {
-  const sheets = [
-    'enemy-garbanzo-loco-sheet-v1.png',
-    'enemy-arbol-pocho-sheet-v1.png',
-    'enemy-sapo-pota-sheet-v1.png',
-  ];
+const JUNGLE_SHEETS = Object.freeze([
+  { type: 'garbanzo_loco', file: 'enemy-garbanzo-loco-sheet-v2.png', cell: 352, baseline: 244 },
+  { type: 'arbol_pocho', file: 'enemy-arbol-pocho-sheet-v2.png', cell: 288, baseline: 248 },
+  { type: 'sapo_pota', file: 'enemy-sapo-pota-sheet-v2.png', cell: 400, baseline: 244 },
+]);
 
-  for (const filename of sheets) {
-    const atlasPath = path.resolve(TEST_DIR, `../public/assets/characters/${filename}`);
-    const atlas = decodeRgbaPng(atlasPath);
-    assert.deepEqual([atlas.width, atlas.height], [1024, 512], filename);
+function readJungleCell(atlas, cellWidth, row, column) {
+  const opaque = [];
+  for (let y = 0; y < 256; y += 1) {
+    for (let x = 0; x < cellWidth; x += 1) {
+      const alpha = atlas.pixels[(((row * 256 + y) * atlas.width) + column * cellWidth + x) * 4 + 3];
+      assert.ok(alpha === 0 || alpha === 255, `unexpected alpha ${alpha}`);
+      if (alpha) opaque.push([x, y]);
+    }
+  }
+  return opaque;
+}
 
+test('Jungle enemy v2 sheets keep eight complete, padded poses on one baseline', () => {
+  for (const { type, file, cell, baseline } of JUNGLE_SHEETS) {
+    const atlas = decodeRgbaPng(path.resolve(TEST_DIR, `../public/assets/characters/${file}`));
+    assert.deepEqual([atlas.width, atlas.height], [cell * 4, 512], file);
+    assert.deepEqual(ENEMY_SHEET_ASSETS[type].xBounds, [0, cell, cell * 2, cell * 3, cell * 4]);
+    assert.deepEqual(ENEMY_SHEET_ASSETS[type].yBounds, [0, 256, 512]);
+    assert.match(ENEMY_SHEET_ASSETS[type].url, /-sheet-v2\.png$/);
     for (let row = 0; row < 2; row += 1) {
       for (let column = 0; column < 4; column += 1) {
-        let visiblePixels = 0;
-        let touchesEdge = false;
-        for (let y = 0; y < 256; y += 1) {
-          for (let x = 0; x < 256; x += 1) {
-            const alpha = atlas.pixels[
-              (((row * 256 + y) * atlas.width) + column * 256 + x) * 4 + 3
-            ];
-            assert.ok(alpha === 0 || alpha === 255, `${filename} has unexpected alpha ${alpha}`);
-            if (alpha === 0) continue;
-            visiblePixels += 1;
-            if (x === 0 || x === 255 || y === 0 || y === 255) touchesEdge = true;
-          }
-        }
-        assert.ok(visiblePixels > 500, `${filename} ${row}:${column} is empty`);
-        assert.equal(touchesEdge, false, `${filename} ${row}:${column} touches a cell edge`);
+        const opaque = readJungleCell(atlas, cell, row, column);
+        assert.ok(opaque.length > 500, `${file} ${row}:${column} is empty`);
+        const xs = opaque.map(([x]) => x);
+        const ys = opaque.map(([, y]) => y);
+        // v1 sliced poses at fixed 256px edges, leaving fragments near the
+        // gutter of the neighbouring cell. Every v2 pose keeps a 4px margin.
+        assert.ok(Math.min(...xs) >= 4 && Math.max(...xs) <= cell - 5, `${file} ${row}:${column} touches its gutter`);
+        assert.ok(Math.min(...ys) >= 4, `${file} ${row}:${column} touches the top edge`);
+        assert.equal(Math.max(...ys), baseline, `${file} ${row}:${column} leaves the shared baseline`);
       }
     }
+  }
+});
+
+test('Jungle poses stay complete: planted Árbol roots, whole spear and a seated Sapo', () => {
+  const footCentre = (opaque) => {
+    const feet = opaque.filter(([, y]) => y >= 220);
+    return feet.reduce((sum, [x]) => sum + x, 0) / feet.length;
+  };
+  const arbol = JUNGLE_SHEETS[1];
+  const arbolAtlas = decodeRgbaPng(path.resolve(TEST_DIR, `../public/assets/characters/${arbol.file}`));
+  // idle, wake, angry, punchRight, punchLeft, recover, hurt (defeat lies down).
+  for (const [row, column] of [[0, 0], [0, 1], [0, 2], [0, 3], [1, 0], [1, 1], [1, 2]]) {
+    const centre = footCentre(readJungleCell(arbolAtlas, arbol.cell, row, column));
+    assert.ok(Math.abs(centre - arbol.cell / 2) <= 6, `Árbol ${row}:${column} roots drift to ${centre}`);
+  }
+  const garbanzo = JUNGLE_SHEETS[0];
+  const garbanzoAtlas = decodeRgbaPng(path.resolve(TEST_DIR, `../public/assets/characters/${garbanzo.file}`));
+  const attack = readJungleCell(garbanzoAtlas, garbanzo.cell, 1, 0).map(([x]) => x);
+  // The complete spear tip (82 world px at 1/2 scale) is part of `attack`.
+  assert.ok(Math.max(...attack) - garbanzo.cell / 2 >= 160, 'Garbanzo attack lost its spear tip');
+  const sapo = JUNGLE_SHEETS[2];
+  const sapoAtlas = decodeRgbaPng(path.resolve(TEST_DIR, `../public/assets/characters/${sapo.file}`));
+  // The vomit pose used to sit ~100px away from idle.
+  for (const [row, column] of [[0, 2], [0, 3], [1, 0]]) {
+    const centre = footCentre(readJungleCell(sapoAtlas, sapo.cell, row, column));
+    assert.ok(Math.abs(centre - sapo.cell / 2) <= 16, `Sapo ${row}:${column} seat drifts to ${centre}`);
   }
 });
 

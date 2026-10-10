@@ -137,7 +137,10 @@ test('both playable phases expose their three canonical normal-enemy definitions
   assert.equal(gameData.enemies.arbol_pocho.speed, 0);
   assert.equal(gameData.enemies.sapo_pota.speed, 0);
   assert.ok(gameData.enemies.garbanzo_loco.attackRange > 0);
-  assert.ok(gameData.enemies.arbol_pocho.attackRange > gameData.enemies.garbanzo_loco.attackRange);
+  // Strike windows end at the painted spear tip and fist, not beyond them.
+  assert.ok(gameData.enemies.garbanzo_loco.spearReach > 0);
+  assert.ok(gameData.enemies.arbol_pocho.punchReach > 0);
+  assert.ok(gameData.enemies.arbol_pocho.punchWindupMs >= 250, 'the punch needs a readable anticipation');
   assert.ok(gameData.enemies.sapo_pota.projectileSpeed > 0);
 });
 

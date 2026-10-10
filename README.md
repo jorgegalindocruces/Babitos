@@ -199,7 +199,7 @@ Estado de producción verificado el 8 de octubre de 2026: GitHub Pages está `bu
 Las láminas de `art/approved/` son dirección artística, no *spritesheets* finales. El estado actual es:
 
 - Babilandia, la arena de Babito Corrupto y Ciudad Bicharraca tienen fondos raster con fallback procedural.
-- COME, VUELA, Garbanzo Loco, Árbol Pocho y Sapo Pota usan hojas raster de producción. Los tres enemigos de La Jungla tienen spritesheets transparentes de ocho poses, máquinas de estado propias y comportamiento jugable; su procedencia está en [jungle-enemy-sheets-v1.md](art/production/jungle-enemy-sheets-v1.md).
+- COME, VUELA, Garbanzo Loco, Árbol Pocho y Sapo Pota usan hojas raster de producción. Los tres enemigos de La Jungla tienen spritesheets transparentes de ocho poses, máquinas de estado propias y comportamiento jugable; su procedencia y la reparación v2 de los frames recortados están en [jungle-enemy-sheets-v2.md](art/production/jungle-enemy-sheets-v2.md).
 - Logo, Babito Corrupto, tenderos y Árbol de Poder tienen PNG raster; las poses del boss se componen en runtime.
 - El atlas base del Babito es arte procedural canónico de producción; sus capas cosméticas se generan por código con claves definitivas y heredan la misma geometría. La hoja de DA VUELTAS, la moneda, proyectiles, plataformas, props y HUD siguen siendo pixel art procedural.
 
