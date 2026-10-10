@@ -123,6 +123,42 @@ test('the landing exposes its sections, play controls and direct game route', as
   assert.match(main, /artDialog\.showModal\(\)/u);
 });
 
+test('the landing presents the approved Jungle enemies without claiming they are runtime sprites', async () => {
+  const page = await readRepositoryFile('index.html');
+  const jungleEnemies = [
+    ['garbanzo-loco', 'Garbanzo Loco'],
+    ['arbol-pocho', 'Árbol Pocho'],
+    ['sapo-pota', 'Sapo Pota'],
+  ];
+
+  for (const [slug, name] of jungleEnemies) {
+    assert.match(page, new RegExp(`>${name}<`, 'u'), `${name} must have a character card`);
+    assert.match(page, new RegExp(`portrait-enemy-${slug}\\.webp`, 'u'));
+    assert.match(page, new RegExp(`drawing-enemy-${slug}-original\\.webp`, 'u'));
+    assert.match(
+      page,
+      new RegExp(`class="art-frame is-wide"[^>]+data-zoom="\\./assets/landing/concept-jungle-${slug}\\.webp"`, 'u'),
+      `${name} must expose its complete design board in the lightbox`,
+    );
+  }
+
+  assert.equal(
+    [...page.matchAll(/data-concept-status="approved"/gu)].length,
+    6,
+    'the three cards and three paper comparisons must identify approved concepts',
+  );
+  assert.ok(
+    [...page.matchAll(/Diseño aprobado · En desarrollo/gu)].length >= 3,
+    'each new Jungle card must disclose that implementation is still in development',
+  );
+  assert.match(page, /los nuevos Bicharracos de La Jungla aún están en desarrollo/u);
+  assert.doesNotMatch(
+    page,
+    /(?:Garbanzo Loco|Árbol Pocho|Sapo Pota) en el juego/u,
+    'concept art cannot be described as a runtime asset before gameplay integration',
+  );
+});
+
 test('every local image used by the landing resolves to a public asset', async () => {
   const [page, styles] = await Promise.all([
     readRepositoryFile('index.html'),
