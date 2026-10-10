@@ -7,6 +7,18 @@ Este archivo relaciona las iteraciones entregadas con sus cambios observables, c
 - Mantener sincronizados `README.md`, `INTERACTIONS.md`, `GAME_DESIGN.md`, `IMPLEMENTATION_SPEC.md` y `ACCEPTANCE_CRITERIA.md` cuando cambien flujo, controles, estados, persistencia o contenido jugable.
 - Añadir una entrada aquí por cada cambio observable, con el commit final y las pruebas realizadas.
 
+## Banda sonora melódica con tres arreglos — 2026-10-10
+
+Commit [`ef29ca2`](https://github.com/jorgegalindocruces/Babitos/commit/ef29ca2). El antiguo acorde continuo se sustituye por una banda sonora chiptune compuesta y seleccionable:
+
+- **Siete canciones originales**: título, Babilandia, Babito Corrupto, tienda, Jungla, La Oscuridad y cierre tienen bucles propios de 32 pasos, con melodía, progresión de acordes, arpegio, bajo y ritmo en lugar de osciladores estáticos.
+- **Tres formas de escucharla**: `AVENTURA` es el arreglo inicial, cálido y melódico; `CALMA` reduce tempo, densidad y brillo; `ARCADE` acelera el pulso y usa timbres chiptune más marcados. El botón `♫` junto a `AUDIO` cambia el arreglo global, anuncia el resultado y no altera el mute.
+- **Preferencia compatible**: `babitos.audio.v1` continúa guardando exclusivamente `muted`/`enabled`; `babitos.music.v1` conserva el arreglo. Valores ausentes, desconocidos o un `localStorage` bloqueado vuelven de forma segura a `AVENTURA`.
+- **Reproducción estable**: un scheduler Web Audio con anticipación de 160 ms, envolventes finitas, límite de voces, filtro suave y crossfade evita zumbidos, huecos, clics y acumulación de nodos. Cambiar tema o arreglo limpia su transporte anterior, también tras una interrupción del sistema.
+- **Ciclo de vida y responsive**: cerrar el juego suspende el contexto y retira el listener de recuperación para que la landing no reactive música; reabrirlo recompone el arreglo correcto. Los dos controles ocupan una barra propia en móvil y pantalla completa sin interceptar el HUD.
+
+Validación: 135 pruebas automáticas, build de producción, `git diff --check`, revisión de código sin hallazgos P1/P2 y QA visual en escritorio y móvil (390 × 844) de las tres opciones, persistencia, barra reservada y consola sin avisos ni errores.
+
 ## Nuevos Bicharracos de La Jungla en la landing — 2026-10-10
 
 Commit [`9f24c57`](https://github.com/jorgegalindocruces/Babitos/commit/9f24c57). La portada incorpora los dibujos infantiles y las fichas pixel art aprobadas de Garbanzo Loco, Árbol Pocho y Sapo Pota sin presentarlos todavía como enemigos jugables:

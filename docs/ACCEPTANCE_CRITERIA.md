@@ -45,7 +45,9 @@ Estos criterios validan el vertical slice 0.2 descrito en [INTERACTIONS.md](INTE
 - En los modales de Título y las capas de pausa/Game Over, los controles inferiores quedan inactivos y el foco pasa a una acción superior; al cerrarlos vuelve al menú o al gameplay.
 - Teclas mantenidas o usadas para cerrar/reanudar no provocan un salto, ataque o clic adicional al regresar al gameplay.
 - El campo de nombre acepta un máximo de 24 caracteres y escribir en él no activa atajos del juego.
-- `M` alterna el audio fuera de campos editables; el botón `AUDIO` refleja el mute, conserva la preferencia y muestra `AUDIO N/D` si Web Audio no está disponible.
+- `M` alterna el audio fuera de campos editables; el botón `AUDIO` refleja el mute y conserva la preferencia heredada en `babitos.audio.v1`.
+- El botón musical contiguo recorre `AVENTURA` (valor inicial), `CALMA` y `ARCADE`, anuncia el resultado y lo conserva en `babitos.music.v1`. Cambiar de estilo mientras el audio está silenciado no lo vuelve a activar.
+- Si Web Audio no está disponible, ambos controles quedan deshabilitados como `AUDIO N/D` y `MÚSICA N/D`; el juego continúa sin sonido.
 - En dispositivos táctiles aparecen cinco pads: izquierda, derecha, bajar (`▼`), salto y ataque. No se exigen controles de mando en esta versión.
 
 ## Creador y poder
@@ -130,5 +132,5 @@ Estos criterios validan el vertical slice 0.2 descrito en [INTERACTIONS.md](INTE
 - Ciudad es un avance, no una fase jugable; Boss 3 y el final son roadmap.
 - La Jungla y La Oscuridad usan arte procedural; la Manzana de Poder recuperada todavía no desbloquea un poder nuevo.
 - DA VUELTAS mantiene un spritesheet procedural; VUELA y COME ya usan arte raster de producción.
-- Audio se genera con Web Audio y no incluye control de volumen.
+- La banda sonora consta de siete composiciones procedurales originales de 32 pasos. El planificador Web Audio anticipado sostiene capas de melodía, arpegio, bajo y ritmo sin depender de archivos externos; no se ofrece un control de volumen continuo.
 - Los botones y anuncios principales tienen soporte de teclado/lector, pero no se declara conformidad de accesibilidad completa para todo el texto dibujado en canvas.

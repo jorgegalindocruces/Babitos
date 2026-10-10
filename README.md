@@ -51,7 +51,7 @@ Los tamaños pequeño, normal y grande son puramente visuales: usan el mismo *hi
 | Navegar por botones | `Tab` / `Mayús + Tab` |
 | Activar el botón enfocado | `Enter` o `Espacio` |
 
-También se puede usar ratón o pantalla táctil en los menús. Los pads virtuales de movimiento, bajada, salto y ataque aparecen durante la partida cuando el navegador detecta una pantalla táctil o puntero grueso. `Espacio` salta mientras el foco está en el gameplay y activa un botón cuando el foco accesible está sobre ese control. El botón `AUDIO` permanece disponible junto al lienzo y recuerda la preferencia local de mute.
+También se puede usar ratón o pantalla táctil en los menús. Los pads virtuales de movimiento, bajada, salto y ataque aparecen durante la partida cuando el navegador detecta una pantalla táctil o puntero grueso. `Espacio` salta mientras el foco está en el gameplay y activa un botón cuando el foco accesible está sobre ese control. El botón `AUDIO` permanece disponible junto al lienzo y recuerda la preferencia local de mute. A su lado, el botón musical recorre `♫ AVENTURA`, `♫ CALMA` y `♫ ARCADE`; la elección se conserva por separado y cambiarla nunca activa un audio que estuviera silenciado.
 
 La descripción exhaustiva, incluidas las reglas de foco, pausa, reintento y vulnerabilidad, está en [Interacciones del juego](docs/INTERACTIONS.md).
 
@@ -60,7 +60,7 @@ La descripción exhaustiva, incluidas las reglas de foco, pausa, reintento y vul
 - Babilandia utiliza un nuevo fondo pixel art panorámico basado exclusivamente en la arquitectura, paleta y atmósfera de la lámina oficial. Si el asset no puede cargarse, el juego vuelve automáticamente al fondo procedural.
 - La arena de Babito Corrupto tiene un fondo 16:9 propio: Babilandia en ruinas al atardecer, basado en el ejemplo canónico del boss y con una zona de juego limpia para conservar la lectura de ataques y plataformas.
 - Ciudad Bicharraca, el último mundo del mapa, muestra ya su paisaje industrial 16:9 como fondo y recorte interior de su pantalla de avance estática; la tarjeta del mapa mantiene un icono procedural.
-- Música ambiental y efectos para interfaz, salto, ataque, daño, monedas, checkpoints, boss y compras se sintetizan en el navegador mediante Web Audio, sin archivos ni dependencias adicionales.
+- La banda sonora reúne siete composiciones procedurales originales de 32 pasos para título, Babilandia, boss, tienda, Jungla, Oscuridad y cierre. Un secuenciador Web Audio con planificación anticipada combina melodía, arpegio, bajo y ritmo; `AVENTURA` es el arreglo inicial y `CALMA`/`ARCADE` ofrecen interpretaciones globales más suave o más rápida. Música y efectos para interfaz, salto, ataque, daño, monedas, checkpoints, boss y compras se sintetizan en el navegador, sin archivos de audio ni dependencias adicionales.
 - El Babito usa un atlas por capas con celdas fuente de 80 px y 54 poses repartidas en nueve estados: `idle`, caminar, correr, saltar, caer, aterrizar (`land`), atacar, recibir daño y KO. Su base sigue el [arte canónico](art/production/babito-v4.md): el diseño lógico de 48 unidades se rasteriza a una rejilla real de 64 px, con cuerpo redondo de 47 × 45 px, corona plana, rostro compacto, aletas descendentes y pies visibles. En tamaño normal cada píxel fuente se muestra 1:1; pequeño y grande usan escalas exactas para mantener cajas de 64, 80 y 96 px. Cada ciclo mueve silueta, pies, brazos y expresión sin perder la personalización. KO, daño y ataque tienen prioridad sobre el movimiento; los *one-shots* comienzan de inmediato desde su primera pose cuando se disparan. COME, VUELA, DA VUELTAS y Babito Corrupto cambian de animación o pose según su estado; La Oscuridad ondula, viaja por sombra, telegrafía cada patrón, se ilumina al quedar expuesta y se disipa en luciérnagas.
 - El Babito ocupa ahora cajas visuales de 64, 80 y 96 px en pequeño, normal y grande, manteniendo una única hitbox de 28 × 40 y la misma línea de apoyo. COME ancla sus pies al cuerpo físico para no hundirse en suelo o plataformas durante caminar, anticipar o morder.
 - El suelo base sigue siendo sólido; las plataformas elevadas de Babilandia, La Jungla y las dos arenas de jefe son unidireccionales: se atraviesan al subir desde abajo, sostienen al personaje al caer y `S`/`↓` permite dejarse caer a través de ellas. Los proyectiles continúan impactando contra todo el terreno.
@@ -125,6 +125,8 @@ La configuración se mantiene fuera de las escenas siempre que es posible:
 - `src/data/levels/` contiene la geometría y entidades de cada fase.
 - `src/data/levels/index.js` registra cada fase lateral, su tema, recompensas y escena de jefe.
 - `src/state/SaveStore.js` valida, migra y persiste la partida.
+- `src/game/musicTracks.js` contiene las siete composiciones y los tres arreglos; `src/game/AudioSystem.js` las secuencia y mezcla con los efectos.
+- `src/game/AudioPreferences.js` mantiene el mute heredado en `babitos.audio.v1` y guarda el estilo musical, de forma independiente, en `babitos.music.v1`.
 - `src/game/createTextures.js` mantiene claves de textura estables mientras se sustituyen los gráficos temporales.
 - `docs/INTERACTIONS.md` es el contrato humano del comportamiento observable; los datos y el código enlazados allí son la fuente ejecutable.
 
@@ -202,7 +204,7 @@ Las láminas de `art/approved/` son dirección artística, no *spritesheets* fin
 - Logo, Babito Corrupto, tenderos y Árbol de Poder tienen PNG raster; las poses del boss se componen en runtime.
 - El atlas base del Babito es arte procedural canónico de producción; sus capas cosméticas se generan por código con claves definitivas y heredan la misma geometría. La hoja de DA VUELTAS, la moneda, proyectiles, plataformas, props y HUD siguen siendo pixel art procedural.
 
-Los elementos todavía provisionales deben sustituirse gradualmente por sprites y animaciones finales sin cambiar sus IDs ni la lógica; el Babito base no forma parte de esa lista. El audio actual es procedural: funciona como primera dirección sonora, pero todavía debe sustituirse o ampliarse con música y efectos producidos. La Jungla y La Oscuridad usan arte procedural (fondo, losetas, setas, farolillos y el sprite del jefe) a la espera de assets raster de producción. Ciudad Bicharraca es una pantalla de avance; su nivel y Boss Total pertenecen a iteraciones posteriores.
+Los elementos todavía provisionales deben sustituirse gradualmente por sprites y animaciones finales sin cambiar sus IDs ni la lógica; el Babito base no forma parte de esa lista. La banda sonora procedural es la implementación musical vigente: siete composiciones originales con tres arreglos seleccionables, generadas íntegramente con Web Audio y sin archivos externos. La Jungla y La Oscuridad usan arte procedural (fondo, losetas, setas, farolillos y el sprite del jefe) a la espera de assets raster de producción. Ciudad Bicharraca es una pantalla de avance; su nivel y Boss Total pertenecen a iteraciones posteriores.
 
 El estado exacto y la procedencia de los assets se describen en [ART_BIBLE.md](docs/ART_BIBLE.md) y `art/production/`.
 

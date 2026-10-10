@@ -45,11 +45,12 @@ La portada de `babitos.es` presenta el juego antes de jugar: hero con el logo y 
 | Atacar | `J` o `X` | Pad `✦` en dispositivos táctiles |
 | Pausar o reanudar gameplay | `P` o `Esc` | `PAUSA` abre la capa; `CONTINUAR` la cierra |
 | Silenciar o activar audio | `M` | Botón `AUDIO` exterior al lienzo |
+| Cambiar el estilo musical | — | Botón `♫ AVENTURA` / `♫ CALMA` / `♫ ARCADE` junto a `AUDIO` |
 | Saltar la introducción | `S` | `SALTAR INTRO` o `ENTRAR EN BABILANDIA` |
 | Recorrer botones | `Tab` / `Mayús + Tab` | Apuntar o tocar |
 | Activar el botón enfocado | `Enter` o `Espacio` | Clic principal o toque |
 
-Los pads virtuales solo aparecen cuando el navegador comunica capacidad táctil o un puntero grueso. Su zona activa es mayor que el círculo dibujado (radio 42 frente a 30), de modo que un pulgar que se desliza un poco no suelta el control, y el aviso inicial de Babilandia muestra los pads en lugar de las teclas. Durante el gameplay, `Espacio` pertenece al salto: el botón `PAUSA` del HUD no captura ese atajo. `Enter` y `Espacio` respetan el control HTML enfocado; salto, bajada, ataque y `M` también ignoran eventos nacidos en campos o botones. El movimiento y `P`/`Esc` siguen siendo atajos globales en una escena jugable.
+Los pads virtuales solo aparecen cuando el navegador comunica capacidad táctil o un puntero grueso. Su zona activa es mayor que el círculo dibujado (radio 42 frente a 30), de modo que un pulgar que se desliza un poco no suelta el control, y el aviso inicial de Babilandia muestra los pads en lugar de las teclas. Durante el gameplay, `Espacio` pertenece al salto: el botón `PAUSA` del HUD no captura ese atajo. `Enter` y `Espacio` respetan el control HTML enfocado; salto, bajada, ataque y `M` también ignoran eventos nacidos en campos o botones. El movimiento y `P`/`Esc` siguen siendo atajos globales en una escena jugable. Los dos controles de sonido conservan la activación nativa por teclado sin transmitir `Enter` o `Espacio` a Phaser.
 
 ## Contrato de botones y menús
 
@@ -250,14 +251,16 @@ La interacción del combate se implementa en [BossScene.js](../src/scenes/BossSc
 - cosméticos desbloqueados y comprados;
 - pantalla, checkpoint, derrota de cada boss, fin de Fase 1 y de Fase 2 y recompensas ya reclamadas.
 
-La preferencia de audio usa por separado `babitos.audio.v1`. Si `localStorage` no está disponible, el juego sigue funcionando durante la sesión.
+El mute usa por separado la clave heredada `babitos.audio.v1`; el arreglo musical usa `babitos.music.v1`. Una preferencia musical ausente o inválida vuelve a `AVENTURA` sin alterar el mute. Si `localStorage` no está disponible, el juego sigue funcionando y conserva ambas decisiones durante la sesión actual.
 
 ## Audio
 
 - `M` y el botón HTML `AUDIO` alternan mute; el atajo se ignora mientras se escribe o cuando se usan modificadores.
-- La primera interacción desbloquea Web Audio. Si el navegador no lo ofrece, el control queda deshabilitado como `AUDIO N/D` y el juego continúa.
-- Hay temas para título/Creador/Poder, Babilandia/Intro, boss, tienda, mapa/avances, La Jungla y La Oscuridad, más efectos de UI, salto, ataque, daño, moneda, checkpoint, boss y compra.
-- Esta versión no tiene control de volumen ni archivos de audio producidos: música y efectos son síntesis runtime.
+- El botón musical situado junto a `AUDIO` recorre tres arreglos que afectan a todo el juego: `AVENTURA` —equilibrado y valor inicial—, `CALMA` —más lento, suave y espaciado— y `ARCADE` —más rápido, denso y marcadamente chiptune—. El cambio se aplica al tema actual, se anuncia en la región viva y no desmutea el juego.
+- La primera interacción desbloquea Web Audio. Si el navegador no lo ofrece, los controles quedan deshabilitados como `AUDIO N/D` y `MÚSICA N/D`, y el juego continúa.
+- Siete composiciones procedurales originales de 32 pasos cubren título/Creador/Poder (`title`), Babilandia/Intro y el mapa aún en progreso (`babilandia`), Babito Corrupto (`boss`), tienda (`shop`), La Jungla (`jungle`), La Oscuridad (`darkness`) y el mapa completado/avances (`ending`).
+- Cada composición combina melodía, arpegio, bajo y ritmo mediante un *scheduler* Web Audio con planificación anticipada; los temas y arreglos cambian sin reiniciar la partida. Los efectos de UI, salto, ataque, daño, moneda, checkpoint, boss y compra siguen su propia capa de mezcla.
+- Música y efectos son síntesis en tiempo real: no se descargan archivos de audio externos y esta versión no expone un control de volumen continuo.
 
 ## Límites de interacción actuales
 
@@ -292,6 +295,9 @@ Ejemplos: `http://localhost:5173/?qa=GameScene&qaLevel=jungla&qaCheckpoint=ruina
 |---|---|
 | Landing, diálogos y carga diferida | [main.js](../src/main.js) |
 | Configuración Phaser, audio y activación/suspensión | [gameBoot.js](../src/gameBoot.js) |
+| Composiciones y arreglos musicales | [musicTracks.js](../src/game/musicTracks.js) |
+| Secuenciador Web Audio y efectos | [AudioSystem.js](../src/game/AudioSystem.js) |
+| Persistencia de mute y estilo musical | [AudioPreferences.js](../src/game/AudioPreferences.js) |
 | Carga, animaciones y rutas QA | [BootScene.js](../src/scenes/BootScene.js) |
 | Entrada y estado del jugador | [PlayerController.js](../src/game/PlayerController.js) |
 | Proyectiles y poderes | [PowerSystem.js](../src/game/PowerSystem.js) |

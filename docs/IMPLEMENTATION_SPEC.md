@@ -36,7 +36,7 @@ WorldMapScene → GameScene(jungla) → DarknessBossScene → ShopScene → Worl
 - Los carteles tutoriales de cada nivel solo guardan `id`, `x` y texto. [surfaceAnchoring.js](../src/game/surfaceAnchoring.js) obtiene la superficie física superior, y `GameScene` compone tabla, texto y poste como una sola decoración apoyada.
 - [SaveStore.js](../src/state/SaveStore.js): normalización, migración y persistencia; el progreso incluye `boss2Defeated` y `phase2Complete`.
 
-El guardado versionado `babitos.save.v1` contiene nombre, tamaño, apariencia, poder seleccionado/desbloqueado, monedas, cosméticos desbloqueados/comprados y progreso. `restartAdventure()` conserva colección, apariencia, saldo e IDs de recompensas cobradas, y reinicia poder, checkpoint y relato. El mute se guarda aparte en `babitos.audio.v1`.
+El guardado versionado `babitos.save.v1` contiene nombre, tamaño, apariencia, poder seleccionado/desbloqueado, monedas, cosméticos desbloqueados/comprados y progreso. `restartAdventure()` conserva colección, apariencia, saldo e IDs de recompensas cobradas, y reinicia poder, checkpoint y relato. [AudioPreferences.js](../src/game/AudioPreferences.js) mantiene el mute heredado aparte en `babitos.audio.v1` y el estilo musical en `babitos.music.v1`; ambas lecturas toleran `localStorage` ausente o bloqueado.
 
 ## Input e interfaz
 
@@ -44,7 +44,7 @@ El guardado versionado `babitos.save.v1` contiene nombre, tamaño, apariencia, p
 
 [fontLoading.js](../src/ui/fontLoading.js) solicita Silkscreen y Nunito antes de crear `Phaser.Game`; si exceden el tiempo de espera, el juego arranca con fallback y vuelve a rasterizar los textos cuando terminan. [textQuality.js](../src/ui/textQuality.js) aplica resolución interna limitada a 2×, sincroniza `frame.source.resolution` y cambia solo las texturas `Phaser.Text` a filtro linear. Como `pixelArt: true` vuelve a imponer nearest cada vez que Phaser ejecuta `updateText()`, el helper envuelve esa operación una vez por objeto y restaura la calidad tras `setText`, `setColor`, `setFontSize` o una recarga de fuente; sprites y fondos siguen en nearest. `Button` y `createLabel` calculan el contorno según tamaño (0 px hasta 10, 1 px entre 11 y 15, 2 px desde 16), y el contenido visible autorado tiene un suelo de 12 px. Los textos que deben caber en un ancho se regeneran con un tamaño de fuente entero en vez de escalar su textura de forma fraccionaria.
 
-`PlayerController` acepta teclado y cinco controles virtuales booleanos: izquierda, derecha, bajar, saltar y atacar. Salto, bajada y ataque filtran eventos nacidos en `button`, `input`, `textarea`, `select`, enlace o elemento editable; `M` aplica un filtro equivalente. El movimiento y los handlers `P`/`Esc` son globales mientras la escena jugable está activa. Al pausar, reanudar, morir o reintentar se borran edges y teclas retenidas.
+`PlayerController` acepta teclado y cinco controles virtuales booleanos: izquierda, derecha, bajar, saltar y atacar. Salto, bajada y ataque filtran eventos nacidos en `button`, `input`, `textarea`, `select`, enlace o elemento editable; `M` aplica un filtro equivalente. El movimiento y los handlers `P`/`Esc` son globales mientras la escena jugable está activa. Al pausar, reanudar, morir o reintentar se borran edges y teclas retenidas. Fuera del canvas, `gameBoot.js` conecta `AUDIO` y el selector musical contiguo: este último cicla `AVENTURA` → `CALMA` → `ARCADE`, persiste solo el arreglo y no modifica el estado de mute.
 
 ## Jugador
 
@@ -134,7 +134,9 @@ Cada escena jugable mantiene un reloj de gameplay descontando el tiempo pausado.
 
 Los fondos de Babilandia, arena del boss y Ciudad son raster 16:9 con escala *cover* y fallback procedural. La Jungla y su arena usan el fondo procedural `jungle`; [jungleScenery.js](../src/game/jungleScenery.js) añade agua animada en los fosos, cascada, lianas, ruinas, maleza, luciérnagas, el velo de oscuridad en espacio de pantalla y el halo aditivo del Babito. Losetas (`tile_jungle_ground`, `tile_branch`, `tile_bridge`, `tile_ruin`), seta, farolillos, Manzana de Poder y el sprite de La Oscuridad se generan en [createTextures.js](../src/game/createTextures.js). Su inventario y procedencia están en [ART_BIBLE.md](ART_BIBLE.md) y `art/production/`. Las colisiones nunca se derivan de estos fondos.
 
-AudioSystem sintetiza música y efectos con Web Audio (con temas `jungle` y `darkness` para la Fase 2), desbloquea el contexto tras interacción y tolera falta de soporte. No hay archivos de audio ni control de volumen en 0.2.
+[musicTracks.js](../src/game/musicTracks.js) define siete composiciones procedurales originales (`title`, `babilandia`, `boss`, `shop`, `jungle`, `darkness` y `ending`). Cada tema es un bucle de 32 pasos con melodía, progresión armónica, tempo y *swing*. Los arreglos globales `adventure` —valor por defecto—, `calm` y `arcade` cambian tempo, densidad, envolvente, octava, forma de onda y mezcla de sus cuatro capas: melodía principal, arpegio, bajo y ritmo.
+
+[AudioSystem.js](../src/game/AudioSystem.js) sintetiza esas capas y los efectos con Web Audio. Su *scheduler* despierta cada 40 ms y planifica hasta 160 ms por adelantado para evitar huecos entre pasos; los cambios de tema o arreglo sustituyen la sesión con una breve salida de las voces anteriores. Desbloquea o reanuda el contexto tras interacción, conserva un tema solicitado mientras sigue bloqueado y tolera que Web Audio no exista. Cambiar el arreglo no toca `muted`. No hay archivos de audio externos ni control de volumen continuo en 0.2.
 
 ## QA y extensión
 
