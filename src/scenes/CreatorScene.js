@@ -48,7 +48,8 @@ export class CreatorScene extends Phaser.Scene {
     createPanel(this, 689, 292, 455, 382, { depth: 10, fillAlpha: 0.94 });
     createLabel(this, 'TU BABITO', 244, 126, { fontSize: 17, color: 0xffcf3c, depth: 20 });
 
-    this.previewHost = this.add.container(244, 262).setScale(3.05).setDepth(30);
+    // Sized so GRANDE (×1.325, sheets' 64 px) still fits under the heading.
+    this.previewHost = this.add.container(244, 262).setScale(2.75).setDepth(30);
     this.avatar = new BabitoAvatar(this, 0, 0, this.draftAppearance, this.save.size);
     this.previewHost.add(this.avatar);
     this.tweens.add({

@@ -1,5 +1,7 @@
 # Babito canónico v4
 
+> **Histórico y supersedido** por [Babito canónico v5](babito-v5.md), alineado con las láminas de anatomía de octubre de 2026.
+
 ## Estado
 
 Contrato visual vigente desde el 8 de octubre de 2026 y revisado el 9 de octubre de 2026. Sustituye a [Babito canónico v3](babito-v3.md), cuya ficha se conserva como historial, y corrige la lectura todavía estrecha, angulosa y con ápice superior de aquella versión. La revisión actual amplía la animación con `land`, sin cambiar personalización, física, hitbox ni guardados.

@@ -239,7 +239,7 @@ test('declared WEBP dimensions match their intrinsic files', async () => {
   assert.ok(checkedImages >= 10, 'dimension regression must cover the landing WEBP set');
 });
 
-test('the landing Babito is a crisp export of the canonical game palette', () => {
+test('the landing Babito is a crisp export of the canonical v5 game palette', () => {
   const asset = decodeRgbaPng(resolve(
     REPOSITORY_ROOT,
     'public/assets/landing/babito.png',
@@ -273,11 +273,16 @@ test('the landing Babito is a crisp export of the canonical game palette', () =>
     }
   }
 
+  // Babito v5 palette from the anatomy sheets, plus the straw hat.
   const expectedColors = [
-    '124,219,249,255', // body
-    '168,237,255,255', // highlight
-    '255,113,150,255', // cheeks
-    '7,17,30,255', // outline
+    '72,217,245,255', // body #48D9F5
+    '145,241,255,255', // light #91F1FF
+    '34,156,203,255', // flank shadow #229CCB
+    '24,35,52,255', // outline #182334
+    '255,145,173,255', // cheeks #FF91AD
+    '7,17,30,255', // eyes and mouth
+    '255,255,255,255', // eye and crown glints
+    '255,93,125,255', // tongue
     '255,198,46,255', // straw hat
     '239,51,79,255', // hat band
     '255,241,128,255', // hat glint
@@ -289,11 +294,5 @@ test('the landing Babito is a crisp export of the canonical game palette', () =>
     [...colors].sort(),
     [...expectedColors].sort(),
     'the editorial export must use only the documented pixel palette',
-  );
-
-  assert.equal(
-    colors.has('43,191,229,255'),
-    false,
-    'the editorial export cannot reintroduce the darker blue underwear patch',
   );
 });

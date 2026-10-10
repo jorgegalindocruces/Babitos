@@ -24,6 +24,7 @@ const CONTEXT_DOCUMENTS = Object.freeze([
   'docs/INTERACTIONS.md',
   'art/production/babito-v3.md',
   'art/production/babito-v4.md',
+  'art/production/babito-v5.md',
   'art/production/landing-web-v1.md',
   'art/production/babilandia-v2.md',
   'art/production/boss-arena-v1.md',
@@ -33,6 +34,9 @@ const CONTEXT_DOCUMENTS = Object.freeze([
   'art/production/jungle-enemy-sheets-v2.md',
 ]);
 const ESSENTIAL_LINK_TARGETS = Object.freeze([
+  'art/approved/babito_anatomy_1.png',
+  'art/approved/babito_anatomy_2.png',
+  'art/approved/babito_anatomy_3.png',
   'src/main.js',
   'src/gameBoot.js',
   'src/scenes/GameScene.js',
@@ -231,19 +235,19 @@ test('scope and critical gameplay invariants are explicit', async () => {
   assert.match(interactions, /un poder nunca destruye, oculta ni desactiva suelo o plataformas/u);
   assert.match(interactions, /El suelo base es completamente sólido/u);
   assert.match(interactions, /Las plataformas elevadas son unidireccionales/u);
-  assert.match(interactions, /cajas de render enteras de 64, 80 y 96 px/u);
+  assert.match(interactions, /cajas de render enteras de 54, 80 y 106 px/u);
   assert.match(interactions, /todos los clips se anclan por los pies a la superficie física/u);
   assert.match(interactions, /`idle` \(6 frames\), `walk` \(8\), `run` \(8\), `jump` \(6\), `fall` \(6\), `land` \(3\), `attack` \(6\), `hurt` \(5\) y `dead` \(6\)/u);
   assert.match(interactions, /prioridad visual es `dead` → `hurt` → `attack` → aire[\s\S]*→ `land` → locomoción/u);
   assert.match(interactions, /Sin `qaFrame`, el clip avanza[\s\S]*input real[\s\S]*libera el override/u);
   assert.match(interactions, /Caminar y correr son ciclos diferentes/u);
-  assert.match(interactions, /cuerpo rasterizado mide 47 × 45 px[\s\S]*ojos normales 4 × 9 px/u);
-  assert.match(interactions, /`#7CDBF9`[\s\S]*`#A8EDFF`[\s\S]*`#2BBFE5`/u);
-  assert.match(interactions, /`#FF7196`[\s\S]*`#07111E`/u);
-  assert.match(interactions, /ninguna variante pinta `palette\.shade` sobre el cuerpo/u);
-  assert.match(interactions, /contorno inferior se abre en dos raíces estrechas/u);
-  assert.match(acceptance, /barriga, raíces de los pies y pies comparten `palette\.main`/u);
-  assert.match(masterPrompt, /banda inferior queda expresamente supersedida/u);
+  assert.match(interactions, /cuerpo de gominola de 47 × 47 px con corona plana, ojos ovalados brillantes/u);
+  assert.match(interactions, /`#48D9F5`[\s\S]*`#91F1FF`[\s\S]*`#229CCB`/u);
+  assert.match(interactions, /solo en el flanco derecho y contorno `#182334`/u);
+  assert.match(interactions, /la sombra nunca cruza la barriga ni toca los pies/u);
+  assert.match(interactions, /mantiene la cara elegida en el Creador/u);
+  assert.match(acceptance, /raíces de los pies permanecen abiertas sin formar cinturilla/u);
+  assert.match(masterPrompt, /La sombra solo puede ocupar el flanco derecho/u);
   assert.match(interactions, /`\?qa=TitleScene`[\s\S]*`DarknessBossScene`/u);
   assert.match(interactions, /`&qaLevel=jungla`/u);
   assert.match(interactions, /`&qaOneHit=1`[\s\S]*`DarknessBossScene`/u);
@@ -267,7 +271,7 @@ test('scope and critical gameplay invariants are explicit', async () => {
   assert.match(implementation, /main\.js[^\n]*landing[\s\S]*gameBoot\.js[^\n]*Phaser/u);
   assert.match(implementation, /BABITO_CANONICAL_GEOMETRY[\s\S]*drawBabitoCompositeFrame/u);
   assert.match(masterPrompt, /Landing → JUGAR → diálogo → Boot → Título/u);
-  assert.match(masterPrompt, /Babito v4[\s\S]*cuerpo rasterizado 47 × 45[\s\S]*ojos 4 × 9[\s\S]*paleta cian canónica/u);
+  assert.match(masterPrompt, /Babito v5[\s\S]*cuerpo de gominola de 47 × 47 px[\s\S]*ojos ovalados brillantes/u);
 });
 
 test('visible shell and scene copy cannot regress to the pre-Phase-2 context', async () => {

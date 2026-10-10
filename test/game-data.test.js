@@ -70,7 +70,8 @@ test('small, normal and large change render scale but share one hitbox contract'
         80 * definition.renderScale,
       ]),
     ),
-    { small: 64, normal: 80, large: 96 },
+    // Anatomy sheets: 32 / 48 / 64 px, on whole-pixel 80 px cells.
+    { small: 54, normal: 80, large: 106 },
   );
 });
 

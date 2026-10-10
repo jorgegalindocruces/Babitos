@@ -15,8 +15,11 @@ import {
   updateBabitoQaMotionOverride,
 } from '../src/game/BabitoAnimations.js';
 import {
+  BABITO_ARM_NUBS,
   BABITO_AUTHORED_ART_BOUNDS,
+  BABITO_BLUSH,
   BABITO_CANONICAL_GEOMETRY,
+  BABITO_OUTLINE,
   BABITO_DETAIL_SCALE,
   BABITO_PALETTES,
   BABITO_RENDER_SIZE,
@@ -347,40 +350,41 @@ test('grounded animation poses keep one exact support line', () => {
   }
 });
 
-test('the base silhouette keeps the approved round Babito proportions', () => {
+test('the base silhouette follows the v5 gumdrop of the anatomy sheets', () => {
   const { body, normalEyes, feet, restingFin } = BABITO_CANONICAL_GEOMETRY;
   const bodyWidth = body.radiusX * 2 + 1;
-  const bodyHeight = body.radiusY * 2 + 1 - body.trimmedTips * 2;
+  const bodyHeight = body.radiusY * 2 + 1;
   const totalRestingWidth = (64 - restingFin.minX) - restingFin.minX + 1;
 
   assert.equal(bodyWidth, 47);
-  assert.equal(bodyHeight, 45);
-  assert.ok(bodyWidth / bodyHeight >= 1 && bodyWidth / bodyHeight <= 1.05);
-  assert.ok(body.trimmedTips >= 1, 'the crown must use a flat scanline instead of a one-pixel tip');
-  assert.ok(totalRestingWidth / bodyWidth <= 1.4, 'resting fins must stay compact');
-  assert.deepEqual(normalEyes, { width: 4, height: 9, gap: 11 });
-  assert.deepEqual(feet, { maxWidth: 13, authoredHeight: 9, exposedHeight: 5 });
+  assert.equal(bodyHeight, 47);
+  assert.ok(totalRestingWidth / bodyWidth <= 1.4, 'resting arm nubs must stay compact');
+  assert.deepEqual(normalEyes, { width: 8, height: 12, gap: 11 });
+  assert.deepEqual(feet, { maxWidth: 12, authoredHeight: 9, exposedHeight: 7 });
   const bodyProfile = getBabitoBodyScanlineWidths();
   assert.equal(bodyProfile.length, bodyHeight);
-  assert.ok(bodyProfile[0] > 1, 'the crown cannot collapse to a one-pixel spike');
-  assert.equal(bodyProfile[0], bodyProfile.at(-1));
   assert.equal(Math.max(...bodyProfile), bodyWidth);
   assert.deepEqual(bodyProfile, [...bodyProfile].reverse(), 'the base body must remain symmetric');
+  // Flat crown, not a dome: the second scanline already spans a third of
+  // the body, and the middle 60 % of the height keeps near-vertical flanks.
+  assert.ok(bodyProfile[1] >= bodyWidth / 3, 'the crown must be flat');
+  const middle = bodyProfile.slice(Math.round(bodyHeight * 0.2), Math.round(bodyHeight * 0.8));
+  assert.ok(Math.min(...middle) >= bodyWidth * 0.85, 'the flanks must stay near-vertical');
   for (let index = 1; index <= Math.floor(bodyProfile.length / 2); index += 1) {
     assert.ok(bodyProfile[index] >= bodyProfile[index - 1], 'the upper curve must expand monotonically');
   }
   assert.deepEqual(BABITO_PALETTES.cyan, {
-    main: '#7cdbf9',
-    light: '#a8edff',
-    shade: '#2bbfe5',
-    tint: 0x7cdbf9,
+    main: '#48d9f5',
+    light: '#91f1ff',
+    shade: '#229ccb',
+    tint: 0x48d9f5,
   });
+  assert.equal(BABITO_OUTLINE, '#182334');
+  assert.equal(BABITO_BLUSH, '#ff91ad');
 });
 
-test('every palette and animation frame keeps one uninterrupted body colour', () => {
+test('body shading stays on the right flank and never forms a waistband', () => {
   const masksByFrame = new Map();
-  const ink = '#07111e';
-  const blush = '#ff7196';
   const glint = '#ffffff';
 
   for (const [body, palette] of Object.entries(BABITO_PALETTES)) {
@@ -389,43 +393,38 @@ test('every palette and animation frame keeps one uninterrupted body colour', ()
       drawBabitoBody(context, palette, pose);
       const pixels = context.pixels.flat();
 
-      assert.equal(
-        pixels.includes(palette.shade),
-        false,
-        `${body}:${pose.frame} reintroduced a darker patch that can read as underwear`,
-      );
-
-      for (let y = 31; y < context.pixels.length; y += 1) {
-        for (const color of context.pixels[y]) {
-          assert.ok(
-            color === null || color === ink || color === palette.main,
-            `${body}:${pose.frame} has a secondary tone in the belly or legs`,
-          );
-        }
+      // The sheets paint volume with SOMBRA, but only along the right flank:
+      // the belly centre, the left half and both feet stay free of it.
+      context.pixels.forEach((row, y) => row.forEach((color, x) => {
+        if (color !== palette.shade) return;
+        assert.ok(x > 24 + 4, `${body}:${pose.frame} shades the belly or left side at ${x},${y}`);
+        assert.ok(y < 37, `${body}:${pose.frame} shades the feet at ${x},${y}`);
+      }));
+      assert.ok(pixels.includes(palette.shade), `${body}:${pose.frame} lost its volume shading`);
+      for (let y = 29; y < 44; y += 1) {
+        assert.ok(
+          [null, BABITO_OUTLINE, palette.main].includes(context.pixels[y][24]),
+          `${body}:${pose.frame} draws a band across the belly at row ${y}`,
+        );
       }
 
       const leftRootY = 37 + (Number(pose.feet?.left?.y) || 0);
-      const leftRootX = 18 + (Number(pose.feet?.left?.x) || 0);
+      const leftRootX = 15 + (Number(pose.feet?.left?.x) || 0);
       const rightRootY = 37 + (Number(pose.feet?.right?.y) || 0);
-      const rightRootX = 29 + (Number(pose.feet?.right?.x) || 0);
-      assert.equal(
-        context.pixels[leftRootY]?.[leftRootX],
-        palette.main,
-        `${body}:${pose.frame} closes the left foot root with an underwear-like outline`,
-      );
-      assert.equal(
-        context.pixels[rightRootY]?.[rightRootX],
-        palette.main,
-        `${body}:${pose.frame} closes the right foot root with an underwear-like outline`,
-      );
+      const rightRootX = 30 + (Number(pose.feet?.right?.x) || 0);
+      assert.equal(context.pixels[leftRootY]?.[leftRootX], palette.main,
+        `${body}:${pose.frame} closes the left foot root with an underwear-like outline`);
+      assert.equal(context.pixels[rightRootY]?.[rightRootX], palette.main,
+        `${body}:${pose.frame} closes the right foot root with an underwear-like outline`);
 
       const roleMask = pixels.map((color) => {
         if (color === null) return 'transparent';
-        if (color === ink) return 'ink';
-        if (color === blush) return 'blush';
+        if (color === BABITO_OUTLINE) return 'outline';
+        if (color === BABITO_BLUSH) return 'blush';
         if (color === glint) return 'glint';
         if (color === palette.main) return 'main';
         if (color === palette.light) return 'light';
+        if (color === palette.shade) return 'shade';
         return `unexpected:${color}`;
       });
       assert.equal(
@@ -444,11 +443,34 @@ test('every palette and animation frame keeps one uninterrupted body colour', ()
   }
 });
 
+test('locomotion and attack keep the equipped face; only hurt and defeat override it', () => {
+  const allowed = new Set(['smile', 'blink', 'hurt', 'dazed', 'knocked-out']);
+  for (const pose of BABITO_FRAME_POSES) {
+    assert.ok(allowed.has(pose.expression), `${pose.state}:${pose.localFrame} uses ${pose.expression}`);
+    if (['walk', 'run', 'jump', 'fall', 'land', 'attack'].includes(pose.state)) {
+      assert.equal(pose.expression, 'smile', `${pose.state}:${pose.localFrame} hides the chosen face`);
+    }
+  }
+  const hurt = BABITO_FRAME_POSES.filter((pose) => pose.state === 'hurt');
+  assert.ok(hurt.some((pose) => pose.expression === 'hurt'));
+  const dead = BABITO_FRAME_POSES.filter((pose) => pose.state === 'dead');
+  assert.equal(dead.at(-1).expression, 'knocked-out', 'defeat ends with X eyes');
+});
+
+test('every arm pose is a compact rounded nub that never rises into ears', () => {
+  for (const [pose, nub] of Object.entries(BABITO_ARM_NUBS)) {
+    assert.ok(nub.width <= 12 && nub.height <= 12, `${pose} grows into a long fin`);
+    assert.ok(nub.x >= 1, `${pose} leaves the authored bounds`);
+    // The crown starts at row 6; an arm whose top passes row 9 reads as an ear.
+    assert.ok(nub.y >= 9, `${pose} rises above the crown`);
+  }
+});
+
 test('larger Babito sizes keep integer render dimensions and one shared baseline', () => {
   assert.deepEqual(BABITO_SIZE_SCALES, {
-    small: 0.8,
+    small: 0.675,
     normal: 1,
-    large: 1.2,
+    large: 1.325,
   });
   assert.equal(BABITO_ART_BASELINE, 30);
 

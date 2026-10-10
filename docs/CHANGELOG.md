@@ -7,6 +7,18 @@ Este archivo relaciona las iteraciones entregadas con sus cambios observables, c
 - Mantener sincronizados `README.md`, `INTERACTIONS.md`, `GAME_DESIGN.md`, `IMPLEMENTATION_SPEC.md` y `ACCEPTANCE_CRITERIA.md` cuando cambien flujo, controles, estados, persistencia o contenido jugable.
 - Añadir una entrada aquí por cada cambio observable, con el commit final y las pruebas realizadas.
 
+## Babito v5 según las láminas de anatomía — 2026-10-11
+
+El protagonista se audita contra las tres láminas de anatomía aprobadas ([babito_anatomy_1.png](../art/approved/babito_anatomy_1.png), [_2](../art/approved/babito_anatomy_2.png), [_3](../art/approved/babito_anatomy_3.png)) y se redibuja para coincidir con ellas. Detalle en [babito-v5.md](../art/production/babito-v5.md):
+
+- **Personaje base**: cuerpo de gominola (corona plana y flancos casi verticales) en lugar de círculo; paleta CUERPO `#48D9F5`, LUZ `#91F1FF`, SOMBRA `#229CCB`, CONTORNO `#182334` y MEJILLAS `#FF91AD`; ojos ovalados brillantes; sonrisa abierta con lengua; brazos en muñón redondeado; y dos pies separados. La sombra aparece solo en el flanco derecho, así que no reintroduce la banda inferior corregida en la v4.
+- **Animación**: caminar, correr, saltar, caer, aterrizar y atacar ya no ponen ceño fruncido ni ocultan los ojos y la boca elegidos. El daño muestra ojos «> <» con estrellas; la derrota mantiene los ojos en X. Los brazos ya no se alargan hasta parecer orejas al caminar o saltar.
+- **Cosméticos**: sombreros por encima de los ojos y gafas de sol a la nueva altura de la cara; las once pieles heredan la nueva geometría.
+- **Tamaños**: ×0,675 / ×1 / ×1,325 (54 / 80 / 106 px), lo más cercano con píxel entero a los 32/48/64 px de las láminas; la vista previa del Creador pasa a ×2,75 para que GRANDE ocupe lo mismo que antes. Hitbox, física y guardados no cambian.
+- **Landing**: `babito.png` se reexporta desde el nuevo renderer.
+
+Pruebas actualizadas y añadidas en `babito-animation.test.js`, `landing.test.js` y `game-data.test.js`.
+
 ## Auditoría y correcciones de la Fase 2 — 2026-10-11
 
 Revisión completa de La Jungla, sus tres enemigos, La Oscuridad y la rejugabilidad, con recorridos automáticos en navegador:
