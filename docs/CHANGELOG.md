@@ -17,7 +17,7 @@ Commit [`ef29ca2`](https://github.com/jorgegalindocruces/Babitos/commit/ef29ca2)
 - **Reproducción estable**: un scheduler Web Audio con anticipación de 160 ms, envolventes finitas, límite de voces, filtro suave y crossfade evita zumbidos, huecos, clics y acumulación de nodos. Cambiar tema o arreglo limpia su transporte anterior, también tras una interrupción del sistema.
 - **Ciclo de vida y responsive**: cerrar el juego suspende el contexto y retira el listener de recuperación para que la landing no reactive música; reabrirlo recompone el arreglo correcto. Los dos controles ocupan una barra propia en móvil y pantalla completa sin interceptar el HUD.
 
-Validación: 135 pruebas automáticas, build de producción, `git diff --check`, revisión de código sin hallazgos P1/P2 y QA visual en escritorio y móvil (390 × 844) de las tres opciones, persistencia, barra reservada y consola sin avisos ni errores.
+Validación: 136 pruebas automáticas, build de producción, `git diff --check`, revisión de código sin hallazgos P1/P2 y QA visual en escritorio y móvil (390 × 844) de las tres opciones, persistencia, barra reservada y consola sin avisos ni errores.
 
 ## Nuevos Bicharracos de La Jungla en la landing — 2026-10-10
 
