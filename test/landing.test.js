@@ -97,6 +97,7 @@ test('the landing exposes its sections, play controls and direct game route', as
     'personajes',
     'papel',
     'arte',
+    'creditos',
   ]) {
     assert.match(page, new RegExp(`\\bid="${id}"`, 'u'), `landing must expose #${id}`);
   }
@@ -130,6 +131,31 @@ test('the landing exposes its sections, play controls and direct game route', as
   assert.match(main, /playDialog\.addEventListener\('cancel', \(event\) => event\.preventDefault\(\)\)/u);
   assert.match(main, /requestFullscreen/u);
   assert.match(main, /artDialog\.showModal\(\)/u);
+});
+
+test('the landing closes with visible credits for Lola and Momo', async () => {
+  const page = await readRepositoryFile('index.html');
+  const finalCallIndex = page.indexOf('class="section final-cta"');
+  const creditsIndex = page.indexOf('id="creditos"');
+  const footerIndex = page.indexOf('class="site-footer"');
+
+  assert.ok(finalCallIndex >= 0 && finalCallIndex < creditsIndex, 'credits must follow the final play call');
+  assert.ok(creditsIndex < footerIndex, 'credits must remain the final editorial section before the technical footer');
+  assert.match(page, /El universo de BABITOS nació de las ideas y los dibujos de Lola y Momo/u);
+  assert.match(page, /Directores creativos y ejecutivos de BABITOS/u);
+  assert.match(
+    page,
+    /class="art-frame creator-credits-art"[\s\S]*data-zoom="\.\/assets\/landing\/credits-lola-momo\.webp"/u,
+  );
+  const creditsButton = /<button\b[^>]*class="art-frame creator-credits-art"[\s\S]*?<\/button>/u.exec(page)?.[0];
+  const creditsImage = /<img\b[^>]*>/u.exec(creditsButton ?? '')?.[0];
+  assert.ok(creditsImage, 'credits must contain an image');
+  assert.equal(readAttribute(creditsImage, 'src'), './assets/landing/credits-lola-momo.webp');
+  assert.match(readAttribute(creditsImage, 'alt') ?? '', /^Lola y Momo /u);
+  assert.equal(readAttribute(creditsImage, 'loading'), 'lazy');
+  assert.equal(readAttribute(creditsImage, 'decoding'), 'async');
+  assert.equal(readAttribute(creditsImage, 'width'), '1536');
+  assert.equal(readAttribute(creditsImage, 'height'), '1024');
 });
 
 test('the landing presents the approved Jungle enemies without claiming they are runtime sprites', async () => {
