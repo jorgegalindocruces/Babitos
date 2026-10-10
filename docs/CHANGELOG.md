@@ -7,6 +7,18 @@ Este archivo relaciona las iteraciones entregadas con sus cambios observables, c
 - Mantener sincronizados `README.md`, `INTERACTIONS.md`, `GAME_DESIGN.md`, `IMPLEMENTATION_SPEC.md` y `ACCEPTANCE_CRITERIA.md` cuando cambien flujo, controles, estados, persistencia o contenido jugable.
 - Añadir una entrada aquí por cada cambio observable, con el commit final y las pruebas realizadas.
 
+## Nuevos Bicharracos de La Jungla en la landing — 2026-10-10
+
+Commit [`9f24c57`](https://github.com/jorgegalindocruces/Babitos/commit/9f24c57). La portada incorpora los dibujos infantiles y las fichas pixel art aprobadas de Garbanzo Loco, Árbol Pocho y Sapo Pota sin presentarlos todavía como enemigos jugables:
+
+- **Personajes por fase**: Babilandia conserva COME, VUELA y DA VUELTAS. Una segunda fila presenta los tres diseños de La Jungla con retratos editoriales, rasgos propios y la etiqueta visible `Diseño aprobado · En desarrollo`.
+- **Del papel al píxel**: la selección pasa de ocho a once comparativas. Los bocetos nuevos se encuadran completos con `object-fit: contain`, sin cortar escudo, ramas, lengua ni nombres, y se emparejan con retratos derivados de las fichas aprobadas.
+- **Galería**: Garbanzo Loco, Árbol Pocho y Sapo Pota abren sus láminas completas en el visor. Las tres ocupan el ancho disponible para conservar la lectura de poses, ataques, detalles y paletas.
+- **Procedencia**: se preservan los seis PNG aportados en `art/approved/` y `art/original_drawings/`; nueve WebP optimizados añaden bocetos, retratos y fichas a la landing. El inventario editorial pasa de 23 a 32 derivados y ocupa aproximadamente 3 MB.
+- **Alcance honesto**: estos recortes no se precargan en Phaser y no cambian la Jungla jugable, sus ocho encuentros ni los tres tipos de enemigo actuales. La ficha editorial evita usar «en el juego» hasta que existan spritesheets y comportamiento runtime reales.
+
+Validación: 123 pruebas automáticas, build de producción, `git diff --check` y QA visual en escritorio y móvil (390 × 844) de tarjetas, comparativas, galería y visor, sin overflow horizontal, imágenes rotas ni errores de consola.
+
 ## Estados completos y siluetas pixeladas del Babito — 2026-10-09
 
 Commit [`4f31baf`](https://github.com/jorgegalindocruces/Babitos/commit/4f31baf). La animación del protagonista deja de depender de poses casi idénticas y de un override QA que podía ocultar el estado real:

@@ -18,7 +18,7 @@ Documentación vigente:
 
 ## Landing page
 
-`index.html` es la portada del juego: historia, creador y poderes, mundos, personajes, una selección «Del papel al píxel» y la galería de arte conceptual. El juego se abre en un diálogo al pulsar **JUGAR** (o con `https://babitos.es/#jugar`) y su motor solo se descarga en ese momento. Cerrar el diálogo congela la pantalla actual; si se cierra durante gameplay, al volver espera el panel de pausa.
+`index.html` es la portada del juego: historia, creador y poderes, mundos, personajes, once comparativas «Del papel al píxel» y nueve láminas en la galería de arte conceptual. Garbanzo Loco, Árbol Pocho y Sapo Pota aparecen como diseños aprobados de La Jungla con la etiqueta **En desarrollo**; sus retratos editoriales no son sprites del runtime. El juego se abre en un diálogo al pulsar **JUGAR** (o con `https://babitos.es/#jugar`) y su motor solo se descarga en ese momento. Cerrar el diálogo congela la pantalla actual; si se cierra durante gameplay, al volver espera el panel de pausa.
 
 ## Recorrido jugable
 
@@ -198,6 +198,7 @@ Las láminas de `art/approved/` son dirección artística, no *spritesheets* fin
 
 - Babilandia, la arena de Babito Corrupto y Ciudad Bicharraca tienen fondos raster con fallback procedural.
 - COME y VUELA usan hojas raster de producción.
+- Garbanzo Loco, Árbol Pocho y Sapo Pota tienen dibujo original y lámina pixel art aprobada, visibles en la landing como conceptos **En desarrollo**; todavía no tienen spritesheets ni comportamiento runtime.
 - Logo, Babito Corrupto, tenderos y Árbol de Poder tienen PNG raster; las poses del boss se componen en runtime.
 - El atlas base del Babito es arte procedural canónico de producción; sus capas cosméticas se generan por código con claves definitivas y heredan la misma geometría. La hoja de DA VUELTAS, la moneda, proyectiles, plataformas, props y HUD siguen siendo pixel art procedural.
 

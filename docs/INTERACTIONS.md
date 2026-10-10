@@ -26,13 +26,14 @@ Son jugables Babilandia con Babito Corrupto (Fase 1) y La Jungla con La Oscurida
 
 ## Landing page
 
-La portada de `babitos.es` presenta el juego antes de jugar: hero con el logo y un Babito que salta, la historia del Árbol de Poder en tres pasos, el creador y los tres poderes, los tres mundos con su estado (dos jugables y Ciudad próximamente), personajes (Bicharracos, jefes y aliados), «Del papel al píxel» con una selección de ocho dibujos originales junto a su versión de juego y una galería de láminas conceptuales que se amplían en un visor.
+La portada de `babitos.es` presenta el juego antes de jugar: hero con el logo y un Babito que salta, la historia del Árbol de Poder en tres pasos, el creador y los tres poderes, los tres mundos con su estado (dos jugables y Ciudad próximamente), personajes (Bicharracos, jefes y aliados), once comparativas «Del papel al píxel» y nueve láminas conceptuales que se amplían en un visor. Ocho comparativas enfrentan el dibujo con su asset de juego; Garbanzo Loco, Árbol Pocho y Sapo Pota enfrentan el boceto con un retrato derivado de su diseño pixel art aprobado y se identifican como **En desarrollo**, no como sprites ya jugables.
 
 - Todos los botones `JUGAR` abren un diálogo modal con el juego. La primera apertura carga el motor (`Cargando BABITOS…`); las siguientes son inmediatas. Si se cierra antes de terminar esa primera carga, el runtime se desactiva en cuanto queda listo y nunca avanza ni toma foco detrás de la portada.
 - `Esc` dentro del diálogo pausa el juego, como siempre; solo el botón `✕` cierra el diálogo. Cerrar congela la pantalla actual, suspende música y reloj y, si se hizo durante gameplay, al volver espera el panel `PAUSA`; en Título, Creador y otros menús reanuda esa misma pantalla.
 - `⛶` pone el juego a pantalla completa. En móvil el diálogo ocupa toda la pantalla y, en vertical, sugiere girar el teléfono.
 - Con el diálogo cerrado, flechas, Espacio y `M` vuelven a comportarse como en cualquier página. Al cerrar, el foco vuelve al botón que lo abrió.
 - Un enlace a `https://babitos.es/#jugar` abre el juego directamente.
+- Las tarjetas de Bicharracos distinguen Babilandia de los nuevos diseños de La Jungla. Las fichas, retratos y comparativas de Garbanzo Loco, Árbol Pocho y Sapo Pota son contenido editorial; no alteran los ocho encuentros ni los tipos de enemigo que ejecuta actualmente `GameScene(jungla)`.
 
 ## Entradas globales
 

@@ -250,7 +250,7 @@ test('scope and critical gameplay invariants are explicit', async () => {
   assert.match(interactions, /texturas Canvas de texto usan filtro linear[\s\S]*cada cambio/u);
   assert.match(implementation, /updateText\(\)[\s\S]*sprites y fondos siguen en nearest/u);
   assert.match(artBible, /texto visible parte de 12 px[\s\S]*texturas tipográficas usan linear/u);
-  assert.match(artBible, /Landing web \| 23 derivados optimizados/u);
+  assert.match(artBible, /Landing web \| 32 derivados optimizados/u);
   assert.match(artBible, /La Oscuridad:[\s\S]*`SHIFT`[\s\S]*`EXPOSED`[\s\S]*`DISPELLED`/u);
   assert.match(implementation, /main\.js[^\n]*landing[\s\S]*gameBoot\.js[^\n]*Phaser/u);
   assert.match(implementation, /BABITO_CANONICAL_GEOMETRY[\s\S]*drawBabitoCompositeFrame/u);
