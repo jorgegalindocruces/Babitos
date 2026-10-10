@@ -18,7 +18,7 @@ Documentación vigente:
 
 ## Landing page
 
-`index.html` es la portada del juego: historia, creador y poderes, mundos, personajes, once comparativas «Del papel al píxel» y nueve láminas en la galería de arte conceptual. Garbanzo Loco, Árbol Pocho y Sapo Pota aparecen como diseños aprobados de La Jungla con la etiqueta **En desarrollo**; sus retratos editoriales no son sprites del runtime. El juego se abre en un diálogo al pulsar **JUGAR** (o con `https://babitos.es/#jugar`) y su motor solo se descarga en ese momento. Cerrar el diálogo congela la pantalla actual; si se cierra durante gameplay, al volver espera el panel de pausa.
+`index.html` es la portada del juego: historia, creador y poderes, mundos, personajes, once comparativas «Del papel al píxel», nueve láminas en la galería de arte conceptual y un cierre de créditos que reconoce a **Lola y Momo** como autores de la idea y los dibujos, y como directores creativos y ejecutivos de BABITOS. Garbanzo Loco, Árbol Pocho y Sapo Pota aparecen como diseños aprobados de La Jungla con la etiqueta **En desarrollo**; sus retratos editoriales no son sprites del runtime. El juego se abre en un diálogo al pulsar **JUGAR** (o con `https://babitos.es/#jugar`) y su motor solo se descarga en ese momento. Cerrar el diálogo congela la pantalla actual; si se cierra durante gameplay, al volver espera el panel de pausa.
 
 ## Recorrido jugable
 

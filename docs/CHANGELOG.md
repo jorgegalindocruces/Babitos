@@ -7,6 +7,17 @@ Este archivo relaciona las iteraciones entregadas con sus cambios observables, c
 - Mantener sincronizados `README.md`, `INTERACTIONS.md`, `GAME_DESIGN.md`, `IMPLEMENTATION_SPEC.md` y `ACCEPTANCE_CRITERIA.md` cuando cambien flujo, controles, estados, persistencia o contenido jugable.
 - Añadir una entrada aquí por cada cambio observable, con el commit final y las pruebas realizadas.
 
+## Créditos de Lola y Momo — 2026-10-10
+
+Commit [`0443a74`](https://github.com/jorgegalindocruces/Babitos/commit/0443a74). La landing termina ahora reconociendo de forma expresa a quienes dieron origen al universo del juego:
+
+- **Autoría visible**: después de la llamada final a jugar, `#creditos` atribuye a Lola y Momo las ideas y los dibujos de BABITOS y los presenta como sus directores creativos y ejecutivos. El cargo existe como texto HTML y no depende de leer la imagen.
+- **Lámina completa**: el gráfico 3:2 se muestra sin recorte, con dimensiones intrínsecas declaradas y carga diferida. También se abre en el visor de arte mediante ratón, toque o teclado.
+- **Original preservado**: `art/approved/credits_lola_momo.png` conserva el PNG aportado de 1536 × 1024; el derivado web de alta calidad pesa unos 358 KB frente a los 1,87 MB originales y no aplica nearest al reducir texto pequeño.
+- **Responsive y accesible**: el cierre mantiene la atribución legible aunque falle la imagen, no introduce overflow a 390 px y añade una entrada `Créditos` a la navegación de escritorio.
+
+Validación: 137 pruebas automáticas, build de producción, `git diff --check`, QA visual de escritorio y móvil (390 × 844), ampliación accesible, imagen completa y consola sin avisos ni errores.
+
 ## Banda sonora melódica con tres arreglos — 2026-10-10
 
 Commit [`ef29ca2`](https://github.com/jorgegalindocruces/Babitos/commit/ef29ca2). El antiguo acorde continuo se sustituye por una banda sonora chiptune compuesta y seleccionable:

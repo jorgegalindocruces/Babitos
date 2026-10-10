@@ -17,6 +17,7 @@ Referencias canónicas:
 - [bosses_canonical.png](../art/approved/bosses_canonical.png): Babito Corrupto, La Oscuridad y Boss Total.
 - [power_tree_canonical.png](../art/approved/power_tree_canonical.png): Árbol triste y restaurado.
 - [power_selection.png](../art/approved/power_selection.png): Fuego, Rayo y Roca.
+- [credits_lola_momo.png](../art/approved/credits_lola_momo.png): lámina editorial de Lola y Momo, creadores y directores creativos y ejecutivos de BABITOS.
 
 [worlds_environment_reference_only.png](../art/approved/worlds_environment_reference_only.png) sirve únicamente para escenarios, tiles, paletas, composición y atmósfera. Se ignoran todos los enemigos que aparezcan en esa lámina.
 
@@ -38,7 +39,7 @@ Las tres referencias nuevas de La Jungla están aprobadas como dirección visual
 | Boss, tenderos y Árbol | PNG raster de personaje con poses o composición runtime | `public/assets/characters/` |
 | Jungla | Nivel jugable con fondo, losetas, agua, cascada, lianas y ruinas procedurales; sin raster de producción todavía | [jungleScenery.js](../src/game/jungleScenery.js) y [createTextures.js](../src/game/createTextures.js) |
 | La Oscuridad | Sprite procedural fiel a `bosses_canonical.png`: masa negra, borde violeta, tentáculos y ojos rasgados, sin boca | [createTextures.js](../src/game/createTextures.js) |
-| Landing web | 32 derivados optimizados de láminas, dibujos, retratos editoriales, personajes y texturas; son presentación web, no spritesheets runtime | [landing-web-v1.md](../art/production/landing-web-v1.md) |
+| Landing web | 33 derivados optimizados de láminas, dibujos, retratos editoriales, personajes, créditos y texturas; son presentación web, no spritesheets runtime | [landing-web-v1.md](../art/production/landing-web-v1.md) |
 
 Los fondos no contienen colisión. El tercio inferior debe evitar falsas plataformas, bordes transitables o salientes que compitan con el terreno real.
 

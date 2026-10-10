@@ -51,6 +51,7 @@ const ESSENTIAL_LINK_TARGETS = Object.freeze([
   'src/state/SaveStore.js',
   'public/assets/landing/logo.webp',
   'public/assets/landing/babito.png',
+  'public/assets/landing/credits-lola-momo.webp',
   'public/assets/landing/concept-worlds-environment-reference-only.webp',
   'public/assets/characters/enemy-vuela-sheet-v4.png',
   'public/assets/backgrounds/babilandia-v2.webp',
@@ -250,7 +251,9 @@ test('scope and critical gameplay invariants are explicit', async () => {
   assert.match(interactions, /texturas Canvas de texto usan filtro linear[\s\S]*cada cambio/u);
   assert.match(implementation, /updateText\(\)[\s\S]*sprites y fondos siguen en nearest/u);
   assert.match(artBible, /texto visible parte de 12 px[\s\S]*texturas tipográficas usan linear/u);
-  assert.match(artBible, /Landing web \| 32 derivados optimizados/u);
+  assert.match(artBible, /Landing web \| 33 derivados optimizados/u);
+  assert.match(acceptance, /Lola y Momo[\s\S]*directores creativos y ejecutivos de BABITOS/u);
+  assert.match(interactions, /`#creditos`[\s\S]*Lola y Momo[\s\S]*directores creativos y ejecutivos de BABITOS/u);
   assert.match(artBible, /La Oscuridad:[\s\S]*`SHIFT`[\s\S]*`EXPOSED`[\s\S]*`DISPELLED`/u);
   assert.match(implementation, /main\.js[^\n]*landing[\s\S]*gameBoot\.js[^\n]*Phaser/u);
   assert.match(implementation, /BABITO_CANONICAL_GEOMETRY[\s\S]*drawBabitoCompositeFrame/u);
