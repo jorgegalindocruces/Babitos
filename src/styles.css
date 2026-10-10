@@ -48,12 +48,19 @@ html.is-playing body {
   box-shadow: 0 28px 90px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(96, 214, 255, 0.15) inset;
 }
 
-.audio-toggle {
+.audio-controls {
   position: absolute;
   z-index: 12;
   left: 50%;
   top: 4px;
   transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.audio-toggle,
+.music-style-toggle {
   min-width: 88px;
   padding: 6px 10px;
   border: 2px solid rgba(113, 229, 255, 0.72);
@@ -66,10 +73,13 @@ html.is-playing body {
   touch-action: manipulation;
   opacity: 0.82;
   box-shadow: 0 3px 0 rgba(2, 8, 20, 0.72);
+  white-space: nowrap;
 }
 
 .audio-toggle:hover,
-.audio-toggle:focus-visible {
+.audio-toggle:focus-visible,
+.music-style-toggle:hover,
+.music-style-toggle:focus-visible {
   border-color: #ffcf3c;
   opacity: 1;
   outline: 3px solid rgba(255, 207, 60, 0.28);
@@ -81,7 +91,14 @@ html.is-playing body {
   color: #ffd8e2;
 }
 
-.audio-toggle:disabled {
+.music-style-toggle {
+  min-width: 112px;
+  border-color: rgba(134, 238, 151, 0.72);
+  color: #eaffcd;
+}
+
+.audio-toggle:disabled,
+.music-style-toggle:disabled {
   cursor: not-allowed;
   opacity: 0.45;
 }
@@ -172,17 +189,28 @@ html.is-playing body {
     padding: 0;
   }
   .game-shell {
-    width: min(100vw, 960px, calc((100svh - 44px) * 16 / 9));
+    width: min(100vw, 960px, calc((100svh - 52px) * 16 / 9));
     border: 0;
     border-radius: 0;
   }
-  .game-topline { display: none; }
-  .audio-toggle {
-    top: 5px;
+  .game-topline {
+    display: block;
+    min-height: 38px;
+    padding: 0;
+  }
+  .game-topline span { display: none; }
+  .audio-controls {
+    top: 4px;
     bottom: auto;
     left: 6px;
+    right: 6px;
     transform: none;
+    justify-content: space-between;
+  }
+  .audio-toggle,
+  .music-style-toggle {
     min-width: 74px;
+    min-height: 30px;
     padding: 5px 8px;
     font-size: 8px;
   }
@@ -640,12 +668,12 @@ a { color: var(--cyan); }
   font: 700 14px var(--pixel);
 }
 .game-shell:fullscreen {
-  width: min(100vw, calc(100vh * 16 / 9));
+  width: min(100vw, calc((100vh - 38px) * 16 / 9));
   border: 0;
   border-radius: 0;
   margin: auto;
 }
-.game-shell:fullscreen .game-topline { display: none; }
+.game-shell:fullscreen .game-topline { min-height: 38px; }
 .game-shell::backdrop { background: #000; }
 
 /* Art lightbox */

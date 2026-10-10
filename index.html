@@ -383,15 +383,24 @@
             <span>BABITOS</span>
             <span>PEQUEÑOS HÉROES · GRANDES AVENTURAS</span>
           </div>
-          <button
-            id="audio-toggle"
-            class="audio-toggle"
-            type="button"
-            aria-label="Silenciar audio"
-            aria-pressed="false"
-            aria-keyshortcuts="M"
-            title="Audio · tecla M"
-          >🔊 AUDIO</button>
+          <div class="audio-controls" role="group" aria-label="Controles de sonido">
+            <button
+              id="audio-toggle"
+              class="audio-toggle"
+              type="button"
+              aria-label="Silenciar audio"
+              aria-pressed="false"
+              aria-keyshortcuts="M"
+              title="Audio · tecla M"
+            >🔊 AUDIO</button>
+            <button
+              id="music-style-toggle"
+              class="music-style-toggle"
+              type="button"
+              aria-label="Estilo musical: Aventura. Pulsa para cambiar"
+              title="Cambiar estilo musical"
+            >♫ AVENTURA</button>
+          </div>
           <div id="game" role="application" aria-label="Videojuego BABITOS">
             <p class="game-loading" data-loading>Cargando BABITOS…</p>
           </div>

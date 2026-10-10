@@ -81,9 +81,11 @@ test('the landing shell keeps Phaser behind the dynamic game bootstrap', async (
 });
 
 test('the landing exposes its sections, play controls and direct game route', async () => {
-  const [page, main] = await Promise.all([
+  const [page, main, gameBoot, styles] = await Promise.all([
     readRepositoryFile('index.html'),
     readRepositoryFile('src/main.js'),
+    readRepositoryFile('src/gameBoot.js'),
+    readRepositoryFile('src/styles.css'),
   ]);
 
   for (const id of [
@@ -107,6 +109,13 @@ test('the landing exposes its sections, play controls and direct game route', as
   assert.match(page, /<dialog id="art-dialog"[^>]*aria-label=/u);
   assert.match(page, /id="game"[^>]*role="application"/u);
   assert.match(page, /id="audio-toggle"[^>]*aria-keyshortcuts="M"/u);
+  assert.match(page, /id="music-style-toggle"[^>]*aria-label="Estilo musical: Aventura/u);
+  assert.match(gameBoot, /audio\.cycleMusicStyle\(\)/u);
+  assert.match(gameBoot, /saveMusicStylePreference\(style\)/u);
+  assert.match(gameBoot, /if \(!active\)[\s\S]*audio\.unbindUnlock\(\)[\s\S]*audio\.context\?\.suspend/u);
+  assert.match(gameBoot, /game\.loop\.wake\(\)[\s\S]*audio\.bindUnlock\(\)[\s\S]*audio\.unlock\(\)/u);
+  assert.match(styles, /\.game-shell:fullscreen \{[^}]*100vh - 38px/u);
+  assert.doesNotMatch(styles, /\.game-shell:fullscreen \.game-topline \{\s*display:\s*none/u);
   assert.match(page, /data-fullscreen[^>]*aria-label="Pantalla completa"/u);
   assert.match(page, /data-close[^>]*aria-label="Cerrar el juego"/u);
 

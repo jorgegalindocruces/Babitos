@@ -1,5 +1,5 @@
 /**
- * Lightweight procedural audio for BABITOS.
+ * Procedural chiptune audio for BABITOS.
  *
  * The class deliberately has no Phaser dependency, so scenes can share one
  * instance through the registry without coupling sound to scene lifecycles.
@@ -15,9 +15,18 @@
  *   audio.setVolume(0.7);
  *
  * Call destroy() when the game itself is disposed. Music is intentionally
- * continuous across Phaser scene transitions; scenes should call startMusic()
- * only when their theme changes.
+ * continuous across Phaser scene transitions. Each theme is a composed
+ * 32-step loop; its global arrangement can be changed at any time.
  */
+
+import {
+  DEFAULT_MUSIC_STYLE,
+  MUSIC_STYLES,
+  MUSIC_STYLE_PRESETS,
+  MUSIC_THEMES,
+  MUSIC_TRACKS,
+  midiToFrequency,
+} from './musicTracks.js';
 
 const SOUND_PRESETS = Object.freeze({
   ui: [
@@ -53,46 +62,13 @@ const SOUND_PRESETS = Object.freeze({
   ],
 });
 
-const MUSIC_PRESETS = Object.freeze({
-  title: Object.freeze({
-    frequencies: Object.freeze([196, 246.94, 293.66]),
-    detunes: Object.freeze([-7, 2, 8]),
-    type: 'sine',
-  }),
-  babilandia: Object.freeze({
-    frequencies: Object.freeze([261.63, 329.63, 392]),
-    detunes: Object.freeze([-5, 3, 9]),
-    type: 'sine',
-  }),
-  boss: Object.freeze({
-    frequencies: Object.freeze([110, 130.81, 164.81]),
-    detunes: Object.freeze([-9, 0, 6]),
-    type: 'triangle',
-  }),
-  shop: Object.freeze({
-    frequencies: Object.freeze([293.66, 369.99, 440]),
-    detunes: Object.freeze([-4, 4, 10]),
-    type: 'sine',
-  }),
-  jungle: Object.freeze({
-    frequencies: Object.freeze([146.83, 220, 261.63, 329.63]),
-    detunes: Object.freeze([-6, 2, 5, 9]),
-    type: 'triangle',
-  }),
-  darkness: Object.freeze({
-    frequencies: Object.freeze([98, 116.54, 146.83]),
-    detunes: Object.freeze([-11, 0, 7]),
-    type: 'triangle',
-  }),
-  ending: Object.freeze({
-    frequencies: Object.freeze([220, 277.18, 329.63, 440]),
-    detunes: Object.freeze([-6, 1, 6, 11]),
-    type: 'sine',
-  }),
-});
-
 export const AUDIO_CUES = Object.freeze(Object.keys(SOUND_PRESETS));
-export const MUSIC_THEMES = Object.freeze(Object.keys(MUSIC_PRESETS));
+export { MUSIC_STYLES, MUSIC_THEMES };
+
+const MUSIC_LOOKAHEAD_SECONDS = 0.16;
+const MUSIC_START_DELAY_SECONDS = 0.035;
+const MUSIC_SCHEDULER_INTERVAL_MS = 40;
+const MAX_MUSIC_VOICES = 20;
 
 function clamp(value, minimum = 0, maximum = 1) {
   const number = Number(value);
@@ -132,24 +108,47 @@ function rampFrequency(param, value, time) {
   }
 }
 
+function cancelParamAutomation(param, time) {
+  try {
+    param?.cancelScheduledValues?.(time);
+  } catch {
+    // A missing/closed Web Audio parameter needs no further cleanup.
+  }
+}
+
+function normalizeMusicStyle(style) {
+  return MUSIC_STYLES.includes(style) ? style : DEFAULT_MUSIC_STYLE;
+}
+
 export class AudioSystem {
   constructor(options = {}) {
     const hasFactoryOption = Object.hasOwn(options, 'contextFactory');
+    const scheduler = options.scheduler ?? globalThis;
 
     this.contextFactory = hasFactoryOption ? options.contextFactory : defaultContextFactory();
+    this.setIntervalFn = typeof scheduler?.setInterval === 'function'
+      ? scheduler.setInterval.bind(scheduler)
+      : null;
+    this.clearIntervalFn = typeof scheduler?.clearInterval === 'function'
+      ? scheduler.clearInterval.bind(scheduler)
+      : null;
     this.context = null;
     this.masterGain = null;
     this.musicGain = null;
+    this.musicFilter = null;
     this.sfxGain = null;
 
     this.volume = clamp(options.volume ?? 0.72);
-    this.musicVolume = clamp(options.musicVolume ?? 0.18);
+    this.musicVolume = clamp(options.musicVolume ?? 0.24);
     this.sfxVolume = clamp(options.sfxVolume ?? 0.72);
     this.muted = options.muted === true;
 
+    this.musicStyle = normalizeMusicStyle(options.musicStyle);
     this.currentMusicTheme = null;
     this.pendingMusicTheme = null;
+    this.musicSession = null;
     this.musicVoices = [];
+    this.musicGeneration = 0;
 
     this.destroyed = false;
     this.unlockPromise = null;
@@ -174,6 +173,7 @@ export class AudioSystem {
       musicVolume: this.musicVolume,
       sfxVolume: this.sfxVolume,
       musicTheme: this.currentMusicTheme ?? this.pendingMusicTheme,
+      musicStyle: this.musicStyle,
     });
   }
 
@@ -189,11 +189,21 @@ export class AudioSystem {
     this.musicGain = this.context.createGain();
     this.sfxGain = this.context.createGain();
 
-    this.musicGain.connect(this.masterGain);
+    if (typeof this.context.createBiquadFilter === 'function') {
+      this.musicFilter = this.context.createBiquadFilter();
+      this.musicFilter.type = 'lowpass';
+      setParamValue(this.musicFilter.frequency, 5200, this.context.currentTime ?? 0);
+      setParamValue(this.musicFilter.Q, 0.45, this.context.currentTime ?? 0);
+      this.musicGain.connect(this.musicFilter);
+      this.musicFilter.connect(this.masterGain);
+    } else {
+      this.musicGain.connect(this.masterGain);
+    }
     this.sfxGain.connect(this.masterGain);
     this.masterGain.connect(this.context.destination);
 
     this.applyVolumes();
+    this.applyMusicTone();
   }
 
   async unlock() {
@@ -295,77 +305,303 @@ export class AudioSystem {
     return this.sfxVolume;
   }
 
+  applyMusicTone() {
+    if (!this.musicFilter || !this.context) return;
+    const cutoff = {
+      adventure: 5200,
+      calm: 3800,
+      arcade: 6800,
+    }[this.musicStyle] ?? 5200;
+    setParamValue(this.musicFilter.frequency, cutoff, this.context.currentTime ?? 0);
+  }
+
+  setMusicStyle(style) {
+    if (!MUSIC_STYLES.includes(style) || this.destroyed) return false;
+    if (style === this.musicStyle) return style;
+
+    const previousStyle = this.musicStyle;
+    this.musicStyle = style;
+    this.applyMusicTone();
+
+    const theme = this.currentMusicTheme ?? this.pendingMusicTheme;
+    if (theme) {
+      if (!this.isReady()) {
+        // Rebuild the current theme in the new arrangement after a suspended
+        // or interrupted context resumes.
+        this.pendingMusicTheme = theme;
+      } else if (!this.beginMusic(theme, true)) {
+        this.musicStyle = previousStyle;
+        this.applyMusicTone();
+        return false;
+      }
+    }
+    return style;
+  }
+
+  cycleMusicStyle() {
+    const currentIndex = MUSIC_STYLES.indexOf(this.musicStyle);
+    const nextStyle = MUSIC_STYLES[(currentIndex + 1) % MUSIC_STYLES.length];
+    return this.setMusicStyle(nextStyle);
+  }
+
   /**
-   * Starts (or changes) a very quiet procedural ambient pad. If Web Audio is
-   * still locked, the requested theme starts immediately after unlock().
+   * Starts (or changes) a composed procedural loop. If Web Audio is still
+   * locked, the requested theme starts immediately after unlock().
    */
   startMusic(theme = 'babilandia') {
-    if (!Object.hasOwn(MUSIC_PRESETS, theme) || this.destroyed) return false;
+    if (!Object.hasOwn(MUSIC_TRACKS, theme) || this.destroyed) return false;
     this.pendingMusicTheme = theme;
     if (!this.isReady()) return false;
     return this.beginMusic(theme);
   }
 
-  beginMusic(theme) {
-    if (this.currentMusicTheme === theme && this.musicVoices.length > 0) {
+  createMusicSession(theme) {
+    const track = MUSIC_TRACKS[theme];
+    const arrangement = MUSIC_STYLE_PRESETS[this.musicStyle];
+    const bpm = track.bpm * arrangement.tempoScale;
+    return {
+      generation: this.musicGeneration + 1,
+      theme,
+      style: this.musicStyle,
+      track,
+      arrangement,
+      baseStepDuration: 60 / bpm / 2,
+      nextStepTime: (this.context.currentTime ?? 0) + MUSIC_START_DELAY_SECONDS,
+      step: 0,
+      timerId: null,
+      voices: [],
+      stopped: false,
+    };
+  }
+
+  beginMusic(theme, force = false) {
+    if (
+      !force
+      && this.musicSession
+      && !this.musicSession.stopped
+      && this.musicSession.theme === theme
+      && this.musicSession.style === this.musicStyle
+    ) {
       this.pendingMusicTheme = null;
       return true;
     }
 
-    const preset = MUSIC_PRESETS[theme];
-    const time = this.context.currentTime ?? 0;
-    const voiceLevel = 0.78 / preset.frequencies.length;
-    const nextVoices = [];
-
-    for (let index = 0; index < preset.frequencies.length; index += 1) {
-      const voice = { oscillator: null, gain: null, started: false };
-      try {
-        voice.oscillator = this.context.createOscillator();
-        voice.gain = this.context.createGain();
-
-        voice.oscillator.type = preset.type;
-        setParamValue(voice.oscillator.frequency, preset.frequencies[index], time);
-        setParamValue(voice.oscillator.detune, preset.detunes[index] ?? 0, time);
-        setParamValue(voice.gain.gain, 0.0001, time);
-        rampParam(voice.gain.gain, voiceLevel, time + 0.7 + index * 0.08);
-
-        voice.oscillator.connect(voice.gain);
-        voice.gain.connect(this.musicGain);
-        voice.oscillator.start(time);
-        voice.started = true;
-        nextVoices.push(voice);
-      } catch {
-        this.stopVoices([voice, ...nextVoices], 0);
-        this.pendingMusicTheme = theme;
-        return false;
+    const nextSession = this.createMusicSession(theme);
+    try {
+      this.scheduleMusicSession(nextSession);
+      if (this.setIntervalFn) {
+        nextSession.timerId = this.setIntervalFn(() => {
+          if (
+            nextSession.stopped
+            || this.musicSession !== nextSession
+            || !this.isReady()
+          ) return;
+          try {
+            this.scheduleMusicSession(nextSession);
+          } catch {
+            // A transient oscillator allocation failure should not stop gameplay.
+          }
+        }, MUSIC_SCHEDULER_INTERVAL_MS);
+        nextSession.timerId?.unref?.();
       }
+    } catch {
+      this.stopMusicSession(nextSession, 0);
+      this.pendingMusicTheme = this.currentMusicTheme ? null : theme;
+      return false;
     }
 
-    const previousVoices = this.musicVoices.splice(0);
-    this.musicVoices = nextVoices;
-    this.stopVoices(previousVoices, 0.08);
+    const previousSession = this.musicSession;
+    this.musicGeneration = nextSession.generation;
+    this.musicSession = nextSession;
+    this.musicVoices = nextSession.voices;
     this.currentMusicTheme = theme;
     this.pendingMusicTheme = null;
+    this.stopMusicSession(previousSession, 0.12);
     return true;
+  }
+
+  scheduleMusicSession(session) {
+    const now = this.context.currentTime ?? 0;
+    const loopLength = session.track.melody.length;
+
+    if (session.nextStepTime < now - session.baseStepDuration) {
+      const skippedSteps = Math.max(
+        1,
+        Math.floor((now - session.nextStepTime) / session.baseStepDuration),
+      );
+      session.step = (session.step + skippedSteps) % loopLength;
+      session.nextStepTime = now + MUSIC_START_DELAY_SECONDS;
+    }
+
+    let scheduledSteps = 0;
+    while (
+      session.nextStepTime < now + MUSIC_LOOKAHEAD_SECONDS
+      && scheduledSteps < 12
+    ) {
+      const swing = clamp(
+        session.track.swing * session.arrangement.swingScale,
+        0,
+        0.35,
+      );
+      const stepDuration = session.baseStepDuration
+        * (session.step % 2 === 0 ? 1 + swing : 1 - swing);
+      let schedulingError = null;
+      try {
+        this.scheduleMusicStep(session, session.step, session.nextStepTime, stepDuration);
+      } catch (error) {
+        schedulingError = error;
+      } finally {
+        // Never retry the same musical instant: a partial Web Audio failure
+        // may omit one layer, but it must not duplicate layers already queued.
+        session.nextStepTime += stepDuration;
+        session.step = (session.step + 1) % loopLength;
+        scheduledSteps += 1;
+      }
+      if (schedulingError) throw schedulingError;
+    }
+  }
+
+  scheduleMusicStep(session, step, startsAt, stepDuration) {
+    const { arrangement, track } = session;
+    const chord = track.chords[Math.floor(step / 8) % track.chords.length];
+    const melodyOffset = track.melody[step];
+
+    if (melodyOffset !== null && step % arrangement.lead.density === 0) {
+      this.scheduleMusicNote(session, {
+        layer: 'lead',
+        midi: track.tonicMidi + melodyOffset + arrangement.lead.octave * 12,
+        startsAt,
+        duration: stepDuration * arrangement.lead.gate,
+        gain: arrangement.lead.gain,
+        type: arrangement.lead.wave,
+      });
+    }
+
+    if (step % arrangement.arp.density === 0) {
+      const chordOffset = chord[(step / arrangement.arp.density) % chord.length | 0];
+      this.scheduleMusicNote(session, {
+        layer: 'arp',
+        midi: track.tonicMidi + chordOffset + arrangement.arp.octave * 12,
+        startsAt,
+        duration: stepDuration * arrangement.arp.gate,
+        gain: arrangement.arp.gain,
+        type: arrangement.arp.wave,
+      });
+    }
+
+    if (step % arrangement.bass.density === 0) {
+      this.scheduleMusicNote(session, {
+        layer: 'bass',
+        midi: track.tonicMidi + chord[0] + arrangement.bass.octave * 12,
+        startsAt,
+        duration: stepDuration * arrangement.bass.density * arrangement.bass.gate,
+        gain: arrangement.bass.gain,
+        type: arrangement.bass.wave,
+      });
+    }
+
+    this.scheduleRhythm(session, step, startsAt, stepDuration);
+  }
+
+  scheduleRhythm(session, step, startsAt, stepDuration) {
+    const rhythm = session.arrangement.rhythm;
+    const arcadeHat = session.style === 'arcade' && step % 2 === 1;
+    if (arcadeHat) {
+      this.scheduleMusicNote(session, {
+        layer: 'rhythm',
+        frequency: 1850,
+        endFrequency: 1150,
+        startsAt,
+        duration: 0.032,
+        gain: rhythm.gain * 0.42,
+        type: 'square',
+      });
+      return;
+    }
+    if (step % rhythm.density !== 0) return;
+
+    this.scheduleMusicNote(session, {
+      layer: 'rhythm',
+      frequency: session.style === 'calm' ? 72 : 92,
+      endFrequency: 44,
+      startsAt,
+      duration: Math.max(0.045, Math.min(0.11, stepDuration * (0.25 + rhythm.gate))),
+      gain: rhythm.gain,
+      type: rhythm.wave,
+    });
+  }
+
+  scheduleMusicNote(session, note) {
+    if (session.voices.length >= MAX_MUSIC_VOICES) return false;
+
+    const voice = {
+      oscillator: null,
+      gain: null,
+      started: false,
+      stopping: false,
+      startsAt: note.startsAt,
+      layer: note.layer,
+      cleanup: null,
+    };
+    try {
+      voice.oscillator = this.context.createOscillator();
+      voice.gain = this.context.createGain();
+      voice.oscillator.type = note.type;
+
+      const frequency = note.frequency ?? midiToFrequency(note.midi);
+      const endFrequency = note.endFrequency ?? frequency;
+      const endsAt = note.startsAt + Math.max(0.025, note.duration);
+      const attackEndsAt = note.startsAt + Math.min(0.018, note.duration * 0.22);
+      const releaseStartsAt = Math.max(attackEndsAt, endsAt - Math.min(0.065, note.duration * 0.38));
+
+      setParamValue(voice.oscillator.frequency, frequency, note.startsAt);
+      rampFrequency(voice.oscillator.frequency, endFrequency, endsAt);
+      setParamValue(voice.oscillator.detune, 0, note.startsAt);
+
+      setParamValue(voice.gain.gain, 0.0001, note.startsAt);
+      rampParam(voice.gain.gain, Math.max(0.0001, note.gain), attackEndsAt);
+      setParamValue(voice.gain.gain, Math.max(0.0001, note.gain), releaseStartsAt);
+      rampParam(voice.gain.gain, 0.0001, endsAt);
+
+      voice.cleanup = () => {
+        voice.oscillator?.disconnect?.();
+        voice.gain?.disconnect?.();
+        const voiceIndex = session.voices.indexOf(voice);
+        if (voiceIndex >= 0) session.voices.splice(voiceIndex, 1);
+      };
+      voice.oscillator.onended = voice.cleanup;
+      voice.oscillator.connect(voice.gain);
+      voice.gain.connect(this.musicGain);
+      voice.oscillator.start(note.startsAt);
+      voice.started = true;
+      voice.oscillator.stop(endsAt + 0.015);
+      session.voices.push(voice);
+      return true;
+    } catch (error) {
+      this.stopVoice(voice, 0);
+      throw error;
+    }
   }
 
   stopVoice(voice, fadeSeconds = 0.12) {
     const { oscillator, gain, started = true } = voice ?? {};
-    const disconnect = () => {
+    const disconnect = voice?.cleanup ?? (() => {
       oscillator?.disconnect?.();
       gain?.disconnect?.();
-    };
+    });
 
-    if (!oscillator || !gain || !started) {
+    if (!oscillator || !gain || !started || voice.stopping) {
       disconnect();
       return;
     }
 
+    voice.stopping = true;
     const time = this.context?.currentTime ?? 0;
     const fade = clamp(fadeSeconds, 0, 2);
 
     try {
-      setParamValue(gain.gain, gain.gain?.value ?? 0.0001, time);
+      cancelParamAutomation(gain.gain, time);
+      setParamValue(gain.gain, Math.max(0.0001, gain.gain?.value ?? 0.0001), time);
       rampParam(gain.gain, 0.0001, time + fade);
       oscillator.onended = disconnect;
       oscillator.stop(time + fade + 0.02);
@@ -378,10 +614,22 @@ export class AudioSystem {
     for (const voice of voices) this.stopVoice(voice, fadeSeconds);
   }
 
-  stopMusic(fadeSeconds = 0.12) {
-    const voices = this.musicVoices.splice(0);
+  stopMusicSession(session, fadeSeconds = 0.12) {
+    if (!session || session.stopped) return;
+    session.stopped = true;
+    if (session.timerId !== null) {
+      this.clearIntervalFn?.(session.timerId);
+      session.timerId = null;
+    }
+    const voices = session.voices.splice(0);
     this.stopVoices(voices, fadeSeconds);
+  }
 
+  stopMusic(fadeSeconds = 0.12) {
+    const session = this.musicSession;
+    this.musicSession = null;
+    this.musicVoices = [];
+    this.stopMusicSession(session, fadeSeconds);
     this.currentMusicTheme = null;
     this.pendingMusicTheme = null;
   }
@@ -448,6 +696,7 @@ export class AudioSystem {
     this.context = null;
     this.masterGain = null;
     this.musicGain = null;
+    this.musicFilter = null;
     this.sfxGain = null;
 
     try {

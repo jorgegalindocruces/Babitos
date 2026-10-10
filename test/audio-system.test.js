@@ -3,6 +3,7 @@ import test from 'node:test';
 
 import {
   AUDIO_CUES,
+  MUSIC_STYLES,
   MUSIC_THEMES,
   AudioSystem,
 } from '../src/game/AudioSystem.js';
@@ -26,6 +27,10 @@ class FakeParam {
   exponentialRampToValueAtTime(value, time) {
     this.value = value;
     this.events.push(['exponential', value, time]);
+  }
+
+  cancelScheduledValues(time) {
+    this.events.push(['cancel', time]);
   }
 }
 
@@ -114,6 +119,28 @@ class FakeAudioContext {
   }
 }
 
+class FakeScheduler {
+  constructor() {
+    this.nextId = 1;
+    this.callbacks = new Map();
+  }
+
+  setInterval(callback) {
+    const id = this.nextId;
+    this.nextId += 1;
+    this.callbacks.set(id, callback);
+    return id;
+  }
+
+  clearInterval(id) {
+    this.callbacks.delete(id);
+  }
+
+  tick() {
+    for (const callback of [...this.callbacks.values()]) callback();
+  }
+}
+
 test('is a safe no-op when Web Audio is unavailable', async () => {
   const audio = new AudioSystem({ contextFactory: null });
 
@@ -131,8 +158,10 @@ test('is a safe no-op when Web Audio is unavailable', async () => {
 
 test('unlocks once and starts music that was requested before the gesture', async () => {
   const context = new FakeAudioContext();
+  const scheduler = new FakeScheduler();
   let factoryCalls = 0;
   const audio = new AudioSystem({
+    scheduler,
     contextFactory: () => {
       factoryCalls += 1;
       return context;
@@ -148,10 +177,14 @@ test('unlocks once and starts music that was requested before the gesture', asyn
   assert.equal(context.resumeCalls, 1);
   assert.equal(audio.unlocked, true);
   assert.equal(audio.getState().musicTheme, 'babilandia');
-  assert.equal(context.oscillators.length, 3);
-  assert.ok(context.oscillators.every((oscillator) => oscillator.startedAt === 4));
+  assert.equal(audio.getState().musicStyle, 'adventure');
+  assert.equal(context.oscillators.length, 4);
+  assert.ok(context.oscillators.every((oscillator) => oscillator.startedAt >= 4));
+  assert.ok(context.oscillators.every((oscillator) => oscillator.stoppedAt > oscillator.startedAt));
+  assert.equal(scheduler.callbacks.size, 1);
 
   await audio.destroy();
+  assert.equal(scheduler.callbacks.size, 0);
   assert.equal(context.closeCalls, 1);
 });
 
@@ -228,7 +261,8 @@ test('bindUnlock keeps recovery gestures, deduplicates resume, and cleans up on 
 
 test('cleans partially-created voices and keeps the previous theme on failure', async () => {
   const context = new FakeAudioContext('running');
-  const audio = new AudioSystem({ contextFactory: () => context });
+  const scheduler = new FakeScheduler();
+  const audio = new AudioSystem({ contextFactory: () => context, scheduler });
   await audio.unlock();
   assert.equal(audio.startMusic('title'), true);
 
@@ -238,10 +272,120 @@ test('cleans partially-created voices and keeps the previous theme on failure', 
 
   assert.equal(audio.currentMusicTheme, 'title');
   assert.deepEqual(audio.musicVoices, titleVoices);
-  assert.ok(titleVoices.every(({ oscillator }) => oscillator.stoppedAt === null));
+  assert.ok(titleVoices.every(({ stopping }) => stopping === false));
   const partialBossVoice = context.oscillators.at(-1);
-  assert.ok(partialBossVoice.stoppedAt > partialBossVoice.startedAt);
+  assert.ok(partialBossVoice.stoppedAt <= context.currentTime + 0.03);
   assert.equal(audio.getState().musicTheme, 'title');
+  assert.equal(scheduler.callbacks.size, 1);
+
+  await audio.destroy();
+});
+
+test('sequences new notes over time and stopMusic cancels its transport', async () => {
+  const context = new FakeAudioContext('running');
+  const scheduler = new FakeScheduler();
+  const audio = new AudioSystem({ contextFactory: () => context, scheduler });
+  await audio.unlock();
+  assert.equal(audio.startMusic('jungle'), true);
+
+  const initialOscillators = context.oscillators.length;
+  context.currentTime += 0.5;
+  scheduler.tick();
+  assert.ok(context.oscillators.length > initialOscillators);
+  assert.ok(context.oscillators.every(({ startedAt, stoppedAt }) => stoppedAt > startedAt));
+
+  audio.stopMusic();
+  const stoppedCount = context.oscillators.length;
+  assert.equal(scheduler.callbacks.size, 0);
+  assert.equal(audio.getState().musicTheme, null);
+  context.currentTime += 8;
+  scheduler.tick();
+  assert.equal(context.oscillators.length, stoppedCount);
+
+  await audio.destroy();
+});
+
+test('a partial scheduler failure advances past the beat instead of duplicating it', async () => {
+  const context = new FakeAudioContext('running');
+  const scheduler = new FakeScheduler();
+  const audio = new AudioSystem({ contextFactory: () => context, scheduler });
+  await audio.unlock();
+  assert.equal(audio.startMusic('title'), true);
+
+  const session = audio.musicSession;
+  context.throwOnOscillatorCall = context.oscillatorCalls + 2;
+  context.currentTime = 4.48;
+  scheduler.tick();
+
+  assert.equal(session.step, 3);
+  const oscillatorCountAfterFailure = context.oscillators.length;
+  const lastScheduledTime = session.nextStepTime;
+  scheduler.tick();
+  assert.equal(session.step, 3);
+  assert.equal(session.nextStepTime, lastScheduledTime);
+  assert.equal(context.oscillators.length, oscillatorCountAfterFailure);
+
+  await audio.destroy();
+});
+
+test('changes soundtrack arrangement without duplicating transports or unmuting', async () => {
+  const context = new FakeAudioContext('running');
+  const scheduler = new FakeScheduler();
+  const audio = new AudioSystem({
+    contextFactory: () => context,
+    scheduler,
+    muted: true,
+  });
+  await audio.unlock();
+  assert.equal(audio.startMusic('shop'), true);
+
+  const adventureSession = audio.musicSession;
+  assert.equal(audio.startMusic('shop'), true);
+  assert.equal(audio.musicSession, adventureSession);
+  assert.equal(scheduler.callbacks.size, 1);
+
+  assert.equal(audio.setMusicStyle('calm'), 'calm');
+  assert.notEqual(audio.musicSession, adventureSession);
+  assert.equal(adventureSession.stopped, true);
+  assert.equal(scheduler.callbacks.size, 1);
+  assert.deepEqual(audio.getState(), {
+    available: true,
+    unlocked: true,
+    muted: true,
+    volume: 0.72,
+    musicVolume: 0.24,
+    sfxVolume: 0.72,
+    musicTheme: 'shop',
+    musicStyle: 'calm',
+  });
+
+  assert.equal(audio.setMusicStyle('unknown'), false);
+  assert.equal(audio.cycleMusicStyle(), 'arcade');
+  assert.equal(audio.getState().muted, true);
+  assert.equal(scheduler.callbacks.size, 1);
+
+  await audio.destroy();
+  assert.equal(scheduler.callbacks.size, 0);
+});
+
+test('rebuilds a changed arrangement after an interrupted context resumes', async () => {
+  const context = new FakeAudioContext('running');
+  const scheduler = new FakeScheduler();
+  const audio = new AudioSystem({ contextFactory: () => context, scheduler });
+  await audio.unlock();
+  audio.startMusic('babilandia');
+  const adventureSession = audio.musicSession;
+
+  context.state = 'interrupted';
+  assert.equal(audio.setMusicStyle('calm'), 'calm');
+  assert.equal(audio.musicSession, adventureSession);
+  assert.equal(audio.pendingMusicTheme, 'babilandia');
+
+  assert.equal(await audio.unlock(), true);
+  assert.notEqual(audio.musicSession, adventureSession);
+  assert.equal(audio.musicSession.style, 'calm');
+  assert.equal(audio.pendingMusicTheme, null);
+  assert.equal(scheduler.callbacks.size, 1);
 
   await audio.destroy();
 });
@@ -258,4 +402,5 @@ test('exports stable cue and music theme catalogs for UI wiring', () => {
     'purchase',
   ]);
   assert.deepEqual(MUSIC_THEMES, ['title', 'babilandia', 'boss', 'shop', 'jungle', 'darkness', 'ending']);
+  assert.deepEqual(MUSIC_STYLES, ['adventure', 'calm', 'arcade']);
 });

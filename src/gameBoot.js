@@ -1,5 +1,11 @@
 import Phaser from 'phaser';
 import { AudioSystem } from './game/AudioSystem.js';
+import {
+  readAudioPreferences,
+  saveMusicStylePreference,
+  saveMutedPreference,
+} from './game/AudioPreferences.js';
+import { MUSIC_STYLE_LABELS } from './game/musicTracks.js';
 import { BootScene } from './scenes/BootScene.js';
 import { TitleScene } from './scenes/TitleScene.js';
 import { CreatorScene } from './scenes/CreatorScene.js';
@@ -13,24 +19,6 @@ import { WorldMapScene } from './scenes/WorldMapScene.js';
 import { ComingSoonScene } from './scenes/ComingSoonScene.js';
 import { refreshUiText, requestUiFonts, waitForUiFonts } from './ui/fontLoading.js';
 
-const AUDIO_PREFERENCE_KEY = 'babitos.audio.v1';
-
-function readMutedPreference() {
-  try {
-    return globalThis.localStorage?.getItem(AUDIO_PREFERENCE_KEY) === 'muted';
-  } catch {
-    return false;
-  }
-}
-
-function saveMutedPreference(muted) {
-  try {
-    globalThis.localStorage?.setItem(AUDIO_PREFERENCE_KEY, muted ? 'muted' : 'enabled');
-  } catch {
-    // Audio remains usable when storage is unavailable or blocked.
-  }
-}
-
 /** Scenes whose gameplay can be paused from outside the canvas. */
 function findPausableScene(game) {
   return game.scene.getScenes(true).find((scene) => (
@@ -43,11 +31,14 @@ function findPausableScene(game) {
  * play dialog opens, so the page itself loads without the game engine.
  */
 export async function startGame() {
-  const audio = new AudioSystem({ muted: readMutedPreference() });
+  const preferences = readAudioPreferences();
+  const audio = new AudioSystem(preferences);
   audio.bindUnlock();
 
   const audioToggle = document.getElementById('audio-toggle');
+  const musicStyleToggle = document.getElementById('music-style-toggle');
   let toggleAudioPromise = null;
+  let changeMusicPromise = null;
   let active = true;
 
   function syncAudioToggle(announceChange = false) {
@@ -64,6 +55,28 @@ export async function startGame() {
     if (announceChange) {
       const status = document.getElementById('game-status');
       if (status) status.textContent = muted ? 'Audio silenciado.' : 'Audio activado.';
+    }
+  }
+
+  function syncMusicStyleToggle(announceChange = false) {
+    if (!musicStyleToggle) return;
+    const { available, musicStyle } = audio.getState();
+    const label = MUSIC_STYLE_LABELS[musicStyle] ?? MUSIC_STYLE_LABELS.adventure;
+    const spokenLabel = label.charAt(0) + label.slice(1).toLowerCase();
+
+    musicStyleToggle.disabled = !available;
+    musicStyleToggle.textContent = available ? `♫ ${label}` : 'MÚSICA N/D';
+    musicStyleToggle.setAttribute(
+      'aria-label',
+      `Estilo musical: ${spokenLabel}. Pulsa para cambiar`,
+    );
+    musicStyleToggle.title = available
+      ? `Música ${spokenLabel.toLowerCase()} · cambiar estilo`
+      : 'Web Audio no está disponible';
+
+    if (announceChange) {
+      const status = document.getElementById('game-status');
+      if (status) status.textContent = `Estilo musical: ${spokenLabel}.`;
     }
   }
 
@@ -95,8 +108,36 @@ export async function startGame() {
     return toggleAudioPromise;
   }
 
+  function changeMusicStyle() {
+    if (changeMusicPromise) return changeMusicPromise;
+
+    changeMusicPromise = (async () => {
+      const style = audio.cycleMusicStyle();
+      if (!style) return false;
+      saveMusicStylePreference(style);
+      syncMusicStyleToggle(true);
+
+      const unlocked = await audio.unlock();
+      if (!unlocked) {
+        syncMusicStyleToggle();
+        announceAudioFailure();
+        return false;
+      }
+
+      if (!audio.getState().muted) audio.play('ui');
+      return true;
+    })().finally(() => {
+      changeMusicPromise = null;
+    });
+
+    return changeMusicPromise;
+  }
+
   const handleAudioToggleClick = () => {
     void toggleAudio();
+  };
+  const handleMusicStyleClick = () => {
+    void changeMusicStyle();
   };
 
   // Preserve native Space/Enter activation while keeping those events away from
@@ -108,6 +149,9 @@ export async function startGame() {
   audioToggle?.addEventListener('click', handleAudioToggleClick);
   audioToggle?.addEventListener('keydown', stopAudioToggleKeyPropagation);
   audioToggle?.addEventListener('keyup', stopAudioToggleKeyPropagation);
+  musicStyleToggle?.addEventListener('click', handleMusicStyleClick);
+  musicStyleToggle?.addEventListener('keydown', stopAudioToggleKeyPropagation);
+  musicStyleToggle?.addEventListener('keyup', stopAudioToggleKeyPropagation);
 
   const muteShortcut = (event) => {
     const tag = event.target?.tagName;
@@ -128,6 +172,7 @@ export async function startGame() {
   };
   document.addEventListener('keydown', muteShortcut);
   syncAudioToggle();
+  syncMusicStyleToggle();
 
   const config = {
     type: Phaser.AUTO,
@@ -186,6 +231,9 @@ export async function startGame() {
     audioToggle?.removeEventListener('click', handleAudioToggleClick);
     audioToggle?.removeEventListener('keydown', stopAudioToggleKeyPropagation);
     audioToggle?.removeEventListener('keyup', stopAudioToggleKeyPropagation);
+    musicStyleToggle?.removeEventListener('click', handleMusicStyleClick);
+    musicStyleToggle?.removeEventListener('keydown', stopAudioToggleKeyPropagation);
+    musicStyleToggle?.removeEventListener('keyup', stopAudioToggleKeyPropagation);
     void audio.destroy();
     game.destroy(true);
   });
@@ -203,13 +251,15 @@ export async function startGame() {
       if (!active) {
         findPausableScene(game)?.togglePause();
         if (game.input?.keyboard) game.input.keyboard.enabled = false;
+        audio.unbindUnlock();
         void audio.context?.suspend?.();
         game.loop.sleep();
         return;
       }
       game.loop.wake();
       if (game.input?.keyboard) game.input.keyboard.enabled = true;
-      void audio.context?.resume?.();
+      audio.bindUnlock();
+      void audio.unlock();
       game.scale.refresh();
     },
   };
