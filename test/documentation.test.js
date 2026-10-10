@@ -29,6 +29,7 @@ const CONTEXT_DOCUMENTS = Object.freeze([
   'art/production/boss-arena-v1.md',
   'art/production/ciudad-bicharraca-v1.md',
   'art/production/enemy-vuela-v4.md',
+  'art/production/jungle-enemy-sheets-v1.md',
 ]);
 const ESSENTIAL_LINK_TARGETS = Object.freeze([
   'src/main.js',
@@ -54,6 +55,9 @@ const ESSENTIAL_LINK_TARGETS = Object.freeze([
   'public/assets/landing/credits-lola-momo.webp',
   'public/assets/landing/concept-worlds-environment-reference-only.webp',
   'public/assets/characters/enemy-vuela-sheet-v4.png',
+  'public/assets/characters/enemy-garbanzo-loco-sheet-v1.png',
+  'public/assets/characters/enemy-arbol-pocho-sheet-v1.png',
+  'public/assets/characters/enemy-sapo-pota-sheet-v1.png',
   'public/assets/backgrounds/babilandia-v2.webp',
   'public/assets/backgrounds/boss-arena-v1.webp',
   'public/assets/backgrounds/ciudad-bicharraca-v1.webp',
@@ -216,7 +220,10 @@ test('scope and critical gameplay invariants are explicit', async () => {
   const implementation = await readRepositoryFile('docs/IMPLEMENTATION_SPEC.md');
   const masterPrompt = await readRepositoryFile('docs/CODEX_MASTER_PROMPT.md');
 
-  assert.match(gameDesign, /La Jungla, ocho encuentros y checkpoints \| Jugable/u);
+  assert.match(interactions, /seis secuencias de combate con diez enemigos/iu);
+  assert.match(interactions, /Garbanzo Loco[\s\S]*`SPEAR_ATTACK`/u);
+  assert.match(interactions, /Árbol Pocho[\s\S]*`PUNCH_LEFT`[\s\S]*`PUNCH_RIGHT`/u);
+  assert.match(interactions, /Sapo Pota[\s\S]*`TOXIC_VOMIT`[\s\S]*2 y 3 proyectiles/u);
   assert.match(gameDesign, /Ciudad Bicharraca \| Pantalla de avance estática/u);
   assert.match(gameDesign, /Boss Total y Final \| Roadmap, sin gameplay/u);
   assert.match(interactions, /Todos los fosos miden como mucho 160 px/u);
@@ -252,6 +259,7 @@ test('scope and critical gameplay invariants are explicit', async () => {
   assert.match(implementation, /updateText\(\)[\s\S]*sprites y fondos siguen en nearest/u);
   assert.match(artBible, /texto visible parte de 12 px[\s\S]*texturas tipográficas usan linear/u);
   assert.match(artBible, /Landing web \| 33 derivados optimizados/u);
+  assert.match(artBible, /Garbanzo Loco, Árbol Pocho y Sapo Pota[\s\S]*spritesheets raster de producción/u);
   assert.match(acceptance, /Lola y Momo[\s\S]*directores creativos y ejecutivos de BABITOS/u);
   assert.match(interactions, /`#creditos`[\s\S]*Lola y Momo[\s\S]*directores creativos y ejecutivos de BABITOS/u);
   assert.match(artBible, /La Oscuridad:[\s\S]*`SHIFT`[\s\S]*`EXPOSED`[\s\S]*`DISPELLED`/u);

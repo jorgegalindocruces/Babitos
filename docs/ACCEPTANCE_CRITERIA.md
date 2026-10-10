@@ -29,9 +29,11 @@ Estos criterios validan el vertical slice 0.2 descrito en [INTERACTIONS.md](INTE
 
 ## La Jungla y La Oscuridad
 
-- La Jungla conserva 6400 px de ancho, cuatro checkpoints (`start`, `lianas`, `ruinas`, `penumbra`), ocho encuentros, 30 Babicoins colocadas, dos setas, siete carteles y el portal en x = 6230; el velo crece de x = 4000 a x = 6000.
+- La Jungla conserva 6400 px de ancho, cuatro checkpoints (`start`, `lianas`, `ruinas`, `penumbra`), seis secuencias de combate con diez enemigos, 30 Babicoins colocadas, dos setas, siete carteles y el portal en x = 6230; el velo crece de x = 4000 a x = 6000.
 - Todos los fosos de La Jungla se saltan (≤ 160 px) o se cruzan por puentes; caer al agua resta un corazón y devuelve al último checkpoint.
-- COME y DA VUELTAS nunca caen a un foso ni se atascan contra un pilar de ruinas; un enemigo que acabara bajo el mundo vuelve a su posición inicial.
+- COME, VUELA y DA VUELTAS no aparecen en La Jungla. Garbanzo Loco respeta los límites de su tramo y no cae a un foso; Árbol Pocho permanece fijo en la vegetación y Sapo Pota, en su línea de agua.
+- Los seis bloques presentan, en este orden de dificultad, Garbanzo solo, Árbol solo, Sapo solo, Garbanzo + Árbol, Sapo + Garbanzo y los tres juntos. Los tres sapos disparan respectivamente una, dos y tres vomiteras.
+- Garbanzo telegrafía `SPEAR_ATTACK`; Árbol despierta por proximidad, distingue `PUNCH_LEFT` y `PUNCH_RIGHT` y solo es vulnerable durante `RECOVER`; Sapo alterna `UNDERWATER`, aparición, `TOXIC_VOMIT`, recuperación y `SUBMERGE`. Los tres sapos ocupan agua real, la vomitera nace en la boca antes de entrar en su calle horizontal y desaparece al tocar al Babito, suelo sólido o al agotar su vida; sus Babicoins caen en una superficie recuperable.
 - Una seta saltarina lanza al Babito al caer sobre ella: unos 250–270 px manteniendo el salto y al menos el 60 % sin mantenerlo. Toda plataforma elevada es alcanzable.
 - El velo de oscuridad del último tramo nunca oculta al Babito: un halo lo acompaña.
 - La Oscuridad solo recibe daño mientras está `EXPUESTA`; en la sombra los disparos la atraviesan sin consumirse. Un farolillo encendido no bloquea disparos.
@@ -123,8 +125,9 @@ Estos criterios validan el vertical slice 0.2 descrito en [INTERACTIONS.md](INTE
 - La selección respeta `dead` → `hurt` → `attack` → aire (`jump`/`fall`) → `land` → locomoción: la velocidad residual no puede sustituir una acción prioritaria. Cada *one-shot* empieza desde su primer frame al activarse y un nuevo salto, ataque o golpe reinicia inmediatamente el clip correspondiente.
 - En QA, `qaMotion` admite los nueve estados. Sin `qaFrame` el clip se anima; con `qaFrame` queda congelado en el frame local pedido. El primer input real de movimiento, bajada, salto o ataque libera el override y devuelve la animación al selector automático.
 - La exportación `public/assets/landing/babito.png` mide 320 × 320, usa transparencia binaria y escala nearest 4× desde la celda fuente de 80 px: cada bloque visible de 4 × 4 conserva un único RGBA y contiene la paleta canónica.
-- Cada estado de COME, VUELA y DA VUELTAS tiene un mapping explícito a un clip existente. Cambiar entre estados que comparten clip no lo reinicia; `hurt` y `defeat` son one-shot, y anticipación/mordisco de COME no recorren la misma secuencia desde el principio. Babito Corrupto cambia de pose entre patrones, `RECOVER` y purificación. La Oscuridad ondula en sombra, se desvanece en `SHIFT`, anticipa rasante/meteoritos/charco/apagado, muestra anillo dorado en `EXPOSED` y se disipa en luciérnagas.
+- Cada estado de los seis enemigos normales tiene un mapping explícito a un clip existente. Cambiar entre estados que comparten clip no lo reinicia; `hurt` y `defeat` son *one-shot*, y anticipación/ataque se leen como poses distintas. Garbanzo, Árbol y Sapo incluyen además estados explícitos `HURT` y `DEFEAT`, y sus impactos peligrosos se interrumpen antes de reanudar la IA. Babito Corrupto cambia de pose entre patrones, `RECOVER` y purificación. La Oscuridad ondula en sombra, se desvanece en `SHIFT`, anticipa rasante/meteoritos/charco/apagado, muestra anillo dorado en `EXPOSED` y se disipa en luciérnagas.
 - El atlas raster de VUELA contiene 36 celdas de 256 × 256 con contenido, margen transparente y alpha 0/255; se renderiza a 64 × 64 sin escala fraccionaria ni deformación.
+- Garbanzo Loco, Árbol Pocho y Sapo Pota usan tres atlas runtime de 1024 × 512, con ocho celdas de 256 × 256, contenido separado, margen transparente y alpha 0/255; nunca se usa una ficha conceptual completa como sprite.
 - Pausar congela el frame de animación y reanudar continúa sin desincronizarlo.
 - Babilandia, la arena de Babito Corrupto y Ciudad Bicharraca respetan el encuadre raster 16:9; La Jungla y la arena de La Oscuridad mantienen su composición procedural. Ninguno dibuja falsos suelos interactivos en el primer plano y toda colisión procede de geometría separada.
 
@@ -132,6 +135,6 @@ Estos criterios validan el vertical slice 0.2 descrito en [INTERACTIONS.md](INTE
 
 - Ciudad es un avance, no una fase jugable; Boss 3 y el final son roadmap.
 - La Jungla y La Oscuridad usan arte procedural; la Manzana de Poder recuperada todavía no desbloquea un poder nuevo.
-- DA VUELTAS mantiene un spritesheet procedural; VUELA y COME ya usan arte raster de producción.
+- DA VUELTAS mantiene un spritesheet procedural; COME, VUELA y los tres enemigos de La Jungla usan arte raster de producción.
 - La banda sonora consta de siete composiciones procedurales originales de 32 pasos. El planificador Web Audio anticipado sostiene capas de melodía, arpegio, bajo y ritmo sin depender de archivos externos; no se ofrece un control de volumen continuo.
 - Los botones y anuncios principales tienen soporte de teclado/lector, pero no se declara conformidad de accesibilidad completa para todo el texto dibujado en canvas.

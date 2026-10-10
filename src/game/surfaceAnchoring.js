@@ -78,3 +78,43 @@ export function placeOnSurface(platforms, options = {}) {
     support,
   };
 }
+
+/** Place an object on the horizontally nearest reachable surface. */
+export function placeOnNearestSurface(platforms, options = {}) {
+  const requestedX = finiteNumber(options.x);
+  const width = Math.max(0, finiteNumber(options.width) ?? 0);
+  const height = Math.max(0, finiteNumber(options.height) ?? 0);
+  const originX = Math.max(0, Math.min(1, finiteNumber(options.originX) ?? 0.5));
+  const originY = Math.max(0, Math.min(1, finiteNumber(options.originY) ?? 1));
+  const gap = finiteNumber(options.gap) ?? 0;
+  const allowedKinds = Array.isArray(options.kinds) && options.kinds.length > 0
+    ? new Set(options.kinds)
+    : null;
+  if (requestedX === null || !Array.isArray(platforms)) return null;
+
+  let nearest = null;
+  for (const platform of platforms) {
+    if (allowedKinds && !allowedKinds.has(platform?.kind)) continue;
+    const bounds = getSurfaceBounds(platform);
+    if (!bounds) continue;
+    const minimumX = bounds.left + width * originX;
+    const maximumX = bounds.right - width * (1 - originX);
+    if (minimumX > maximumX) continue;
+    const x = Math.max(minimumX, Math.min(maximumX, requestedX));
+    const distance = Math.abs(x - requestedX);
+    if (
+      nearest
+      && (nearest.distance < distance
+        || (nearest.distance === distance && nearest.surfaceY <= bounds.surfaceY))
+    ) continue;
+    nearest = { platform, ...bounds, x, distance };
+  }
+
+  if (!nearest) return null;
+  return {
+    x: nearest.x,
+    y: nearest.surfaceY - gap - height * (1 - originY),
+    surfaceY: nearest.surfaceY,
+    support: nearest,
+  };
+}

@@ -252,6 +252,7 @@ export const TEXTURE_KEYS = Object.freeze({
   projectileFire: 'projectile_fire',
   projectileLightning: 'projectile_lightning',
   projectileRock: 'projectile_rock',
+  enemyToxicGlob: 'enemy_toxic_glob',
   merchantEmpanadilla: 'merchant_empanadilla',
   merchantPinguino: 'merchant_pinguino',
   powerTreeSad: 'power_tree_sad',
@@ -1180,6 +1181,19 @@ function drawProjectileRock(ctx) {
   rect(ctx, 11, 11, 4, 3, COLORS.grayDark);
 }
 
+function drawEnemyToxicGlob(ctx) {
+  // A deliberately chunky silhouette: the poisonous core remains readable
+  // against both the bright river and the dark final stretch of La Jungla.
+  rect(ctx, 0, 6, 6, 4, '#1f7b38');
+  rect(ctx, 3, 3, 8, 10, '#55c93d');
+  rect(ctx, 7, 1, 12, 14, COLORS.greenDark);
+  rect(ctx, 9, 2, 10, 12, '#9ae84c');
+  rect(ctx, 14, 4, 8, 8, COLORS.yellow);
+  rect(ctx, 16, 5, 5, 5, COLORS.yellowLight);
+  rect(ctx, 10, 3, 4, 3, '#d9ff7d');
+  rect(ctx, 4, 7, 4, 2, '#baff67');
+}
+
 function drawEmpanadilla(ctx) {
   // Flexible pink arms behind the pastry body.
   pixelLine(ctx, 15, 38, 4, 29, COLORS.ink, 8);
@@ -1683,6 +1697,7 @@ function getTextureSpecs() {
     [TEXTURE_KEYS.projectileFire, 24, 16, drawProjectileFire],
     [TEXTURE_KEYS.projectileLightning, 32, 14, drawProjectileLightning],
     [TEXTURE_KEYS.projectileRock, 18, 18, drawProjectileRock],
+    [TEXTURE_KEYS.enemyToxicGlob, 24, 16, drawEnemyToxicGlob],
     [TEXTURE_KEYS.merchantEmpanadilla, 64, 72, drawEmpanadilla],
     [TEXTURE_KEYS.merchantPinguino, 64, 72, drawPinguino],
     [TEXTURE_KEYS.powerTreeSad, 96, 112, drawTreeSad],

@@ -26,7 +26,7 @@ Son jugables Babilandia con Babito Corrupto (Fase 1) y La Jungla con La Oscurida
 
 ## Landing page
 
-La portada de `babitos.es` presenta el juego antes de jugar: hero con el logo y un Babito que salta, la historia del Árbol de Poder en tres pasos, el creador y los tres poderes, los tres mundos con su estado (dos jugables y Ciudad próximamente), personajes (Bicharracos, jefes y aliados), once comparativas «Del papel al píxel», nueve láminas conceptuales y un cierre de créditos. Ocho comparativas enfrentan el dibujo con su asset de juego; Garbanzo Loco, Árbol Pocho y Sapo Pota enfrentan el boceto con un retrato derivado de su diseño pixel art aprobado y se identifican como **En desarrollo**, no como sprites ya jugables.
+La portada de `babitos.es` presenta el juego antes de jugar: hero con el logo y un Babito que salta, la historia del Árbol de Poder en tres pasos, el creador y los tres poderes, los tres mundos con su estado (dos jugables y Ciudad próximamente), personajes (Bicharracos, jefes y aliados), once comparativas «Del papel al píxel», nueve láminas conceptuales y un cierre de créditos. Garbanzo Loco, Árbol Pocho y Sapo Pota enfrentan el boceto con un retrato derivado de su diseño pixel art aprobado y se identifican como **Jugable · Fase 2**. Esos retratos son editoriales; el juego carga sus spritesheets transparentes independientes.
 
 - Todos los botones `JUGAR` abren un diálogo modal con el juego. La primera apertura carga el motor (`Cargando BABITOS…`); las siguientes son inmediatas. Si se cierra antes de terminar esa primera carga, el runtime se desactiva en cuanto queda listo y nunca avanza ni toma foco detrás de la portada.
 - `Esc` dentro del diálogo pausa el juego, como siempre; solo el botón `✕` cierra el diálogo. Cerrar congela la pantalla actual, suspende música y reloj y, si se hizo durante gameplay, al volver espera el panel `PAUSA`; en Título, Creador y otros menús reanuda esa misma pantalla.
@@ -34,7 +34,7 @@ La portada de `babitos.es` presenta el juego antes de jugar: hero con el logo y 
 - Con el diálogo cerrado, flechas, Espacio y `M` vuelven a comportarse como en cualquier página. Al cerrar, el foco vuelve al botón que lo abrió.
 - Un enlace a `https://babitos.es/#jugar` abre el juego directamente.
 - `#creditos` aparece después del último CTA y antes del pie técnico. Reconoce a Lola y Momo como autores de las ideas y los dibujos y como directores creativos y ejecutivos de BABITOS; su lámina completa se amplía en el mismo visor, mientras la atribución y los cargos permanecen también como texto HTML visible.
-- Las tarjetas de Bicharracos distinguen Babilandia de los nuevos diseños de La Jungla. Las fichas, retratos y comparativas de Garbanzo Loco, Árbol Pocho y Sapo Pota son contenido editorial; no alteran los ocho encuentros ni los tipos de enemigo que ejecuta actualmente `GameScene(jungla)`.
+- Las tarjetas de Bicharracos distinguen las dos familias jugables: COME, VUELA y DA VUELTAS permanecen en Babilandia; Garbanzo Loco, Árbol Pocho y Sapo Pota pertenecen a La Jungla. Las fichas y retratos son contenido editorial, pero esos tres personajes sí tienen sprites, animaciones y comportamiento propios en `GameScene(jungla)`.
 
 ## Entradas globales
 
@@ -166,18 +166,24 @@ Un impacto aceptado reproduce `hurt` completo como reacción no cíclica. Durant
 
 ### La Jungla
 
-La Fase 2 reutiliza la escena de nivel ([GameScene.js](../src/scenes/GameScene.js)) con los datos de [jungla.json](../src/data/levels/jungla.json); el registro [levels/index.js](../src/data/levels/index.js) indica qué fondo, texturas, recompensas y jefe corresponden a cada nivel. Se abre desde el Mapa en cuanto la Fase 1 está completa y empieza siempre en `start`. Las reglas de movimiento, combate, checkpoints, pausa, Babicoins colocadas y portal son las de Babilandia, con estas diferencias:
+La Fase 2 reutiliza la escena de nivel ([GameScene.js](../src/scenes/GameScene.js)) con los datos de [jungla.json](../src/data/levels/jungla.json); el registro [levels/index.js](../src/data/levels/index.js) indica qué fondo, texturas, recompensas y jefe corresponden a cada nivel. Se abre desde el Mapa en cuanto la Fase 1 está completa y empieza siempre en `start`. Las reglas de movimiento, daño, poderes, checkpoints, pausa, Babicoins colocadas y portal son las de Babilandia. Los enemigos sueltan igualmente 0, 1 o 2 Babicoins y reciben Fuego, Rayo o Roca mediante el mismo sistema; La Jungla sustituye por completo los tipos de Fase 1 con estas diferencias:
 
 - **Fosos del río**: el suelo se interrumpe. Caer al agua cuesta un corazón y devuelve al último checkpoint, como cualquier caída. Todos los fosos miden como mucho 160 px (un salto en carrera cubre unos 230) o se cruzan por puentes de cuerda o un tronco intermedio.
-- **Tres tramos y cuatro checkpoints** (`start`, `lianas`, `ruinas`, `penumbra`):
-  1. **Raíces**: primeros fosos, COME patrullando entre ellos y la primera seta saltarina hacia una copa con monedas sobre el segundo foso.
-  2. **Puentes de cuerda**: el río ancho se cruza por dos puentes unidireccionales mientras una pareja de VUELA ataca en picado; una rama alta guarda monedas. Después, dos pilares de ruinas sólidos encierran a DA VUELTAS: su giro rebota entre ellos y los pilares sirven de refugio.
-  3. **Ruinas en penumbra**: COME y VUELA combinados, una segunda seta que sube a una ruta alta de piedra sobre el último foso y un encuentro final con DA VUELTAS y COME alrededor de un pilar y una rama refugio.
+- **Seis secuencias de combate con diez enemigos**, repartidas entre los cuatro checkpoints (`start`, `lianas`, `ruinas`, `penumbra`):
+  1. Garbanzo Loco se presenta solo al inicio para enseñar su persecución y su lanza.
+  2. Árbol Pocho aparece camuflado entre la vegetación y despierta cuando el Babito se acerca.
+  3. Sapo Pota presenta desde la laguna su aparición y una primera vomitera de un proyectil.
+  4. Garbanzo Loco y Árbol Pocho se combinan en las ruinas.
+  5. Sapo Pota y Garbanzo Loco se combinan al comenzar la penumbra; el sapo dispara una ráfaga de dos.
+  6. Antes del portal aparecen juntos Garbanzo Loco, Árbol Pocho y Sapo Pota; este último dispara una ráfaga de tres.
+- **Garbanzo Loco**: patrulla y persigue, entra en `ATTACK_WINDUP`, ejecuta una estocada horizontal durante `SPEAR_ATTACK` y termina en `RECOVER`. Lanza y escudo-vaina forman parte de todas sus poses; solo la estocada activa alcanza al Babito.
+- **Árbol Pocho**: permanece fijo y camuflado en `TREE_IDLE`; proximidad activa `WAKE_UP` y `ANGRY_IDLE`, elige `PUNCH_LEFT` o `PUNCH_RIGHT` según el lado del Babito y queda brevemente vulnerable en `RECOVER` antes de volver a esperar.
+- **Sapo Pota**: espera con los ojos en `UNDERWATER`, emerge, anticipa y ejecuta `TOXIC_VOMIT`; cada globo sale de la boca, hace un ajuste vertical corto y visible (máximo 48 px) hacia la altura actual del Babito y continúa en línea horizontal. Puede atravesar desde abajo los puentes de una dirección, pero desaparece contra suelo sólido, el Babito o al agotar su vida. Los encuentros avanzados lanzan 2 y 3 proyectiles espaciados. Es el más resistente, no persigue al Babito y permanece vinculado a su zona de agua; sus drops se trasladan al puente u orilla alcanzable más cercana.
 - **Setas saltarinas**: caer sobre su sombrero lanza al Babito hasta 250–270 px si se mantiene el salto; soltándolo sube al menos el 60 % y después corta el impulso como un salto normal. Caminar contra el tallo no hace nada.
 - **Pilares de ruinas**: son suelo sólido elevado; bloquean el paso lateral y hay que saltarlos.
-- **Enemigos y fosos**: COME y DA VUELTAS no salen del tramo de suelo en el que aparecen; COME espera en el borde y DA VUELTAS se da la vuelta. Ambos giran al chocar con un pilar.
+- **Enemigos y fosos**: Garbanzo Loco no sale del tramo de suelo donde aparece y se da la vuelta en bordes o pilares. Árbol Pocho y Sapo Pota son estacionarios; los tres sapos están colocados en fosos reales y se anclan a la línea de agua. Sus proyectiles tóxicos salen de la boca, entran en una calle horizontal alcanzable y desaparecen al impactar con el Babito, suelo sólido o al agotar su tiempo de vida. Las Babicoins de un sapo derrotado aparecen sobre el puente u orilla más cercanos para no perderse en el río.
 - **La luz se apaga**: poco después del checkpoint `ruinas`, desde x = 4000, un velo oscuro crece hasta x = 6000 junto al portal y un halo cálido sigue al Babito para mantenerlo legible.
-- Ocho encuentros abren el portal hacia La Oscuridad. Hay 30 Babicoins colocadas con identificadores `jungla:coin:<id>`, independientes de las de Babilandia.
+- Derrotar a los diez enemigos de las seis secuencias abre el portal hacia La Oscuridad. Hay 30 Babicoins colocadas con identificadores `jungla:coin:<id>`, independientes de las de Babilandia.
 - Ambientación: agua animada en cada foso, una cascada sobre los puentes, lianas que se mecen, ruinas al fondo y luciérnagas.
 
 ### La Oscuridad
@@ -238,6 +244,7 @@ La interacción del combate se implementa en [BossScene.js](../src/scenes/BossSc
 - La animación se selecciona después de resolver movimiento y física en el mismo frame. Los tamaños pequeño, normal y grande aplican escalas `0.8`, `1` y `1.2` a `BABITO_RENDER_SIZE = 80` y producen cajas de render enteras de 64, 80 y 96 px. El tamaño normal conserva los píxeles fuente 1:1; la baseline fuente de 30 px se compensa a 20 px de mundo para que los tres tamaños compartan línea de suelo sin cambiar el cuerpo físico.
 - COME tiene `idle`, `walk`, `windup`, `attack`, `hurt` y `defeat` sobre su spritesheet raster. `WINDUP` recorre la preparación y `BITE` empieza en la pose de mordisco sin reiniciar una fila ofensiva completa; todos los clips se anclan por los pies a la superficie física.
 - VUELA tiene `idle`, `fly`, `dive`, `attack`, `hurt` y `defeat` en un atlas raster de 36 poses; `dive`, `attack`, `hurt` y `defeat` no vuelven del último frame al primero. DA VUELTAS mantiene `idle`, `roll`, `windup`, `hurt` y `defeat` en su hoja procedural.
+- Garbanzo Loco anima patrulla/persecución, anticipación, estocada, recuperación, daño y derrota. Árbol Pocho diferencia árbol quieto, despertar, enfado, puñetazo izquierdo, puñetazo derecho, recuperación, daño y derrota. Sapo Pota diferencia ojos sumergidos, salida del agua, espera, anticipación, vomitera, recuperación, daño, inmersión y derrota. Cada uno usa una hoja transparente de 1024 × 512 con ocho celdas de 256 × 256; la máquina de estados elige clips semánticos y un impacto interrumpe la ventana peligrosa hacia su reacción `HURT`.
 - Babito Corrupto cambia de pose en intro, los tres patrones, `RECOVER` y su forma purificada. La Oscuridad es un sprite procedural fiel a su referencia canónica (masa negra de borde violeta, tentáculos y ojos rasgados) que ondula, se desvanece al viajar por la sombra y se ilumina con un anillo dorado al quedar expuesta.
 - Las capas del Babito se dibujan a su tamaño nativo y se amplían después sin suavizado, con píxeles totalmente opacos o transparentes: en Título y Creador se ve nítido, sin franjas ni bordes borrosos.
 - Pausar congela también los relojes de animación.
@@ -280,15 +287,15 @@ Solo con el servidor de desarrollo, `BootScene` admite rutas para revisar pantal
 - `&qaCoins=90` para garantizar al menos ese saldo, hasta 999; no reduce monedas existentes;
 - `&qaComplete=1` para marcar la Fase 1 como completada;
 - `&qaLevel=jungla` en `GameScene` para cargar La Jungla; sin él se resuelve el nivel solicitado o guardado;
-- `&qaCombat=1` en `GameScene` para empezar en el primer checkpoint, acercar al primer COME, dejarlo a un golpe y forzar drops de dos monedas;
+- `&qaCombat=1` en `GameScene` para empezar en el primer checkpoint, acercar al primer enemigo del nivel, dejarlo a un golpe y forzar drops de dos monedas;
 - `&qaCheckpoint=start|market_gate|fountain|boss_gate` para Babilandia o `start|lianas|ruinas|penumbra` para La Jungla; revisa una zona concreta sin persistir ese checkpoint ni cobrar sus monedas colocadas;
 - `&qaMotion=idle|walk|run|jump|fall|land|attack|hurt|dead` activa una presentación temporal del Babito. Sin `qaFrame`, el clip avanza con su cadencia real —los ciclos repiten y los *one-shots* conservan su pose final—; `&qaFrame=<n>` congela el frame local solicitado, limitado al último disponible. Cualquier input real de movimiento, bajada, salto o ataque, por teclado o pad táctil, libera el override y devuelve el control al selector automático. `&qaSize=small|normal|large` fija el tamaño visual; estas ayudas pueden actualizar la escena/checkpoint del guardado local de desarrollo;
-- `&qaEnemy=come|vuela|da_vueltas` para aislar una instancia, colocarla ante la cámara e inmovilizar su IA sin daño ni persistencia;
+- `&qaEnemy=come|vuela|da_vueltas|garbanzo_loco|arbol_pocho|sapo_pota` para aislar una instancia, colocarla ante la cámara e inmovilizar su IA sin daño ni persistencia;
 - `&qaEnemyState=<estado-o-clip>` para fijar un estado de IA (`DIVE`, `BITE`, `DIZZY`…) o un clip (`idle`, `hurt`, `defeat`); `&qaEnemyFrame=<n>` fija su frame local y limita valores altos al último disponible;
 - `&qaOneHit=1` en `BossScene` coloca a Babito Corrupto a un golpe y entra pronto en `RECOVER`; en `DarknessBossScene` coloca a La Oscuridad a un golpe y adelanta su primera exposición;
 - `&debugAI=1` en cualquiera de los dos niveles muestra la etiqueta del estado actual de cada enemigo.
 
-Ejemplos: `http://localhost:5173/?qa=GameScene&qaLevel=jungla&qaCheckpoint=ruinas`, `http://localhost:5173/?qa=DarknessBossScene&qaOneHit=1` y `http://localhost:5173/?qa=GameScene&qaEnemy=vuela&qaEnemyState=DIVE&qaEnemyFrame=4&debugAI=1`.
+Ejemplos: `http://localhost:5173/?qa=GameScene&qaLevel=jungla&qaCheckpoint=ruinas`, `http://localhost:5173/?qa=DarknessBossScene&qaOneHit=1` y `http://localhost:5173/?qa=GameScene&qaLevel=jungla&qaEnemy=sapo_pota&qaEnemyState=TOXIC_VOMIT&qaEnemyFrame=4&debugAI=1`.
 
 ## Referencias de implementación
 

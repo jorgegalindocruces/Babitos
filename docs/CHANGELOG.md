@@ -7,6 +7,19 @@ Este archivo relaciona las iteraciones entregadas con sus cambios observables, c
 - Mantener sincronizados `README.md`, `INTERACTIONS.md`, `GAME_DESIGN.md`, `IMPLEMENTATION_SPEC.md` y `ACCEPTANCE_CRITERIA.md` cuando cambien flujo, controles, estados, persistencia o contenido jugable.
 - Añadir una entrada aquí por cada cambio observable, con el commit final y las pruebas realizadas.
 
+## Garbanzo Loco, Árbol Pocho y Sapo Pota jugables — 2026-10-10
+
+La Jungla deja de reutilizar los enemigos de Babilandia e integra los tres Bicharracos definidos por sus dibujos y fichas aprobadas:
+
+- **Elenco propio de Fase 2**: los diez enemigos del nivel forman seis secuencias legibles: Garbanzo Loco solo, Árbol Pocho camuflado, Sapo Pota en la laguna, Garbanzo + Árbol, Sapo + Garbanzo y el trío completo antes del portal. COME, VUELA y DA VUELTAS permanecen sin cambios en Babilandia.
+- **Tres máquinas de estado completas**: Garbanzo patrulla, persigue, anticipa y ataca horizontalmente con su lanza; Árbol despierta por proximidad, golpea a izquierda o derecha y deja una recuperación vulnerable; Sapo emerge, anticipa, lanza vomitera tóxica, se recupera y vuelve a sumergirse. Los sapos avanzados disparan ráfagas de dos y tres proyectiles.
+- **Arte de producción**: tres hojas transparentes de 1024 × 512, organizadas en ocho celdas de 256 × 256, sustituyen cualquier uso de retratos o láminas completas dentro del juego. La procedencia y el orden de poses quedan registrados en [jungle-enemy-sheets-v1.md](../art/production/jungle-enemy-sheets-v1.md).
+- **Sistemas compartidos**: daño, poderes, terreno, checkpoints, drops de 0–2 Babicoins, pausa y sellado del portal siguen el contrato común de `GameScene`. Garbanzo respeta bordes y plataformas; Árbol y Sapo permanecen anclados a su hábitat; los proyectiles tóxicos se eliminan al impactar o al agotar su tiempo de vida.
+- **Correcciones de combate y apoyo**: los golpes izquierdo/derecho del Árbol y la orientación del Sapo coinciden con sus hitboxes; recibir daño cancela la estocada pendiente y tocar el tronco, la espalda o el escudo no sustituye al área de ataque. Garbanzo y Árbol compensan el padding inferior del atlas, los tres sapos viven en huecos con agua, la vomitera sale de la boca hacia una calle horizontal útil y sus monedas aterrizan en una orilla o puente accesibles.
+- **Portada coherente**: las tarjetas dejan atrás `En desarrollo` y presentan a los tres como `Jugable · Fase 2`. Los retratos y concept boards continúan siendo contenido editorial; los spritesheets de Phaser son assets separados.
+
+La validación de cierre incluye pruebas de datos, composición del nivel, mapeo estado/animación, transparencia y padding de las 24 poses, build de producción y QA visual de los seis encuentros.
+
 ## Créditos de Lola y Momo — 2026-10-10
 
 Commit [`0443a74`](https://github.com/jorgegalindocruces/Babitos/commit/0443a74). La landing termina ahora reconociendo de forma expresa a quienes dieron origen al universo del juego:
@@ -41,6 +54,8 @@ Commit [`9f24c57`](https://github.com/jorgegalindocruces/Babitos/commit/9f24c57)
 - **Alcance honesto**: estos recortes no se precargan en Phaser y no cambian la Jungla jugable, sus ocho encuentros ni los tres tipos de enemigo actuales. La ficha editorial evita usar «en el juego» hasta que existan spritesheets y comportamiento runtime reales.
 
 Validación: 123 pruebas automáticas, build de producción, `git diff --check` y QA visual en escritorio y móvil (390 × 844) de tarjetas, comparativas, galería y visor, sin overflow horizontal, imágenes rotas ni errores de consola.
+
+Este estado editorial quedó supersedido el mismo 10 de octubre al integrar las tres máquinas de estado y sus spritesheets de producción en la Fase 2 jugable.
 
 ## Estados completos y siluetas pixeladas del Babito — 2026-10-09
 

@@ -19,7 +19,7 @@
     { "x": 2680, "y": 420, "width": 180, "height": 16, "kind": "platform", "style": "bridge" },
     { "x": 2560, "y": 330, "width": 130, "height": 20, "kind": "platform", "style": "branch" },
     { "x": 3380, "y": 330, "width": 160, "height": 20, "kind": "platform", "style": "stone" },
-    { "x": 4985, "y": 430, "width": 70, "height": 20, "kind": "platform", "style": "branch" },
+    { "x": 4985, "y": 430, "width": 70, "height": 20, "kind": "platform", "style": "branch", "foreground": true },
     { "x": 4990, "y": 250, "width": 180, "height": 20, "kind": "platform", "style": "stone" },
     { "x": 5250, "y": 290, "width": 170, "height": 20, "kind": "platform", "style": "stone" },
     { "x": 5660, "y": 370, "width": 150, "height": 20, "kind": "platform", "style": "branch" }
@@ -30,10 +30,10 @@
   ],
   "tutorialSigns": [
     { "id": "pits", "x": 520, "text": "SALTA EL RÍO · CAER CUESTA UN CORAZÓN" },
-    { "id": "come_edge", "x": 1090, "text": "COME NO SABE NADAR" },
+    { "id": "garbanzo", "x": 1090, "text": "LA LANZA SE ESQUIVA SALTANDO" },
     { "id": "spring", "x": 1300, "text": "SETA SALTARINA: MANTÉN SALTO" },
-    { "id": "bridges", "x": 2200, "text": "PUENTES DE CUERDA SOBRE EL RÍO" },
-    { "id": "ruins", "x": 3020, "text": "LAS RUINAS FRENAN A DA VUELTAS" },
+    { "id": "bridges", "x": 2200, "text": "SAPO POTA ACECHA BAJO EL AGUA" },
+    { "id": "ruins", "x": 3020, "text": "LOS ÁRBOLES TAMBIÉN DESPIERTAN" },
     { "id": "darkness", "x": 4300, "text": "LA LUZ SE APAGA MÁS ADELANTE" },
     { "id": "portal", "x": 6020, "text": "LA OSCURIDAD ESPERA TRAS EL PORTAL" }
   ],
@@ -44,14 +44,16 @@
     { "id": "penumbra", "x": 5150, "y": 480 }
   ],
   "enemies": [
-    { "id": "come_1", "type": "come", "x": 1250, "y": 420 },
-    { "id": "vuela_rio_a", "type": "vuela", "x": 2450, "y": 290 },
-    { "id": "vuela_rio_b", "type": "vuela", "x": 2720, "y": 315 },
-    { "id": "da_vueltas_ruinas", "type": "da_vueltas", "x": 3380, "y": 420 },
-    { "id": "come_2", "type": "come", "x": 4450, "y": 420 },
-    { "id": "vuela_penumbra", "type": "vuela", "x": 4620, "y": 285 },
-    { "id": "da_vueltas_final", "type": "da_vueltas", "x": 5560, "y": 420 },
-    { "id": "come_3", "type": "come", "x": 5850, "y": 420 }
+    { "id": "garbanzo_inicio", "type": "garbanzo_loco", "x": 1220, "y": 420 },
+    { "id": "arbol_vegetacion", "type": "arbol_pocho", "x": 1920, "y": 405 },
+    { "id": "sapo_laguna", "type": "sapo_pota", "x": 2490, "y": 438, "volleyCount": 1, "waterlineY": 501, "detectRange": 250, "attackRange": 240 },
+    { "id": "garbanzo_ruinas", "type": "garbanzo_loco", "x": 3270, "y": 420 },
+    { "id": "arbol_ruinas", "type": "arbol_pocho", "x": 3750, "y": 405 },
+    { "id": "sapo_penumbra", "type": "sapo_pota", "x": 4065, "y": 438, "volleyCount": 2, "waterlineY": 501, "detectRange": 200, "attackRange": 200 },
+    { "id": "garbanzo_penumbra", "type": "garbanzo_loco", "x": 4490, "y": 420 },
+    { "id": "sapo_final", "type": "sapo_pota", "x": 4990, "y": 438, "volleyCount": 3, "waterlineY": 501, "detectRange": 150, "attackRange": 150 },
+    { "id": "garbanzo_final", "type": "garbanzo_loco", "x": 5570, "y": 420 },
+    { "id": "arbol_final", "type": "arbol_pocho", "x": 5890, "y": 405 }
   ],
   "coins": [
     { "id": "raices_rama_1", "x": 945, "y": 352 },

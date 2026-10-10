@@ -2,6 +2,15 @@ import Phaser from 'phaser';
 import { getGroundSpans, getLevel, PLATFORM_STYLE_TEXTURES } from '../data/levels/index.js';
 import gameData from '../data/game-data.json';
 import { EnemyController } from '../game/EnemyController.js';
+import {
+  createEnemyMeleeAttack,
+  getArcadeBodyBounds,
+  getEnemyMeleeBounds,
+  isEnemyMeleeAttackActive,
+  isEnemyProjectile,
+  launchToxicProjectile,
+  rectanglesOverlap,
+} from '../game/EnemyAttackSystem.js';
 import { enemyUsesPlatformCollision } from '../game/EnemyAnimations.js';
 import { updateBabitoQaMotionOverride } from '../game/BabitoAnimations.js';
 import { PlayerController } from '../game/PlayerController.js';
@@ -10,6 +19,7 @@ import { shouldCollideWithTerrain } from '../game/platformCollision.js';
 import { isPowerProjectile, makeImpact } from '../game/PowerSystem.js';
 import {
   findSupportingSurface,
+  placeOnNearestSurface,
   placeOnSurface,
   TUTORIAL_SIGN_STYLE,
 } from '../game/surfaceAnchoring.js';
@@ -145,6 +155,8 @@ export class GameScene extends Phaser.Scene {
         : (this.level.checkpoints.find((entry) => entry.id === this.save.progress.checkpoint)
           ?? this.level.checkpoints[0]));
     this.projectiles = this.physics.add.group();
+    this.enemyProjectiles = this.physics.add.group();
+    this.enemyMeleeAttacks = [];
     this.coins = this.physics.add.group();
     this.createPlacedCoins();
     this.enemySprites = this.physics.add.group();
@@ -187,9 +199,11 @@ export class GameScene extends Phaser.Scene {
           enemy.visual.setVisible(false);
           enemy.stateBadge?.setVisible(false);
         }
-        const qaX = 390;
+        // Put aquatic previews in the first real river gap instead of burying
+        // their waterline animation in the starting ground strip.
+        const qaX = qaEnemy.type === 'sapo_pota' ? 755 : 390;
         let qaY = qaEnemy.type === 'vuela' ? 270 : qaEnemy.sprite.y;
-        if (qaEnemy.type !== 'vuela') {
+        if (!['vuela', 'sapo_pota'].includes(qaEnemy.type)) {
           const support = findSupportingSurface(this.level.platforms, {
             x: qaX,
             width: qaEnemy.sprite.body.width,
@@ -200,6 +214,7 @@ export class GameScene extends Phaser.Scene {
         }
         qaEnemy.home.set(qaX, qaY);
         qaEnemy.sprite.setPosition(qaX, qaY);
+        qaEnemy.sprite.body.reset(qaX, qaY);
         const applied = qaEnemy.setQaPresentation(
           this.qaEnemyState ?? qaEnemy.config.states[0],
           this.qaEnemyFrame,
@@ -213,6 +228,9 @@ export class GameScene extends Phaser.Scene {
       firstEnemy.health = 1;
       firstEnemy.home.x = 350;
       firstEnemy.sprite.setX(350);
+      firstEnemy.sprite.body.reset(350, firstEnemy.sprite.y);
+      firstEnemy.walkBounds = getGroundSpans(this.level.platforms)
+        .find((span) => 350 >= span.left && 350 <= span.right) ?? null;
     }
     this.createBossPortal();
     this.createPhysicsInteractions();
@@ -240,7 +258,7 @@ export class GameScene extends Phaser.Scene {
       const texture = PLATFORM_STYLE_TEXTURES[platform.style]
         ?? (platform.kind === 'ground' ? tiles.ground : tiles.platform);
       const tile = this.add.tileSprite(platform.x, platform.y, platform.width, platform.height, texture)
-        .setDepth(4);
+        .setDepth(platform.foreground ? 11 : 4);
       tile.setData({ isPlatform: true, kind: platform.kind });
       this.platforms.add(tile);
     }
@@ -402,7 +420,7 @@ export class GameScene extends Phaser.Scene {
 
   /** Continuous base ground under a walker, so it never steps into a pit. */
   getWalkBounds(definition) {
-    if (definition.type === 'vuela') return null;
+    if (!enemyUsesPlatformCollision(definition.type)) return null;
     return getGroundSpans(this.level.platforms)
       .find((span) => definition.x >= span.left && definition.x <= span.right) ?? null;
   }
@@ -414,6 +432,10 @@ export class GameScene extends Phaser.Scene {
         { ...definition, walkBounds: this.getWalkBounds(definition) },
         this.player.body,
         (enemy, dropCount) => this.handleEnemyDefeat(enemy, dropCount),
+        {
+          onMeleeAttack: (enemy, spec) => this.startEnemyMeleeAttack(enemy, spec),
+          onToxicVolley: (enemy, spec) => this.launchEnemyToxicVolley(enemy, spec),
+        },
       );
       this.enemyControllers.push(controller);
       this.enemySprites.add(controller.sprite);
@@ -426,6 +448,63 @@ export class GameScene extends Phaser.Scene {
         );
       }
     }
+  }
+
+  startEnemyMeleeAttack(enemy, spec) {
+    if (!enemy || enemy.dead || this.qaEnemyType) return null;
+    const attack = createEnemyMeleeAttack(enemy, spec, this.gameplayTime);
+    this.enemyMeleeAttacks.push(attack);
+    return attack;
+  }
+
+  launchEnemyToxicVolley(enemy, spec = {}) {
+    if (!enemy || enemy.dead || this.qaEnemyType) return [];
+    const count = Phaser.Math.Clamp(Math.trunc(spec.count ?? 1), 1, 3);
+    const direction = spec.direction < 0 ? -1 : 1;
+    const intervalMs = Math.max(90, Number(spec.intervalMs) || 150);
+    const shots = [];
+    for (let index = 0; index < count; index += 1) {
+      this.time.delayedCall(index * intervalMs, () => {
+        if (
+          !this.scene.isActive()
+          || enemy.dead
+          || !enemy.sprite?.active
+          || enemy.state !== 'TOXIC_VOMIT'
+        ) return;
+        const targetY = Number(spec.targetY);
+        const mouthY = Number(spec.mouthY);
+        const projectile = launchToxicProjectile(this, this.enemyProjectiles, {
+          x: enemy.sprite.x + direction * (Number(spec.originOffsetX) || 54),
+          y: (Number.isFinite(mouthY)
+            ? mouthY
+            : enemy.sprite.y + (Number(spec.originOffsetY) || -18)) - index * 2,
+          targetY: Number.isFinite(targetY) ? targetY - index * 2 : undefined,
+          direction,
+          speed: spec.projectileSpeed,
+          damage: spec.damage,
+          sourceId: enemy.id,
+        });
+        shots.push(projectile);
+      });
+    }
+    return shots;
+  }
+
+  updateEnemyMeleeAttacks() {
+    const playerBounds = getArcadeBodyBounds(this.player?.body?.body);
+    this.enemyMeleeAttacks = this.enemyMeleeAttacks.filter((attack) => {
+      if (
+        attack.connected
+        || !isEnemyMeleeAttackActive(attack)
+        || this.gameplayTime >= attack.expiresAt
+      ) return false;
+      const strikeBounds = getEnemyMeleeBounds(attack);
+      if (!rectanglesOverlap(strikeBounds, playerBounds)) return true;
+      attack.connected = true;
+      this.player.takeDamage(attack.enemy.sprite.x, attack.damage);
+      makeImpact(this, playerBounds.x + playerBounds.width / 2, playerBounds.y + playerBounds.height / 2, 0xffcf3c);
+      return false;
+    });
   }
 
   createSprings() {
@@ -491,6 +570,18 @@ export class GameScene extends Phaser.Scene {
       makeImpact(this, projectile.x, projectile.y, 0xffcf3c);
       projectile.destroy();
     }, (first, second) => isPowerProjectile(first) || isPowerProjectile(second));
+    this.physics.add.collider(this.enemyProjectiles, this.platforms, (first, second) => {
+      const projectile = isEnemyProjectile(first) ? first : (isEnemyProjectile(second) ? second : null);
+      if (!projectile?.active) return;
+      makeImpact(this, projectile.x, projectile.y, 0x9ae84c);
+      projectile.destroy();
+    }, (first, second) => {
+      const projectile = isEnemyProjectile(first) ? first : (isEnemyProjectile(second) ? second : null);
+      const terrain = projectile === first ? second : first;
+      // Vomit can rise through a one-way bridge from below, like the Babito;
+      // solid ground and ruin pillars still destroy it on contact.
+      return Boolean(projectile && terrain?.getData?.('kind') === 'ground');
+    });
     this.physics.add.overlap(this.projectiles, this.enemySprites, (first, second) => {
       const projectile = isPowerProjectile(first) ? first : (isPowerProjectile(second) ? second : null);
       const enemySprite = projectile === first ? second : first;
@@ -510,6 +601,12 @@ export class GameScene extends Phaser.Scene {
     this.physics.add.overlap(this.player.body, this.enemySprites, (_playerBody, enemySprite) => {
       const controller = enemySprite.getData('controller');
       if (controller?.canHurtPlayer()) this.player.takeDamage(enemySprite.x, controller.config.damage);
+    });
+    this.physics.add.overlap(this.player.body, this.enemyProjectiles, (_playerBody, projectile) => {
+      if (!isEnemyProjectile(projectile) || !projectile.active) return;
+      this.player.takeDamage(projectile.x, projectile.getData('damage') ?? 1);
+      makeImpact(this, projectile.x, projectile.y, 0x9ae84c);
+      projectile.destroy();
     });
     this.physics.add.overlap(this.player.body, this.coins, (_playerBody, coin) => this.collectCoin(coin));
     this.physics.add.overlap(
@@ -538,8 +635,20 @@ export class GameScene extends Phaser.Scene {
     spawnDust(this, enemy.sprite.x, enemy.sprite.body?.bottom ?? enemy.sprite.y, {
       count: 8, spread: 22, color: 0xffffff, depth: 13,
     });
+    const waterDrop = enemy.type === 'sapo_pota'
+      ? placeOnNearestSurface(this.level.platforms, {
+        x: enemy.sprite.x,
+        width: 44,
+        height: 20,
+        originY: 0.5,
+        gap: 12,
+        kinds: ['ground', 'platform'],
+      })
+      : null;
+    const dropX = waterDrop?.x ?? enemy.sprite.x;
+    const dropY = waterDrop?.y ?? enemy.sprite.y - 10;
     for (let index = 0; index < dropCount; index += 1) {
-      const coin = this.coins.create(enemy.sprite.x + (index - 0.5) * 12, enemy.sprite.y - 10, 'coin')
+      const coin = this.coins.create(dropX + (index - 0.5) * 12, dropY, 'coin')
         .setDepth(12)
         .setBounce(0.62)
         .setCollideWorldBounds(true)
@@ -633,7 +742,7 @@ export class GameScene extends Phaser.Scene {
     this.powerText = createLabel(this, `${power?.name?.toUpperCase() ?? 'PODER'}  ·  J / X`, 575, 31, {
       fontSize: '12px', color: Number.parseInt((power?.color ?? '#71e5ff').slice(1), 16), depth: 1001,
     });
-    this.progressText = createLabel(this, `ENCUENTROS  0/${this.level.enemies.length}`, 748, 31, {
+    this.progressText = createLabel(this, `ENEMIGOS  0/${this.level.enemies.length}`, 748, 31, {
       fontSize: '12px', color: 0xbdefff, depth: 1001,
     });
     hud.add([this.healthText, this.coinText, this.powerText, this.progressText]);
@@ -829,6 +938,8 @@ export class GameScene extends Phaser.Scene {
         enemy.resetToHome();
       }
     }
+    this.enemyMeleeAttacks = [];
+    this.enemyProjectiles?.clear?.(true, true);
   }
 
   handleFall() {
@@ -932,11 +1043,12 @@ export class GameScene extends Phaser.Scene {
       }
     }
     this.enemyControllers.forEach((enemy) => enemy.update());
+    this.updateEnemyMeleeAttacks();
     this.updateCameraLookAhead(frameDelta);
     this.updateDropHint(frameDelta);
     this.scenery?.update(this.cameras.main);
     if (this.player?.body.y > 575) this.handleFall();
-    this.progressText?.setText(`ENCUENTROS  ${this.defeatedEnemies}/${this.level.enemies.length}`);
+    this.progressText?.setText(`ENEMIGOS  ${this.defeatedEnemies}/${this.level.enemies.length}`);
   }
 
   getGameplayTime() {

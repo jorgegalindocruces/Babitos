@@ -66,13 +66,13 @@ test('every pit in La Jungla can be jumped or crossed on bridges', () => {
   }
 });
 
-test('La Jungla checkpoints, walkers, springs and portal stand on solid ground', () => {
+test('La Jungla checkpoints, grounded enemies, springs and portal stand on solid ground', () => {
   const spans = getGroundSpans(jungla.platforms);
   for (const checkpoint of jungla.checkpoints) {
     const span = spanAt(spans, checkpoint.x);
     assert.ok(span && checkpoint.x - span.left >= 40 && span.right - checkpoint.x >= 40, checkpoint.id);
   }
-  for (const enemy of jungla.enemies.filter((entry) => entry.type !== 'vuela')) {
+  for (const enemy of jungla.enemies.filter((entry) => entry.type !== 'sapo_pota')) {
     assert.ok(spanAt(spans, enemy.x), `${enemy.id} would spawn over a pit`);
   }
   for (const spring of jungla.springs) assert.ok(spanAt(spans, spring.x), spring.id);
@@ -84,12 +84,52 @@ test('La Jungla keeps its complete authored Phase 2 composition', () => {
   assert.equal(jungla.worldWidth, 6400);
   assert.equal(jungla.checkpoints.length, 4);
   assert.deepEqual(jungla.checkpoints.map(({ id }) => id), ['start', 'lianas', 'ruinas', 'penumbra']);
-  assert.equal(jungla.enemies.length, 8);
+  assert.equal(jungla.enemies.length, 10);
   assert.equal(jungla.coins.length, 30);
   assert.equal(jungla.springs.length, 2);
   assert.equal(jungla.tutorialSigns.length, 7);
   assert.deepEqual(jungla.darkness, { startX: 4000, endX: 6000, maxAlpha: 0.42 });
   assert.deepEqual(jungla.bossPortal, { x: 6230, y: 480 });
+});
+
+test('La Jungla replaces Phase 1 enemies with its six authored encounter beats', () => {
+  const phaseOneTypes = new Set(LEVELS.babilandia.data.enemies.map(({ type }) => type));
+  const jungleTypes = new Set(jungla.enemies.map(({ type }) => type));
+
+  assert.deepEqual(phaseOneTypes, new Set(['come', 'vuela', 'da_vueltas']));
+  assert.deepEqual(jungleTypes, new Set(['garbanzo_loco', 'arbol_pocho', 'sapo_pota']));
+  assert.equal(
+    jungla.enemies.some(({ type }) => phaseOneTypes.has(type)),
+    false,
+    'Phase 1 enemies must remain in Babilandia instead of being reused in La Jungla',
+  );
+
+  const byId = Object.fromEntries(jungla.enemies.map((enemy) => [enemy.id, enemy]));
+  assert.equal(byId.garbanzo_inicio.type, 'garbanzo_loco');
+  assert.equal(byId.arbol_vegetacion.type, 'arbol_pocho');
+  assert.equal(byId.sapo_laguna.type, 'sapo_pota');
+  assert.deepEqual(
+    [byId.garbanzo_ruinas.type, byId.arbol_ruinas.type],
+    ['garbanzo_loco', 'arbol_pocho'],
+  );
+  assert.deepEqual(
+    [byId.sapo_penumbra.type, byId.garbanzo_penumbra.type],
+    ['sapo_pota', 'garbanzo_loco'],
+  );
+  assert.deepEqual(
+    [byId.sapo_final.type, byId.garbanzo_final.type, byId.arbol_final.type],
+    ['sapo_pota', 'garbanzo_loco', 'arbol_pocho'],
+  );
+
+  const sapos = jungla.enemies
+    .filter(({ type }) => type === 'sapo_pota')
+    .sort((first, second) => first.x - second.x);
+  assert.deepEqual(sapos.map(({ volleyCount }) => volleyCount), [1, 2, 3]);
+  assert.ok(sapos.every(({ waterlineY }) => Number.isFinite(waterlineY)));
+  assert.ok(
+    sapos.every(({ x }) => !spanAt(getGroundSpans(jungla.platforms), x)),
+    'every Sapo stays in water',
+  );
 });
 
 test('La Oscuridad is a light-vulnerable boss with a one-time reward', () => {

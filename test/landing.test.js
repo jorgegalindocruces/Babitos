@@ -158,7 +158,7 @@ test('the landing closes with visible credits for Lola and Momo', async () => {
   assert.equal(readAttribute(creditsImage, 'height'), '1024');
 });
 
-test('the landing presents the approved Jungle enemies without claiming they are runtime sprites', async () => {
+test('the landing presents the approved Jungle enemies as playable Phase 2 characters', async () => {
   const page = await readRepositoryFile('index.html');
   const jungleEnemies = [
     ['garbanzo-loco', 'Garbanzo Loco'],
@@ -177,21 +177,18 @@ test('the landing presents the approved Jungle enemies without claiming they are
     );
   }
 
-  assert.equal(
-    [...page.matchAll(/data-concept-status="approved"/gu)].length,
-    6,
-    'the three cards and three paper comparisons must identify approved concepts',
-  );
   assert.ok(
-    [...page.matchAll(/Diseño aprobado · En desarrollo/gu)].length >= 3,
-    'each new Jungle card must disclose that implementation is still in development',
+    [...page.matchAll(/Jugable · Fase 2/gu)].length >= 3,
+    'each Jungle enemy card must disclose that the character is playable in Phase 2',
   );
-  assert.match(page, /los nuevos Bicharracos de La Jungla aún están en desarrollo/u);
-  assert.doesNotMatch(
-    page,
-    /(?:Garbanzo Loco|Árbol Pocho|Sapo Pota) en el juego/u,
-    'concept art cannot be described as a runtime asset before gameplay integration',
+  assert.equal(
+    [...page.matchAll(/data-runtime-status="playable"/gu)].length,
+    3,
+    'the three Jungle enemy cards must be marked as playable runtime characters',
   );
+  assert.match(page, /Bicharracos de La Jungla ya [^.\n]*(?:jugable|jugables)/u);
+  assert.doesNotMatch(page, /Diseño aprobado · En desarrollo/u);
+  assert.doesNotMatch(page, /Bicharracos de La Jungla aún están en desarrollo/u);
 });
 
 test('every local image used by the landing resolves to a public asset', async () => {

@@ -23,6 +23,27 @@ export const ENEMY_SHEET_ASSETS = Object.freeze({
     xBounds: makeBounds([0, 64, 128, 192, 256, 320, 384]),
     yBounds: makeBounds([0, 64, 128, 192, 256, 320]),
   }),
+  garbanzo_loco: Object.freeze({
+    key: 'enemy_garbanzo_loco_sheet_v1',
+    url: 'assets/characters/enemy-garbanzo-loco-sheet-v1.png',
+    revision: 'v1',
+    xBounds: makeBounds([0, 256, 512, 768, 1024]),
+    yBounds: makeBounds([0, 256, 512]),
+  }),
+  arbol_pocho: Object.freeze({
+    key: 'enemy_arbol_pocho_sheet_v1',
+    url: 'assets/characters/enemy-arbol-pocho-sheet-v1.png',
+    revision: 'v1',
+    xBounds: makeBounds([0, 256, 512, 768, 1024]),
+    yBounds: makeBounds([0, 256, 512]),
+  }),
+  sapo_pota: Object.freeze({
+    key: 'enemy_sapo_pota_sheet_v1',
+    url: 'assets/characters/enemy-sapo-pota-sheet-v1.png',
+    revision: 'v1',
+    xBounds: makeBounds([0, 256, 512, 768, 1024]),
+    yBounds: makeBounds([0, 256, 512]),
+  }),
 });
 
 export const ENEMY_ANIMATION_CLIPS = Object.freeze({
@@ -49,6 +70,39 @@ export const ENEMY_ANIMATION_CLIPS = Object.freeze({
     hurt: Object.freeze({ row: 3, frameRate: 10, repeat: 0 }),
     defeat: Object.freeze({ row: 4, frameRate: 9, repeat: 0 }),
   }),
+  garbanzo_loco: Object.freeze({
+    idle: Object.freeze({ row: 0, columns: Object.freeze([0]), frameRate: 5, repeat: -1 }),
+    walk: Object.freeze({ row: 0, columns: Object.freeze([1, 2]), frameRate: 8, repeat: -1 }),
+    windup: Object.freeze({ row: 0, columns: Object.freeze([3]), frameRate: 7, repeat: 0 }),
+    attack: Object.freeze({ row: 1, columns: Object.freeze([0]), frameRate: 12, repeat: 0 }),
+    hurt: Object.freeze({ row: 1, columns: Object.freeze([1]), frameRate: 8, repeat: 0, durationMs: 360 }),
+    recover: Object.freeze({ row: 1, columns: Object.freeze([2]), frameRate: 6, repeat: 0 }),
+    defeat: Object.freeze({ row: 1, columns: Object.freeze([3]), frameRate: 7, repeat: 0, durationMs: 520 }),
+  }),
+  arbol_pocho: Object.freeze({
+    idle: Object.freeze({ row: 0, columns: Object.freeze([0]), frameRate: 5, repeat: -1 }),
+    wake: Object.freeze({ row: 0, columns: Object.freeze([1]), frameRate: 7, repeat: 0 }),
+    angry: Object.freeze({ row: 0, columns: Object.freeze([2]), frameRate: 6, repeat: -1 }),
+    // The authored row 1 pose reaches left and row 0 reaches right.
+    punch_left: Object.freeze({ row: 1, columns: Object.freeze([0]), frameRate: 12, repeat: 0 }),
+    punch_right: Object.freeze({ row: 0, columns: Object.freeze([3]), frameRate: 12, repeat: 0 }),
+    recover: Object.freeze({ row: 1, columns: Object.freeze([1]), frameRate: 6, repeat: 0 }),
+    hurt: Object.freeze({ row: 1, columns: Object.freeze([2]), frameRate: 8, repeat: 0, durationMs: 380 }),
+    defeat: Object.freeze({ row: 1, columns: Object.freeze([3]), frameRate: 7, repeat: 0, durationMs: 560 }),
+  }),
+  sapo_pota: Object.freeze({
+    underwater: Object.freeze({ row: 0, columns: Object.freeze([0]), frameRate: 5, repeat: -1 }),
+    emerge: Object.freeze({ row: 0, columns: Object.freeze([1]), frameRate: 7, repeat: 0 }),
+    idle: Object.freeze({ row: 0, columns: Object.freeze([2]), frameRate: 5, repeat: -1 }),
+    windup: Object.freeze({ row: 0, columns: Object.freeze([3]), frameRate: 7, repeat: 0 }),
+    vomit: Object.freeze({ row: 1, columns: Object.freeze([0]), frameRate: 12, repeat: 0 }),
+    hurt: Object.freeze({ row: 1, columns: Object.freeze([1]), frameRate: 8, repeat: 0, durationMs: 400 }),
+    submerge: Object.freeze({ row: 1, columns: Object.freeze([2]), frameRate: 7, repeat: 0 }),
+    defeat: Object.freeze({ row: 1, columns: Object.freeze([3]), frameRate: 7, repeat: 0, durationMs: 580 }),
+    // The authored idle pose doubles as the post-vomit breathing pose. It is
+    // registered separately so RECOVER remains a semantic animation state.
+    recover: Object.freeze({ row: 0, columns: Object.freeze([2]), frameRate: 5, repeat: 0 }),
+  }),
 });
 
 export const ENEMY_STATE_CLIPS = Object.freeze({
@@ -74,6 +128,36 @@ export const ENEMY_STATE_CLIPS = Object.freeze({
     SPIN: 'roll',
     DIZZY: 'hurt',
   }),
+  garbanzo_loco: Object.freeze({
+    PATROL: 'walk',
+    CHASE: 'walk',
+    ATTACK_WINDUP: 'windup',
+    SPEAR_ATTACK: 'attack',
+    RECOVER: 'recover',
+    HURT: 'hurt',
+    DEFEAT: 'defeat',
+  }),
+  arbol_pocho: Object.freeze({
+    TREE_IDLE: 'idle',
+    WAKE_UP: 'wake',
+    ANGRY_IDLE: 'angry',
+    PUNCH_LEFT: 'punch_left',
+    PUNCH_RIGHT: 'punch_right',
+    RECOVER: 'recover',
+    HURT: 'hurt',
+    DEFEAT: 'defeat',
+  }),
+  sapo_pota: Object.freeze({
+    UNDERWATER: 'underwater',
+    EMERGE: 'emerge',
+    IDLE: 'idle',
+    ATTACK_WINDUP: 'windup',
+    TOXIC_VOMIT: 'vomit',
+    RECOVER: 'recover',
+    HURT: 'hurt',
+    SUBMERGE: 'submerge',
+    DEFEAT: 'defeat',
+  }),
 });
 
 const ENEMY_STATE_TINTS = Object.freeze({
@@ -89,10 +173,23 @@ const ENEMY_STATE_TINTS = Object.freeze({
     WINDUP: 0xffcf4a,
     DIZZY: 0x9df0ff,
   }),
+  garbanzo_loco: Object.freeze({
+    ATTACK_WINDUP: 0xffcf4a,
+    RECOVER: 0x9df0ff,
+  }),
+  arbol_pocho: Object.freeze({
+    WAKE_UP: 0xffcf4a,
+    RECOVER: 0x9df0ff,
+  }),
+  sapo_pota: Object.freeze({
+    ATTACK_WINDUP: 0xffcf4a,
+    RECOVER: 0x9df0ff,
+  }),
 });
 
 export function getEnemyAnimationKey(type, clip) {
-  return `enemy-${type}-${clip}-v3`;
+  const revision = ENEMY_SHEET_ASSETS[type]?.revision ?? 'v3';
+  return `enemy-${type}-${clip}-${revision}`;
 }
 
 export function getEnemyFrameName(type, row, column) {
@@ -106,6 +203,7 @@ export function getEnemyClipForState(type, state) {
 export function getEnemyClipDurationMs(type, clip) {
   const settings = ENEMY_ANIMATION_CLIPS[type]?.[clip];
   if (!settings) return 0;
+  if (Number.isFinite(settings.durationMs)) return settings.durationMs;
   const frameCount = settings.columns?.length
     ?? (ENEMY_SHEET_ASSETS[type]?.xBounds.length - 1);
   if (!frameCount) return 0;
@@ -115,11 +213,20 @@ export function getEnemyClipDurationMs(type, clip) {
 export function getEnemyStateAfterHit(type, state) {
   if (type === 'come' && ['WINDUP', 'BITE'].includes(state)) return 'RECOVER';
   if (type === 'vuela' && ['TARGET', 'WINDUP', 'DIVE'].includes(state)) return 'RETURN';
+  if (type === 'garbanzo_loco' && ['ATTACK_WINDUP', 'SPEAR_ATTACK', 'HURT'].includes(state)) {
+    return 'RECOVER';
+  }
+  if (type === 'arbol_pocho' && [
+    'WAKE_UP', 'ANGRY_IDLE', 'PUNCH_LEFT', 'PUNCH_RIGHT', 'HURT',
+  ].includes(state)) return 'RECOVER';
+  if (type === 'sapo_pota' && [
+    'EMERGE', 'IDLE', 'ATTACK_WINDUP', 'TOXIC_VOMIT', 'HURT',
+  ].includes(state)) return 'RECOVER';
   return state;
 }
 
 export function enemyUsesPlatformCollision(type) {
-  return type !== 'vuela';
+  return !['vuela', 'arbol_pocho', 'sapo_pota'].includes(type);
 }
 
 export function resolveEnemyQaPresentation(type, requestedState) {

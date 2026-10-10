@@ -85,15 +85,60 @@ test('the three initial powers preserve their canonical behavior', () => {
   assert.ok(powers.rock.damage > powers.fire.damage);
 });
 
-test('only the three canonical normal-enemy definitions exist', () => {
-  assert.deepEqual(Object.keys(gameData.enemies), ['come', 'vuela', 'da_vueltas']);
+test('both playable phases expose their three canonical normal-enemy definitions', () => {
+  assert.deepEqual(Object.keys(gameData.enemies), [
+    'come',
+    'vuela',
+    'da_vueltas',
+    'garbanzo_loco',
+    'arbol_pocho',
+    'sapo_pota',
+  ]);
   assert.deepEqual(gameData.enemies.come.states, ['PATROL', 'CHASE', 'WINDUP', 'BITE', 'RECOVER']);
   assert.deepEqual(gameData.enemies.vuela.states, ['AIR_PATROL', 'TARGET', 'WINDUP', 'DIVE', 'RETURN']);
   assert.deepEqual(gameData.enemies.da_vueltas.states, ['PATROL', 'WINDUP', 'SPIN', 'DIZZY']);
+  assert.deepEqual(gameData.enemies.garbanzo_loco.states, [
+    'PATROL',
+    'CHASE',
+    'ATTACK_WINDUP',
+    'SPEAR_ATTACK',
+    'RECOVER',
+    'HURT',
+    'DEFEAT',
+  ]);
+  assert.deepEqual(gameData.enemies.arbol_pocho.states, [
+    'TREE_IDLE',
+    'WAKE_UP',
+    'ANGRY_IDLE',
+    'PUNCH_LEFT',
+    'PUNCH_RIGHT',
+    'RECOVER',
+    'HURT',
+    'DEFEAT',
+  ]);
+  assert.deepEqual(gameData.enemies.sapo_pota.states, [
+    'UNDERWATER',
+    'EMERGE',
+    'IDLE',
+    'ATTACK_WINDUP',
+    'TOXIC_VOMIT',
+    'RECOVER',
+    'HURT',
+    'SUBMERGE',
+    'DEFEAT',
+  ]);
   for (const enemy of Object.values(gameData.enemies)) {
     assert.deepEqual(enemy.coinDrop, [0, 1, 2]);
+    assert.ok(enemy.health > 0, `${enemy.name} needs positive health`);
+    assert.ok(enemy.damage > 0, `${enemy.name} needs positive contact or attack damage`);
   }
   assert.deepEqual(gameData.enemies.vuela.groupSize, [1, 2]);
+  assert.ok(gameData.enemies.garbanzo_loco.speed > 0);
+  assert.equal(gameData.enemies.arbol_pocho.speed, 0);
+  assert.equal(gameData.enemies.sapo_pota.speed, 0);
+  assert.ok(gameData.enemies.garbanzo_loco.attackRange > 0);
+  assert.ok(gameData.enemies.arbol_pocho.attackRange > gameData.enemies.garbanzo_loco.attackRange);
+  assert.ok(gameData.enemies.sapo_pota.projectileSpeed > 0);
 });
 
 test('Babito Corrupto has the required patterns and guaranteed shop reward', () => {

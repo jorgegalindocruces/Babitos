@@ -32,7 +32,54 @@
   "enemies": {
     "come": { "name": "COME", "relativeSize": "larger", "health": 3, "speed": 76, "damage": 1, "states": ["PATROL", "CHASE", "WINDUP", "BITE", "RECOVER"], "coinDrop": [0, 1, 2] },
     "vuela": { "name": "VUELA", "relativeSize": "smaller", "health": 2, "speed": 105, "damage": 1, "groupSize": [1, 2], "states": ["AIR_PATROL", "TARGET", "WINDUP", "DIVE", "RETURN"], "coinDrop": [0, 1, 2] },
-    "da_vueltas": { "name": "DA VUELTAS", "relativeSize": "medium", "health": 3, "speed": 82, "spinSpeed": 285, "damage": 1, "states": ["PATROL", "WINDUP", "SPIN", "DIZZY"], "coinDrop": [0, 1, 2] }
+    "da_vueltas": { "name": "DA VUELTAS", "relativeSize": "medium", "health": 3, "speed": 82, "spinSpeed": 285, "damage": 1, "states": ["PATROL", "WINDUP", "SPIN", "DIZZY"], "coinDrop": [0, 1, 2] },
+    "garbanzo_loco": {
+      "name": "GARBANZO LOCO",
+      "relativeSize": "larger",
+      "health": 4,
+      "speed": 74,
+      "damage": 1,
+      "detectRange": 380,
+      "attackRange": 122,
+      "windupMs": 520,
+      "attackMs": 260,
+      "recoverMs": 720,
+      "states": ["PATROL", "CHASE", "ATTACK_WINDUP", "SPEAR_ATTACK", "RECOVER", "HURT", "DEFEAT"],
+      "coinDrop": [0, 1, 2]
+    },
+    "arbol_pocho": {
+      "name": "ÁRBOL POCHO",
+      "relativeSize": "large",
+      "health": 5,
+      "speed": 0,
+      "damage": 1,
+      "detectRange": 250,
+      "attackRange": 150,
+      "wakeMs": 680,
+      "angryIdleMs": 420,
+      "punchMs": 340,
+      "recoverMs": 980,
+      "states": ["TREE_IDLE", "WAKE_UP", "ANGRY_IDLE", "PUNCH_LEFT", "PUNCH_RIGHT", "RECOVER", "HURT", "DEFEAT"],
+      "coinDrop": [0, 1, 2]
+    },
+    "sapo_pota": {
+      "name": "SAPO POTA",
+      "relativeSize": "largest",
+      "health": 6,
+      "speed": 0,
+      "damage": 1,
+      "detectRange": 520,
+      "attackRange": 500,
+      "projectileSpeed": 275,
+      "underwaterMs": 900,
+      "emergeMs": 720,
+      "windupMs": 620,
+      "vomitMs": 440,
+      "recoverMs": 1150,
+      "submergeMs": 620,
+      "states": ["UNDERWATER", "EMERGE", "IDLE", "ATTACK_WINDUP", "TOXIC_VOMIT", "RECOVER", "HURT", "SUBMERGE", "DEFEAT"],
+      "coinDrop": [0, 1, 2]
+    }
   },
   "bosses": ["babito_corrupto", "la_oscuridad", "boss_total"],
   "bossData": {

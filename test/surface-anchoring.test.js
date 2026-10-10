@@ -5,6 +5,7 @@ import jungla from '../src/data/levels/jungla.json' with { type: 'json' };
 import {
   findSupportingSurface,
   getSurfaceBounds,
+  placeOnNearestSurface,
   placeOnSurface,
   TUTORIAL_SIGN_STYLE,
 } from '../src/game/surfaceAnchoring.js';
@@ -51,6 +52,22 @@ test('surface placement accounts for origin, height and a requested gap', () => 
   assert.equal(placement.y, 86);
   assert.equal(placement.y + 20 * (1 - 0.5), placement.surfaceY - 4);
   assert.equal(placeOnSurface(overlappingSurfaces, { x: 140, width: 10 }), null);
+});
+
+test('nearest-surface placement moves water drops onto a reachable bank', () => {
+  const placement = placeOnNearestSurface(overlappingSurfaces, {
+    x: 130,
+    width: 20,
+    height: 20,
+    originY: 0.5,
+    gap: 4,
+    kinds: ['ground'],
+  });
+  assert.deepEqual(
+    { x: placement.x, y: placement.y, surfaceY: placement.surfaceY },
+    { x: 90, y: 86, surfaceY: 100 },
+  );
+  assert.equal(placeOnNearestSurface([], { x: 10 }), null);
 });
 
 test('every Babilandia tutorial sign is data-driven and physically supported', () => {

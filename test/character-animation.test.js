@@ -19,7 +19,11 @@ import {
   shouldIgnoreEnemyClipIfPlaying,
 } from '../src/game/EnemyAnimations.js';
 import { getEnemyPatrolDirection, getEnemyWallDirection } from '../src/game/EnemyBehavior.js';
-import { getEnemyVisualAnchor, getEnemyVisualTop } from '../src/game/EnemyPresentation.js';
+import {
+  getEnemyVisualAnchor,
+  getEnemyVisualTop,
+  shouldFlipEnemyVisual,
+} from '../src/game/EnemyPresentation.js';
 import {
   BOSS_POSE_CLIPS,
   sampleBossPose,
@@ -82,6 +86,16 @@ test('every enemy AI state resolves to a semantic visual clip', () => {
   assert.equal(getEnemyClipForState('vuela', 'DIVE'), 'dive');
   assert.equal(getEnemyClipForState('da_vueltas', 'PATROL'), 'roll');
   assert.equal(getEnemyClipForState('da_vueltas', 'SPIN'), 'roll');
+  assert.equal(getEnemyClipForState('garbanzo_loco', 'ATTACK_WINDUP'), 'windup');
+  assert.equal(getEnemyClipForState('garbanzo_loco', 'SPEAR_ATTACK'), 'attack');
+  assert.equal(getEnemyClipForState('arbol_pocho', 'TREE_IDLE'), 'idle');
+  assert.equal(getEnemyClipForState('arbol_pocho', 'WAKE_UP'), 'wake');
+  assert.equal(getEnemyClipForState('arbol_pocho', 'PUNCH_LEFT'), 'punch_left');
+  assert.equal(getEnemyClipForState('arbol_pocho', 'PUNCH_RIGHT'), 'punch_right');
+  assert.equal(getEnemyClipForState('sapo_pota', 'UNDERWATER'), 'underwater');
+  assert.equal(getEnemyClipForState('sapo_pota', 'EMERGE'), 'emerge');
+  assert.equal(getEnemyClipForState('sapo_pota', 'TOXIC_VOMIT'), 'vomit');
+  assert.equal(getEnemyClipForState('sapo_pota', 'SUBMERGE'), 'submerge');
   assert.equal(getEnemyClipForState('unknown', 'UNKNOWN'), 'idle');
 
   for (const [type, definition] of Object.entries(gameData.enemies)) {
@@ -105,6 +119,10 @@ test('enemy clip restarts and state telegraphs preserve their visual contracts',
   assert.equal(ENEMY_ANIMATION_CLIPS.vuela.hurt.repeat, 0);
   assert.equal(ENEMY_ANIMATION_CLIPS.come.hurt.repeat, 0);
   assert.equal(ENEMY_ANIMATION_CLIPS.da_vueltas.hurt.repeat, 0);
+  assert.deepEqual(ENEMY_ANIMATION_CLIPS.arbol_pocho.punch_left.columns, [0]);
+  assert.equal(ENEMY_ANIMATION_CLIPS.arbol_pocho.punch_left.row, 1);
+  assert.deepEqual(ENEMY_ANIMATION_CLIPS.arbol_pocho.punch_right.columns, [3]);
+  assert.equal(ENEMY_ANIMATION_CLIPS.arbol_pocho.punch_right.row, 0);
   assert.equal(getEnemyClipDurationMs('vuela', 'hurt'), 500);
   assert.ok(getEnemyClipDurationMs('come', 'hurt') > 500);
   assert.ok(Math.abs(getEnemyClipDurationMs('come', 'windup') - (3000 / 7)) < 0.001);
@@ -117,9 +135,16 @@ test('enemy hit reactions interrupt dangerous states and flying ignores terrain'
   assert.equal(getEnemyStateAfterHit('vuela', 'DIVE'), 'RETURN');
   assert.equal(getEnemyStateAfterHit('vuela', 'WINDUP'), 'RETURN');
   assert.equal(getEnemyStateAfterHit('da_vueltas', 'DIZZY'), 'DIZZY');
+  assert.equal(getEnemyStateAfterHit('garbanzo_loco', 'SPEAR_ATTACK'), 'RECOVER');
+  assert.equal(getEnemyStateAfterHit('arbol_pocho', 'PUNCH_LEFT'), 'RECOVER');
+  assert.equal(getEnemyStateAfterHit('arbol_pocho', 'PUNCH_RIGHT'), 'RECOVER');
+  assert.equal(getEnemyStateAfterHit('sapo_pota', 'TOXIC_VOMIT'), 'RECOVER');
   assert.equal(enemyUsesPlatformCollision('vuela'), false);
   assert.equal(enemyUsesPlatformCollision('come'), true);
   assert.equal(enemyUsesPlatformCollision('da_vueltas'), true);
+  assert.equal(enemyUsesPlatformCollision('garbanzo_loco'), true);
+  assert.equal(enemyUsesPlatformCollision('arbol_pocho'), false);
+  assert.equal(enemyUsesPlatformCollision('sapo_pota'), false);
 });
 
 test('enemy QA presentation resolves every state and authored clip', () => {
@@ -176,6 +201,40 @@ test('VUELA production atlas has 36 opaque, padded 256px cells', () => {
   }
 });
 
+test('Jungle enemy production sheets have eight transparent, padded 256px poses', () => {
+  const sheets = [
+    'enemy-garbanzo-loco-sheet-v1.png',
+    'enemy-arbol-pocho-sheet-v1.png',
+    'enemy-sapo-pota-sheet-v1.png',
+  ];
+
+  for (const filename of sheets) {
+    const atlasPath = path.resolve(TEST_DIR, `../public/assets/characters/${filename}`);
+    const atlas = decodeRgbaPng(atlasPath);
+    assert.deepEqual([atlas.width, atlas.height], [1024, 512], filename);
+
+    for (let row = 0; row < 2; row += 1) {
+      for (let column = 0; column < 4; column += 1) {
+        let visiblePixels = 0;
+        let touchesEdge = false;
+        for (let y = 0; y < 256; y += 1) {
+          for (let x = 0; x < 256; x += 1) {
+            const alpha = atlas.pixels[
+              (((row * 256 + y) * atlas.width) + column * 256 + x) * 4 + 3
+            ];
+            assert.ok(alpha === 0 || alpha === 255, `${filename} has unexpected alpha ${alpha}`);
+            if (alpha === 0) continue;
+            visiblePixels += 1;
+            if (x === 0 || x === 255 || y === 0 || y === 255) touchesEdge = true;
+          }
+        }
+        assert.ok(visiblePixels > 500, `${filename} ${row}:${column} is empty`);
+        assert.equal(touchesEdge, false, `${filename} ${row}:${column} touches a cell edge`);
+      }
+    }
+  }
+});
+
 test('enemy defeat presentation clears transient squash, alpha and tint', () => {
   const calls = [];
   const visual = {
@@ -208,6 +267,17 @@ test('COME stays foot-anchored to terrain at every squash height', () => {
     getEnemyVisualAnchor('vuela', { y: 270, body: { bottom: 286 } }),
     { originY: 0.5, y: 270 },
   );
+  assert.deepEqual(
+    getEnemyVisualAnchor('garbanzo_loco', { y: 442, body: { bottom: 480 } }),
+    { originY: 1, y: 486 },
+  );
+  assert.deepEqual(
+    getEnemyVisualAnchor('arbol_pocho', { y: 405, body: { bottom: 480 } }),
+    { originY: 1, y: 485 },
+  );
+  assert.equal(shouldFlipEnemyVisual('sapo_pota', -1), false);
+  assert.equal(shouldFlipEnemyVisual('sapo_pota', 1), true);
+  assert.equal(shouldFlipEnemyVisual('arbol_pocho', -1), false);
 });
 
 test('boss animation samples stepped poses and loops each combat state', () => {

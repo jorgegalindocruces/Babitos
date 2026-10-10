@@ -1,6 +1,12 @@
 export function isEnemyFootAnchored(type) {
-  return type === 'come';
+  return ['come', 'garbanzo_loco', 'arbol_pocho', 'sapo_pota'].includes(type);
 }
+
+const AUTHORED_BASELINE_OFFSETS = Object.freeze({
+  // Transparent cell padding below the last opaque pixel at production size.
+  garbanzo_loco: 6,
+  arbol_pocho: 5,
+});
 
 export function getEnemyVisualAnchor(type, sprite = {}) {
   const centerY = Number(sprite.y);
@@ -10,9 +16,16 @@ export function getEnemyVisualAnchor(type, sprite = {}) {
   return {
     originY: footAnchored ? 1 : 0.5,
     y: footAnchored && Number.isFinite(bodyBottom)
-      ? bodyBottom
+      ? bodyBottom + (AUTHORED_BASELINE_OFFSETS[type] ?? 0)
       : (Number.isFinite(centerY) ? centerY : 0),
   };
+}
+
+export function shouldFlipEnemyVisual(type, direction) {
+  if (type === 'arbol_pocho') return false;
+  // The approved Sapo sheet faces left; the other directional sheets face right.
+  if (type === 'sapo_pota') return Number(direction) > 0;
+  return Number(direction) < 0;
 }
 
 export function getEnemyVisualTop(y, displayHeight, originY = 0.5) {

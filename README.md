@@ -2,7 +2,7 @@
 
 **Pequeños Babitos, grandes aventuras.**
 
-BABITOS es un plataformas 2D familiar hecho con JavaScript, Phaser 3 y Vite. Puedes crear un Babito por capas, elegir un poder, recorrer Babilandia para enfrentarte a COME, VUELA, DA VUELTAS y al Babito Corrupto, y después cruzar La Jungla hasta La Oscuridad. Las monedas del juego, llamadas Babicoins, sirven para comprar cosméticos en la tienda del Señor Empanadilla y el Señor Pingüino.
+BABITOS es un plataformas 2D familiar hecho con JavaScript, Phaser 3 y Vite. Puedes crear un Babito por capas, elegir un poder, recorrer Babilandia para enfrentarte a COME, VUELA, DA VUELTAS y al Babito Corrupto, y después cruzar La Jungla contra Garbanzo Loco, Árbol Pocho y Sapo Pota hasta llegar a La Oscuridad. Las monedas del juego, llamadas Babicoins, sirven para comprar cosméticos en la tienda del Señor Empanadilla y el Señor Pingüino.
 
 El juego funciona completamente en el navegador, sin backend ni base de datos. La partida se guarda en `localStorage` bajo la clave versionada `babitos.save.v1`.
 
@@ -18,7 +18,7 @@ Documentación vigente:
 
 ## Landing page
 
-`index.html` es la portada del juego: historia, creador y poderes, mundos, personajes, once comparativas «Del papel al píxel», nueve láminas en la galería de arte conceptual y un cierre de créditos que reconoce a **Lola y Momo** como autores de la idea y los dibujos, y como directores creativos y ejecutivos de BABITOS. Garbanzo Loco, Árbol Pocho y Sapo Pota aparecen como diseños aprobados de La Jungla con la etiqueta **En desarrollo**; sus retratos editoriales no son sprites del runtime. El juego se abre en un diálogo al pulsar **JUGAR** (o con `https://babitos.es/#jugar`) y su motor solo se descarga en ese momento. Cerrar el diálogo congela la pantalla actual; si se cierra durante gameplay, al volver espera el panel de pausa.
+`index.html` es la portada del juego: historia, creador y poderes, mundos, personajes, once comparativas «Del papel al píxel», nueve láminas en la galería de arte conceptual y un cierre de créditos que reconoce a **Lola y Momo** como autores de la idea y los dibujos, y como directores creativos y ejecutivos de BABITOS. Garbanzo Loco, Árbol Pocho y Sapo Pota aparecen como personajes **Jugables · Fase 2**. Sus retratos siguen siendo derivados editoriales del arte aprobado; el runtime usa spritesheets independientes con ocho poses por personaje. El juego se abre en un diálogo al pulsar **JUGAR** (o con `https://babitos.es/#jugar`) y su motor solo se descarga en ese momento. Cerrar el diálogo congela la pantalla actual; si se cierra durante gameplay, al volver espera el panel de pausa.
 
 ## Recorrido jugable
 
@@ -31,7 +31,7 @@ Documentación vigente:
 7. Combate contra el Babito Corrupto.
 8. Tienda de cosméticos.
 9. Mapa con rejuego de Babilandia y acceso a La Jungla.
-10. La Jungla: fosos del río, puentes de cuerda, setas saltarinas, ruinas y ocho encuentros en una luz que se apaga.
+10. La Jungla: fosos del río, puentes de cuerda, setas saltarinas, ruinas y seis secuencias de combate con diez enemigos propios en una luz que se apaga.
 11. Combate contra La Oscuridad: solo la luz de los farolillos la vuelve vulnerable.
 12. Tienda y Mapa de nuevo; Ciudad Bicharraca sigue siendo un avance estático.
 
@@ -61,7 +61,7 @@ La descripción exhaustiva, incluidas las reglas de foco, pausa, reintento y vul
 - La arena de Babito Corrupto tiene un fondo 16:9 propio: Babilandia en ruinas al atardecer, basado en el ejemplo canónico del boss y con una zona de juego limpia para conservar la lectura de ataques y plataformas.
 - Ciudad Bicharraca, el último mundo del mapa, muestra ya su paisaje industrial 16:9 como fondo y recorte interior de su pantalla de avance estática; la tarjeta del mapa mantiene un icono procedural.
 - La banda sonora reúne siete composiciones procedurales originales de 32 pasos para título, Babilandia, boss, tienda, Jungla, Oscuridad y cierre. Un secuenciador Web Audio con planificación anticipada combina melodía, arpegio, bajo y ritmo; `AVENTURA` es el arreglo inicial y `CALMA`/`ARCADE` ofrecen interpretaciones globales más suave o más rápida. Música y efectos para interfaz, salto, ataque, daño, monedas, checkpoints, boss y compras se sintetizan en el navegador, sin archivos de audio ni dependencias adicionales.
-- El Babito usa un atlas por capas con celdas fuente de 80 px y 54 poses repartidas en nueve estados: `idle`, caminar, correr, saltar, caer, aterrizar (`land`), atacar, recibir daño y KO. Su base sigue el [arte canónico](art/production/babito-v4.md): el diseño lógico de 48 unidades se rasteriza a una rejilla real de 64 px, con cuerpo redondo de 47 × 45 px, corona plana, rostro compacto, aletas descendentes y pies visibles. En tamaño normal cada píxel fuente se muestra 1:1; pequeño y grande usan escalas exactas para mantener cajas de 64, 80 y 96 px. Cada ciclo mueve silueta, pies, brazos y expresión sin perder la personalización. KO, daño y ataque tienen prioridad sobre el movimiento; los *one-shots* comienzan de inmediato desde su primera pose cuando se disparan. COME, VUELA, DA VUELTAS y Babito Corrupto cambian de animación o pose según su estado; La Oscuridad ondula, viaja por sombra, telegrafía cada patrón, se ilumina al quedar expuesta y se disipa en luciérnagas.
+- El Babito usa un atlas por capas con celdas fuente de 80 px y 54 poses repartidas en nueve estados: `idle`, caminar, correr, saltar, caer, aterrizar (`land`), atacar, recibir daño y KO. Su base sigue el [arte canónico](art/production/babito-v4.md): el diseño lógico de 48 unidades se rasteriza a una rejilla real de 64 px, con cuerpo redondo de 47 × 45 px, corona plana, rostro compacto, aletas descendentes y pies visibles. En tamaño normal cada píxel fuente se muestra 1:1; pequeño y grande usan escalas exactas para mantener cajas de 64, 80 y 96 px. Cada ciclo mueve silueta, pies, brazos y expresión sin perder la personalización. KO, daño y ataque tienen prioridad sobre el movimiento; los *one-shots* comienzan de inmediato desde su primera pose cuando se disparan. Los seis enemigos normales cambian de animación según su estado: los tres de Babilandia conservan su comportamiento y los tres de La Jungla añaden lanza, golpes de ramas y proyectiles tóxicos. Babito Corrupto cambia de pose según el patrón; La Oscuridad ondula, viaja por sombra, telegrafía cada ataque, se ilumina al quedar expuesta y se disipa en luciérnagas.
 - El Babito ocupa ahora cajas visuales de 64, 80 y 96 px en pequeño, normal y grande, manteniendo una única hitbox de 28 × 40 y la misma línea de apoyo. COME ancla sus pies al cuerpo físico para no hundirse en suelo o plataformas durante caminar, anticipar o morder.
 - El suelo base sigue siendo sólido; las plataformas elevadas de Babilandia, La Jungla y las dos arenas de jefe son unidireccionales: se atraviesan al subir desde abajo, sostienen al personaje al caer y `S`/`↓` permite dejarse caer a través de ellas. Los proyectiles continúan impactando contra todo el terreno.
 - VUELA usa un atlas raster de 36 poses fiel al diseño canónico. Sus ciclos de vuelo, picado, anticipación, daño y derrota son independientes; un impacto interrumpe un ataque peligroso antes de reanudar la IA.
@@ -199,8 +199,7 @@ Estado de producción verificado el 8 de octubre de 2026: GitHub Pages está `bu
 Las láminas de `art/approved/` son dirección artística, no *spritesheets* finales. El estado actual es:
 
 - Babilandia, la arena de Babito Corrupto y Ciudad Bicharraca tienen fondos raster con fallback procedural.
-- COME y VUELA usan hojas raster de producción.
-- Garbanzo Loco, Árbol Pocho y Sapo Pota tienen dibujo original y lámina pixel art aprobada, visibles en la landing como conceptos **En desarrollo**; todavía no tienen spritesheets ni comportamiento runtime.
+- COME, VUELA, Garbanzo Loco, Árbol Pocho y Sapo Pota usan hojas raster de producción. Los tres enemigos de La Jungla tienen spritesheets transparentes de ocho poses, máquinas de estado propias y comportamiento jugable; su procedencia está en [jungle-enemy-sheets-v1.md](art/production/jungle-enemy-sheets-v1.md).
 - Logo, Babito Corrupto, tenderos y Árbol de Poder tienen PNG raster; las poses del boss se componen en runtime.
 - El atlas base del Babito es arte procedural canónico de producción; sus capas cosméticas se generan por código con claves definitivas y heredan la misma geometría. La hoja de DA VUELTAS, la moneda, proyectiles, plataformas, props y HUD siguen siendo pixel art procedural.
 
@@ -208,7 +207,7 @@ Los elementos todavía provisionales deben sustituirse gradualmente por sprites 
 
 El estado exacto y la procedencia de los assets se describen en [ART_BIBLE.md](docs/ART_BIBLE.md) y `art/production/`.
 
-`worlds_environment_reference_only.png` sirve únicamente para escenarios, paleta y atmósfera. Los enemigos canónicos son los de `enemies_canonical.png`.
+`worlds_environment_reference_only.png` sirve únicamente para escenarios, paleta y atmósfera. Los enemigos canónicos son los de `enemies_canonical.png` para Babilandia y los de las tres fichas `jungle_*` para La Jungla.
 
 ## Contribuir
 
@@ -221,7 +220,7 @@ Las contribuciones son bienvenidas:
 5. Actualiza [INTERACTIONS.md](docs/INTERACTIONS.md), los criterios y el [registro de cambios](docs/CHANGELOG.md) cuando cambie el comportamiento observable.
 6. Comprueba `npm test` y `npm run build` antes de abrir un pull request.
 
-Puedes proponer nuevos Babitos, cosméticos, niveles o enemigos para futuras expansiones. Los tres enemigos normales del vertical slice —COME, VUELA y DA VUELTAS— no deben sustituirse ni rediseñarse.
+Puedes proponer nuevos Babitos, cosméticos, niveles o enemigos para futuras expansiones. Los seis enemigos normales de las dos fases jugables —COME, VUELA, DA VUELTAS, Garbanzo Loco, Árbol Pocho y Sapo Pota— no deben sustituirse ni rediseñarse.
 
 ## Licencia
 

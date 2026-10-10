@@ -15,7 +15,7 @@ Este documento define la visión completa. No todo el flujo está implementado t
 | Babilandia, seis encuentros y checkpoints | Jugable |
 | Babito Corrupto | Jugable |
 | Tienda y Mapa | Implementado |
-| La Jungla, ocho encuentros y checkpoints | Jugable (Fase 2) |
+| La Jungla, seis secuencias con diez enemigos y checkpoints | Jugable (Fase 2) |
 | La Oscuridad | Jugable |
 | Ciudad Bicharraca | Pantalla de avance estática |
 | Boss Total y Final | Roadmap, sin gameplay |
@@ -51,8 +51,11 @@ Los poderes no se compran. Babicoins equivalen a apariencia; Manzanas de Poder e
 - COME: rojo, boca enorme, ojos saltones, mayor que el Babito, terrestre y muerde.
 - VUELA: murciélago morado, menor que el Babito, aparece solo o en pareja, vuela y ataca en picado.
 - DA VUELTAS: bola verde con pinchos, rueda y después queda mareado. Solo es vulnerable durante ese estado.
+- Garbanzo Loco: guerrero de La Jungla con lanza, tres plumas y escudo-vaina; patrulla, persigue y anticipa una estocada horizontal.
+- Árbol Pocho: árbol camuflado con un gran ojo azul; despierta por proximidad, golpea con la rama del lado correspondiente y deja una recuperación vulnerable.
+- Sapo Pota: sapo grande y resistente ligado al agua; emerge, anticipa una vomitera tóxica horizontal y vuelve a sumergirse.
 
-Cada enemigo puede soltar 0, 1 o 2 monedas. En las dos fases, solo el ataque activo de cada enemigo causa daño y el portal se abre al superar todos los encuentros: seis en Babilandia y ocho en La Jungla. DA VUELTAS apunta su giro hacia el Babito para que el peligro sea legible.
+Cada enemigo puede soltar 0, 1 o 2 monedas. En las dos fases, solo el ataque activo de cada enemigo causa daño y el portal se abre al superar todos los enemigos: seis en Babilandia y diez, agrupados en seis secuencias, en La Jungla. DA VUELTAS apunta su giro hacia el Babito; la lanza, las ramas y la vomitera también se anticipan para que cada peligro sea legible.
 
 ## Jefes
 
@@ -67,7 +70,7 @@ Señor Empanadilla y Señor Pingüino son aliados y tenderos. Nunca son enemigos
 ## Mundos
 
 1. Babilandia atacada — jugable: ciudad de Babitos, luminosa pero dañada. Funciona como tutorial en tres tramos: Mercado enseña a saltar y presenta a COME; Puente presenta a VUELA y premia el camino alto; Fuente y portal combina DA VUELTAS y COME alrededor de una plataforma refugio. El suelo base es continuo, de modo que el reto vertical procede de plataformas útiles, refugios y monedas, no de fosos.
-2. Jungla — jugable: ramas, lianas, cascadas, puentes de cuerda, ruinas y verticalidad, con progresión hacia la oscuridad. Combina lo aprendido en tres tramos: Raíces introduce los fosos del río y la seta saltarina; Puentes de cuerda obliga a cruzar el río mientras VUELA ataca y encierra a DA VUELTAS entre pilares de ruinas; Ruinas en penumbra mezcla enemigos, sube por setas a una ruta alta y oscurece la escena hasta el portal. A diferencia de Babilandia, aquí sí hay fosos: siempre saltables, y caer cuesta un corazón.
+2. Jungla — jugable: ramas, lianas, cascadas, puentes de cuerda, ruinas y verticalidad, con progresión hacia la oscuridad. Sus seis secuencias presentan Garbanzo Loco, Árbol Pocho y Sapo Pota por separado, después combinan Garbanzo + Árbol y Sapo + Garbanzo y terminan con los tres antes del portal. Raíces introduce los fosos y la seta; Puentes presenta la vegetación hostil y la laguna; Ruinas en penumbra aumenta las ráfagas tóxicas, sube por setas a una ruta alta y oscurece la escena. Los fosos son siempre saltables y caer cuesta un corazón.
 3. Ciudad Bicharraca — avance/roadmap: industrial, máquinas, tuberías, trampas y fortaleza final.
 
 `worlds_environment_reference_only.png` define solo entorno, composición, paleta y atmósfera. Sus enemigos dibujados no son canónicos.
