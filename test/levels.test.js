@@ -25,6 +25,7 @@ test('saved progress scenes resume the matching level', () => {
   assert.equal(resolveLevelId('babilandia'), 'babilandia');
   assert.equal(resolveLevelId(undefined), 'babilandia');
   assert.equal(getLevel('jungla').boss.scene, 'DarknessBossScene');
+  assert.equal(getLevel('jungla').backgroundAsset, 'jungleV1');
   assert.equal(getLevel('babilandia').boss.scene, 'BossScene');
   const prefixes = Object.values(LEVELS).map((level) => level.coinRewardPrefix);
   assert.equal(new Set(prefixes).size, prefixes.length, 'coin rewards must not collide between levels');

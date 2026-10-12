@@ -58,6 +58,7 @@ La descripción exhaustiva, incluidas las reglas de foco, pausa, reintento y vul
 ## Iteración 0.2 · Pulido audiovisual
 
 - Babilandia utiliza un nuevo fondo pixel art panorámico basado exclusivamente en la arquitectura, paleta y atmósfera de la lámina oficial. Si el asset no puede cargarse, el juego vuelve automáticamente al fondo procedural.
+- La Jungla utiliza el fondo panorámico pixel art aprobado, con selva, montañas, cascadas y templo. Se mueve suavemente con la cámara; agua, lianas, ruinas, luciérnagas y oscuridad siguen siendo capas dinámicas independientes, y el fallback procedural conserva la fase si el raster no carga.
 - La arena de Babito Corrupto tiene un fondo 16:9 propio: Babilandia en ruinas al atardecer, basado en el ejemplo canónico del boss y con una zona de juego limpia para conservar la lectura de ataques y plataformas.
 - Ciudad Bicharraca, el último mundo del mapa, muestra ya su paisaje industrial 16:9 como fondo y recorte interior de su pantalla de avance estática; la tarjeta del mapa mantiene un icono procedural.
 - La banda sonora reúne siete composiciones procedurales originales de 32 pasos para título, Babilandia, boss, tienda, Jungla, Oscuridad y cierre. Un secuenciador Web Audio con planificación anticipada combina melodía, arpegio, bajo y ritmo; `AVENTURA` es el arreglo inicial y `CALMA`/`ARCADE` ofrecen interpretaciones globales más suave o más rápida. Música y efectos para interfaz, salto, ataque, daño, monedas, checkpoints, boss y compras se sintetizan en el navegador, sin archivos de audio ni dependencias adicionales.
@@ -198,12 +199,12 @@ Estado de producción verificado el 8 de octubre de 2026: GitHub Pages está `bu
 
 Las láminas de `art/approved/` son dirección artística, no *spritesheets* finales. El estado actual es:
 
-- Babilandia, la arena de Babito Corrupto y Ciudad Bicharraca tienen fondos raster con fallback procedural.
+- Babilandia, La Jungla, la arena de Babito Corrupto y Ciudad Bicharraca tienen fondos raster con fallback procedural. La procedencia del nuevo paisaje de Fase 2 está en [jungla-v1.md](art/production/jungla-v1.md).
 - COME, VUELA, Garbanzo Loco, Árbol Pocho y Sapo Pota usan hojas raster de producción. Los tres enemigos de La Jungla tienen spritesheets transparentes de ocho poses, máquinas de estado propias y comportamiento jugable; su procedencia y la reparación v2 de los frames recortados están en [jungle-enemy-sheets-v2.md](art/production/jungle-enemy-sheets-v2.md).
 - Logo, Babito Corrupto, tenderos y Árbol de Poder tienen PNG raster; las poses del boss se componen en runtime.
 - El atlas base del Babito es arte procedural canónico de producción; sus capas cosméticas se generan por código con claves definitivas y heredan la misma geometría. La hoja de DA VUELTAS, la moneda, proyectiles, plataformas, props y HUD siguen siendo pixel art procedural.
 
-Los elementos todavía provisionales deben sustituirse gradualmente por sprites y animaciones finales sin cambiar sus IDs ni la lógica; el Babito base no forma parte de esa lista. La banda sonora procedural es la implementación musical vigente: siete composiciones originales con tres arreglos seleccionables, generadas íntegramente con Web Audio y sin archivos externos. La Jungla y La Oscuridad usan arte procedural (fondo, losetas, setas, farolillos y el sprite del jefe) a la espera de assets raster de producción. Ciudad Bicharraca es una pantalla de avance; su nivel y Boss Total pertenecen a iteraciones posteriores.
+Los elementos todavía provisionales deben sustituirse gradualmente por sprites y animaciones finales sin cambiar sus IDs ni la lógica; el Babito base no forma parte de esa lista. La banda sonora procedural es la implementación musical vigente: siete composiciones originales con tres arreglos seleccionables, generadas íntegramente con Web Audio y sin archivos externos. La Jungla ya tiene fondo raster de producción, mientras sus losetas, setas, farolillos, decorado dinámico y el sprite de La Oscuridad siguen siendo procedurales. Ciudad Bicharraca es una pantalla de avance; su nivel y Boss Total pertenecen a iteraciones posteriores.
 
 El estado exacto y la procedencia de los assets se describen en [ART_BIBLE.md](docs/ART_BIBLE.md) y `art/production/`.
 

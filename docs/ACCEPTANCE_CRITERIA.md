@@ -132,12 +132,12 @@ Estos criterios validan el vertical slice 0.2 descrito en [INTERACTIONS.md](INTE
 - El atlas raster de VUELA contiene 36 celdas de 256 × 256 con contenido, margen transparente y alpha 0/255; se renderiza a 64 × 64 sin escala fraccionaria ni deformación.
 - Garbanzo Loco, Árbol Pocho y Sapo Pota usan tres atlas runtime v2 de ocho celdas de 256 px de alto (352, 288 y 400 px de ancho), con cada pose completa en su celda, margen transparente, línea base común, pivote horizontal común y alpha 0/255; nunca se usa una ficha conceptual completa como sprite.
 - Pausar congela el frame de animación y reanudar continúa sin desincronizarlo.
-- Babilandia, la arena de Babito Corrupto y Ciudad Bicharraca respetan el encuadre raster 16:9; La Jungla y la arena de La Oscuridad mantienen su composición procedural. Ninguno dibuja falsos suelos interactivos en el primer plano y toda colisión procede de geometría separada.
+- Babilandia, La Jungla, la arena de Babito Corrupto y Ciudad Bicharraca respetan el encuadre raster 16:9; La Jungla conserva agua, cascada, lianas, ruinas, maleza, luciérnagas y oscuridad como capas dinámicas por encima, y la arena de La Oscuridad mantiene su composición procedural. Ningún fondo aporta colisión: toda interacción procede de geometría separada.
 
 ## Límites conocidos aceptados
 
 - Ciudad es un avance, no una fase jugable; Boss 3 y el final son roadmap.
-- La Jungla y La Oscuridad usan arte procedural; la Manzana de Poder recuperada todavía no desbloquea un poder nuevo.
+- La Jungla combina un fondo raster de producción con decorado y losetas procedurales; La Oscuridad conserva arte procedural. La Manzana de Poder recuperada todavía no desbloquea un poder nuevo.
 - DA VUELTAS mantiene un spritesheet procedural; COME, VUELA y los tres enemigos de La Jungla usan arte raster de producción.
 - La banda sonora consta de siete composiciones procedurales originales de 32 pasos. El planificador Web Audio anticipado sostiene capas de melodía, arpegio, bajo y ritmo sin depender de archivos externos; no se ofrece un control de volumen continuo.
 - Los botones y anuncios principales tienen soporte de teclado/lector, pero no se declara conformidad de accesibilidad completa para todo el texto dibujado en canvas.

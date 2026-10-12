@@ -31,6 +31,7 @@ Las tres referencias de La Jungla gobiernan ya personajes jugables. Garbanzo Loc
 | Elemento | Estado | Referencia de producción |
 |---|---|---|
 | Babilandia | Fondo raster 16:9 con fallback procedural | [babilandia-v2.md](../art/production/babilandia-v2.md) |
+| Jungla | Fondo raster 16:9 con fallback procedural; agua, cascada, lianas, ruinas, maleza, luciérnagas y oscuridad siguen como capas de gameplay | [jungla-v1.md](../art/production/jungla-v1.md) |
 | Arena de Babito Corrupto | Fondo raster 16:9 con fallback procedural | [boss-arena-v1.md](../art/production/boss-arena-v1.md) |
 | Ciudad Bicharraca | Fondo raster 16:9 y recorte dentro de su pantalla de avance, con fallback | [ciudad-bicharraca-v1.md](../art/production/ciudad-bicharraca-v1.md) |
 | COME | Spritesheet raster por estados | [enemy-come-sheet-v3.png](../public/assets/characters/enemy-come-sheet-v3.png) |
@@ -41,7 +42,6 @@ Las tres referencias de La Jungla gobiernan ya personajes jugables. Garbanzo Loc
 | Sapo Pota | Spritesheet raster v2 de 8 poses, 4 × 2, alpha binario, celdas de 256 px de alto y pivote común | [jungle-enemy-sheets-v2.md](../art/production/jungle-enemy-sheets-v2.md) |
 | Babito | Atlas procedural canónico con celdas de 80 px, raster de detalle de 64 px, 54 poses y capas cosméticas sincronizadas | [babito-v5.md](../art/production/babito-v5.md) |
 | Boss, tenderos y Árbol | PNG raster de personaje con poses o composición runtime | `public/assets/characters/` |
-| Jungla | Nivel jugable con fondo, losetas, agua, cascada, lianas y ruinas procedurales; sin raster de producción todavía | [jungleScenery.js](../src/game/jungleScenery.js) y [createTextures.js](../src/game/createTextures.js) |
 | La Oscuridad | Sprite procedural fiel a `bosses_canonical.png`: masa negra, borde violeta, tentáculos y ojos rasgados, sin boca | [createTextures.js](../src/game/createTextures.js) |
 | Landing web | 33 derivados optimizados de láminas, dibujos, retratos editoriales, personajes, créditos y texturas; son presentación web, no spritesheets runtime | [landing-web-v1.md](../art/production/landing-web-v1.md) |
 

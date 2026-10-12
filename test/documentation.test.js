@@ -27,6 +27,7 @@ const CONTEXT_DOCUMENTS = Object.freeze([
   'art/production/babito-v5.md',
   'art/production/landing-web-v1.md',
   'art/production/babilandia-v2.md',
+  'art/production/jungla-v1.md',
   'art/production/boss-arena-v1.md',
   'art/production/ciudad-bicharraca-v1.md',
   'art/production/enemy-vuela-v4.md',
@@ -64,6 +65,7 @@ const ESSENTIAL_LINK_TARGETS = Object.freeze([
   'public/assets/characters/enemy-arbol-pocho-sheet-v2.png',
   'public/assets/characters/enemy-sapo-pota-sheet-v2.png',
   'public/assets/backgrounds/babilandia-v2.webp',
+  'public/assets/backgrounds/jungla-v1.webp',
   'public/assets/backgrounds/boss-arena-v1.webp',
   'public/assets/backgrounds/ciudad-bicharraca-v1.webp',
 ]);

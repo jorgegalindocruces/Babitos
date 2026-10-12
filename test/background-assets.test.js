@@ -3,6 +3,7 @@ import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 
 const BACKGROUND_URLS = Object.freeze({
+  jungle: new URL('../public/assets/backgrounds/jungla-v1.webp', import.meta.url),
   bossArena: new URL('../public/assets/backgrounds/boss-arena-v1.webp', import.meta.url),
   city: new URL('../public/assets/backgrounds/ciudad-bicharraca-v1.webp', import.meta.url),
 });
@@ -18,7 +19,7 @@ function readLossyWebpDimensions(buffer) {
   };
 }
 
-test('the final-stage scenes ship with real 16:9 production backgrounds', async () => {
+test('the raster-backed stages ship with real 16:9 production backgrounds', async () => {
   for (const [name, url] of Object.entries(BACKGROUND_URLS)) {
     const buffer = await readFile(url);
     const dimensions = readLossyWebpDimensions(buffer);

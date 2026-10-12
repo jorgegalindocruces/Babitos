@@ -7,6 +7,16 @@ Este archivo relaciona las iteraciones entregadas con sus cambios observables, c
 - Mantener sincronizados `README.md`, `INTERACTIONS.md`, `GAME_DESIGN.md`, `IMPLEMENTATION_SPEC.md` y `ACCEPTANCE_CRITERIA.md` cuando cambien flujo, controles, estados, persistencia o contenido jugable.
 - Añadir una entrada aquí por cada cambio observable, con el commit final y las pruebas realizadas.
 
+## Fondo raster de La Jungla — 2026-10-12
+
+La Fase 2 incorpora como capa lejana el paisaje pixel art aprobado de selva, montañas, cascadas y templo:
+
+- **Paridad con Babilandia**: `GameScene(jungla)` precarga el nuevo raster 16:9, lo escala con *cover* y lo desplaza suavemente según la cámara durante los 6400 px del recorrido.
+- **Gameplay intacto**: plataformas, puentes, pilares, fosos y agua conservan cuerpos y reglas independientes; ninguna forma pintada en el fondo crea o elimina colisión.
+- **Profundidad dinámica**: el agua de los fosos, la cascada, las lianas, las ruinas, la maleza, las luciérnagas y el oscurecimiento final siguen renderizados por encima del paisaje.
+- **Carga resiliente**: si el archivo no está disponible, `addPixelBackground()` vuelve al fondo procedural `jungle` sin impedir jugar.
+- **Trazabilidad**: se preserva el PNG aportado en `art/approved/jungla_background_v1.png`, el runtime usa un WebP optimizado y [jungla-v1.md](../art/production/jungla-v1.md) registra dimensiones, derivado e integración.
+
 ## Babito v5 según las láminas de anatomía — 2026-10-11
 
 El protagonista se audita contra las tres láminas de anatomía aprobadas ([babito_anatomy_1.png](../art/approved/babito_anatomy_1.png), [_2](../art/approved/babito_anatomy_2.png), [_3](../art/approved/babito_anatomy_3.png)) y se redibuja para coincidir con ellas. Detalle en [babito-v5.md](../art/production/babito-v5.md):

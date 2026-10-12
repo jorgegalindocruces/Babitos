@@ -186,7 +186,7 @@ La Fase 2 reutiliza la escena de nivel ([GameScene.js](../src/scenes/GameScene.j
 - **Checkpoints seguros**: ningún checkpoint queda dentro del radio de detección de un Árbol o un Sapo, ni del alcance de un Garbanzo que pueda llegar hasta él. `lianas` está a 270 px del primer Árbol, `ruinas` (x = 3830) queda detrás de las ruinas ya superadas y `penumbra` (x = 5220) a 230 px del último Sapo.
 - **La luz se apaga**: poco después del checkpoint `ruinas`, desde x = 4000, un velo oscuro crece hasta x = 6000 junto al portal y un halo cálido sigue al Babito para mantenerlo legible.
 - Derrotar a los diez enemigos de las seis secuencias abre el portal hacia La Oscuridad. Hay 30 Babicoins colocadas con identificadores `jungla:coin:<id>`, independientes de las de Babilandia.
-- Ambientación: agua animada en cada foso, una cascada sobre los puentes, lianas que se mecen, ruinas al fondo y luciérnagas.
+- Ambientación: fondo raster panorámico de selva, montañas, cascadas y templo con paneo suave; sobre él permanecen el agua animada de cada foso, la cascada del recorrido, lianas que se mecen, ruinas, maleza y luciérnagas. Si el raster no carga, reaparece el fondo procedural `jungle`. La imagen nunca aporta colisión.
 
 ### La Oscuridad
 

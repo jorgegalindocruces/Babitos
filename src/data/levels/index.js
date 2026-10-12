@@ -27,7 +27,7 @@ export const LEVELS = Object.freeze({
     id: 'jungla',
     data: jungla,
     theme: 'jungle',
-    backgroundAsset: null,
+    backgroundAsset: 'jungleV1',
     cameraColor: '#1d5554',
     progressScene: 'jungla',
     coinRewardPrefix: 'jungla:coin:',
