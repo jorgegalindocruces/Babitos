@@ -1,7 +1,13 @@
 import Phaser from 'phaser';
 import { BabitoAvatar } from '../game/BabitoAvatar.js';
 import { TEXTURE_KEYS, createTextures } from '../game/createTextures.js';
-import { isJungleUnlocked, replayPhaseOne, startPhaseTwo } from '../state/progressionFlow.js';
+import {
+  isCityUnlocked,
+  isJungleUnlocked,
+  replayPhaseOne,
+  startPhaseThree,
+  startPhaseTwo,
+} from '../state/progressionFlow.js';
 import { createButton } from '../ui/Button.js';
 import {
   addPixelBackground,
@@ -44,6 +50,8 @@ export class WorldMapScene extends Phaser.Scene {
     this.phaseComplete = snapshot.progress.phase1Complete;
     this.jungleUnlocked = isJungleUnlocked(snapshot.progress);
     this.phaseTwoComplete = snapshot.progress.phase2Complete === true;
+    this.cityUnlocked = isCityUnlocked(snapshot.progress);
+    this.phaseThreeComplete = snapshot.progress.phase3Complete === true;
 
     addPixelBackground(this, 'babilandia', {
       musicTheme: this.phaseComplete ? 'ending' : 'babilandia',
@@ -60,11 +68,13 @@ export class WorldMapScene extends Phaser.Scene {
     createTitle(this, 'MAPA DE BABILANDIA', 480, 37, { fontSize: 36, depth: 40 });
     createBodyText(
       this,
-      this.phaseTwoComplete
-        ? 'FASE 2 COMPLETA · La Jungla vuelve a brillar. Ciudad Bicharraca aguarda.'
+      this.phaseThreeComplete
+        ? 'FASE 3 COMPLETA · Has llegado hasta la puerta del Boss Total.'
+        : (this.phaseTwoComplete
+          ? 'FASE 2 COMPLETA · La Jungla vuelve a brillar. Ciudad Bicharraca aguarda.'
         : (this.phaseComplete
           ? 'FASE 1 COMPLETA · La primera luz ha regresado. ¡La Jungla te espera!'
-          : 'FASE 1 DISPONIBLE · Babilandia necesita un pequeño héroe.'),
+          : 'FASE 1 DISPONIBLE · Babilandia necesita un pequeño héroe.')),
       480,
       78,
       {
@@ -81,11 +91,13 @@ export class WorldMapScene extends Phaser.Scene {
     this.createNavigation();
 
     announce(
-      this.phaseTwoComplete
-        ? 'Mapa de mundos. Fases uno y dos completadas. Ciudad Bicharraca muestra un avance.'
+      this.phaseThreeComplete
+        ? 'Mapa de mundos. Las tres fases están completadas. Boss Total llegará próximamente.'
+        : (this.phaseTwoComplete
+          ? 'Mapa de mundos. Fases uno y dos completadas. Ciudad Bicharraca está disponible.'
         : (this.phaseComplete
           ? 'Mapa de mundos. Fase uno completada. La Jungla está disponible.'
-          : 'Mapa de mundos. Babilandia está disponible.'),
+          : 'Mapa de mundos. Babilandia está disponible.')),
     );
     fadeIn(this);
   }
@@ -189,13 +201,18 @@ export class WorldMapScene extends Phaser.Scene {
     });
     jungleButton.labelText.setY(72);
 
+    const cityLabel = this.phaseThreeComplete
+      ? '✓ FASE 3 COMPLETA\nCIUDAD BICHARRACA\nREJUGAR DESDE EL INICIO'
+      : (this.cityUnlocked
+        ? '▶ FASE 3 DISPONIBLE\nCIUDAD BICHARRACA\nJUGAR DESDE EL INICIO'
+        : 'BLOQUEADA\nCIUDAD BICHARRACA\nCOMPLETA LA FASE 2');
     const cityButton = createButton(this, {
       x: 770,
       y: 281,
       width: 250,
       height: 242,
       radius: 16,
-      label: 'PRÓXIMAMENTE\nCIUDAD BICHARRACA\nMUNDO 3',
+      label: cityLabel,
       variant: 'danger',
       style: {
         fill: 0x3a244c,
@@ -205,11 +222,19 @@ export class WorldMapScene extends Phaser.Scene {
         shadow: 0x1b102a,
       },
       fontSize: '14px',
-      accessibleLabel: 'Ciudad Bicharraca, mundo 3, ver avance próximamente',
+      accessibleLabel: this.cityUnlocked
+        ? 'Ciudad Bicharraca, mundo 3. Jugar desde el inicio.'
+        : 'Ciudad Bicharraca, mundo 3, bloqueada hasta completar la fase 2.',
       onPress: () => {
-        this.store.setProgress({ scene: 'city' });
-        transitionToScene(this, 'ComingSoonScene', { world: 'city' }, {
-          announcement: 'Avance de Ciudad Bicharraca',
+        if (!this.cityUnlocked) {
+          showToast(this, 'Derrota a La Oscuridad para abrir Ciudad Bicharraca', {
+            type: 'warning', duration: 1600,
+          });
+          return;
+        }
+        startPhaseThree(this.store);
+        transitionToScene(this, 'GameScene', { level: 'city' }, {
+          announcement: 'Entrando en Ciudad Bicharraca',
         });
       },
     });

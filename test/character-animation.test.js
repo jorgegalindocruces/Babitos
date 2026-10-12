@@ -96,6 +96,12 @@ test('every enemy AI state resolves to a semantic visual clip', () => {
   assert.equal(getEnemyClipForState('sapo_pota', 'EMERGE'), 'emerge');
   assert.equal(getEnemyClipForState('sapo_pota', 'TOXIC_VOMIT'), 'vomit');
   assert.equal(getEnemyClipForState('sapo_pota', 'SUBMERGE'), 'submerge');
+  assert.equal(getEnemyClipForState('drone_bot', 'CHARGE'), 'charge');
+  assert.equal(getEnemyClipForState('drone_bot', 'ELECTRIC_ATTACK'), 'electric_attack');
+  assert.equal(getEnemyClipForState('robot_elice', 'SPIN_ATTACK'), 'spin_attack');
+  assert.equal(getEnemyClipForState('robot_elice', 'VULNERABLE'), 'spin_recover');
+  assert.equal(getEnemyClipForState('ive_robot', 'SCYTHE_ATTACK'), 'scythe_attack');
+  assert.equal(getEnemyClipForState('ive_robot', 'GRAB_ATTACK'), 'grab_attack');
   assert.equal(getEnemyClipForState('unknown', 'UNKNOWN'), 'idle');
 
   for (const [type, definition] of Object.entries(gameData.enemies)) {
@@ -139,12 +145,18 @@ test('enemy hit reactions interrupt dangerous states and flying ignores terrain'
   assert.equal(getEnemyStateAfterHit('arbol_pocho', 'PUNCH_LEFT'), 'RECOVER');
   assert.equal(getEnemyStateAfterHit('arbol_pocho', 'PUNCH_RIGHT'), 'RECOVER');
   assert.equal(getEnemyStateAfterHit('sapo_pota', 'TOXIC_VOMIT'), 'RECOVER');
+  assert.equal(getEnemyStateAfterHit('drone_bot', 'ELECTRIC_ATTACK'), 'RECOVER');
+  assert.equal(getEnemyStateAfterHit('robot_elice', 'SPIN_ATTACK'), 'VULNERABLE');
+  assert.equal(getEnemyStateAfterHit('ive_robot', 'SCYTHE_ATTACK'), 'RECOVER');
   assert.equal(enemyUsesPlatformCollision('vuela'), false);
   assert.equal(enemyUsesPlatformCollision('come'), true);
   assert.equal(enemyUsesPlatformCollision('da_vueltas'), true);
   assert.equal(enemyUsesPlatformCollision('garbanzo_loco'), true);
   assert.equal(enemyUsesPlatformCollision('arbol_pocho'), false);
   assert.equal(enemyUsesPlatformCollision('sapo_pota'), false);
+  assert.equal(enemyUsesPlatformCollision('drone_bot'), false);
+  assert.equal(enemyUsesPlatformCollision('robot_elice'), true);
+  assert.equal(enemyUsesPlatformCollision('ive_robot'), true);
 });
 
 test('enemy QA presentation resolves every state and authored clip', () => {
@@ -268,6 +280,45 @@ test('Jungle poses stay complete: planted Árbol roots, whole spear and a seated
   }
 });
 
+const CITY_SHEETS = Object.freeze([
+  ['drone_bot', 'drone-bot-sheet-v1.png'],
+  ['robot_elice', 'robot-elice-sheet-v1.png'],
+  ['ive_robot', 'ive-robot-sheet-v1.png'],
+]);
+
+test('City robot sheets contain eight complete transparent 443px cells', () => {
+  for (const [type, file] of CITY_SHEETS) {
+    const atlas = decodeRgbaPng(path.resolve(TEST_DIR, `../public/assets/enemies/city/${file}`));
+    assert.deepEqual([atlas.width, atlas.height], [1772, 886], file);
+    assert.deepEqual(ENEMY_SHEET_ASSETS[type].xBounds, [0, 443, 886, 1329, 1772]);
+    assert.deepEqual(ENEMY_SHEET_ASSETS[type].yBounds, [0, 443, 886]);
+
+    for (let row = 0; row < 2; row += 1) {
+      for (let column = 0; column < 4; column += 1) {
+        let visible = 0;
+        let transparent = 0;
+        let touchesEdge = false;
+        for (let y = 0; y < 443; y += 1) {
+          for (let x = 0; x < 443; x += 1) {
+            const alpha = atlas.pixels[
+              (((row * 443 + y) * atlas.width) + column * 443 + x) * 4 + 3
+            ];
+            if (alpha > 8) {
+              visible += 1;
+              if (x < 2 || x > 440 || y < 2 || y > 440) touchesEdge = true;
+            } else {
+              transparent += 1;
+            }
+          }
+        }
+        assert.ok(visible > 1000, `${file} ${row}:${column} is empty`);
+        assert.ok(transparent > 1000, `${file} ${row}:${column} lost transparency`);
+        assert.equal(touchesEdge, false, `${file} ${row}:${column} touches a cell edge`);
+      }
+    }
+  }
+});
+
 test('enemy defeat presentation clears transient squash, alpha and tint', () => {
   const calls = [];
   const visual = {
@@ -307,6 +358,18 @@ test('COME stays foot-anchored to terrain at every squash height', () => {
   assert.deepEqual(
     getEnemyVisualAnchor('arbol_pocho', { y: 405, body: { bottom: 480 } }),
     { originY: 1, y: 485 },
+  );
+  assert.deepEqual(
+    getEnemyVisualAnchor('drone_bot', { y: 270, body: { bottom: 300 } }),
+    { originY: 0.5, y: 270 },
+  );
+  assert.deepEqual(
+    getEnemyVisualAnchor('robot_elice', { y: 420, body: { bottom: 480 } }),
+    { originY: 1, y: 488 },
+  );
+  assert.deepEqual(
+    getEnemyVisualAnchor('ive_robot', { y: 370, body: { bottom: 480 } }),
+    { originY: 1, y: 492 },
   );
   assert.equal(shouldFlipEnemyVisual('sapo_pota', -1), false);
   assert.equal(shouldFlipEnemyVisual('sapo_pota', 1), true);

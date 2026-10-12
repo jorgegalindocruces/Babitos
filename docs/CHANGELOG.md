@@ -7,6 +7,21 @@ Este archivo relaciona las iteraciones entregadas con sus cambios observables, c
 - Mantener sincronizados `README.md`, `INTERACTIONS.md`, `GAME_DESIGN.md`, `IMPLEMENTATION_SPEC.md` y `ACCEPTANCE_CRITERIA.md` cuando cambien flujo, controles, estados, persistencia o contenido jugable.
 - Añadir una entrada aquí por cada cambio observable, con el commit final y las pruebas realizadas.
 
+## Fase 3 · Ciudad de los Bicharracos — 2026-10-12
+
+Ciudad Bicharraca deja de ser una pantalla de avance y pasa a ser la tercera fase jugable:
+
+- **Fondo oficial**: el panorama industrial entregado por el usuario sustituye al paisaje provisional en juego, landing y cierre. Se conserva completo a 1672 × 941; el parallax ahora usa capas transparentes de ambiente para no ocultar sus carteles, fortaleza, plataformas y tráfico.
+- **Nivel completo**: [city.json](../src/data/levels/city.json) define 7200 px en tres zonas —Entrada, Fábricas y Fortaleza—, cuatro checkpoints, once encuentros, 36 Babicoins, plataformas de metal y tuberías, tres plataformas móviles, cinco peligros eléctricos y el portal final.
+- **Tres robots de Momo**: Drone Bot vuela, carga y dispara un rayo vertical; Robot Elice patrulla por tierra, gira invulnerable y queda expuesto al terminar; IVE Robot, también terrestre, combina guadaña, agarre con retroceso y doble tajo avanzado. Sus tamaños mantienen la jerarquía aproximada 1,5×/2×/3× frente a Babito.
+- **Animación de estados**: las tres hojas transparentes 4 × 2 contienen ocho poses completas de 443 × 443 px por personaje y sustituyen cualquier uso de la ficha conceptual dentro de Phaser. Los mappings cubren todos los estados de IA, daño y derrota. Referencias, prompts y herramienta están en [city-enemy-sheets-v1.md](../art/production/city-enemy-sheets-v1.md).
+- **Escenario con profundidad**: el paisaje industrial existente funciona como capa lejana; [cityScenery.js](../src/game/cityScenery.js) añade tres niveles de parallax, rótulos de zona y chispas. Arte, colisión y peligros permanecen separados.
+- **Flujo y persistencia**: el Mapa desbloquea Ciudad tras la Fase 2, `CONTINUAR` reanuda sus checkpoints y el portal guarda `phase3Complete`. El cierre muestra `PRÓXIMAMENTE: BOSS TOTAL` y permite volver al Mapa o al Título sin implementar todavía ese boss.
+- **Landing y autoría**: Ciudad figura como Fase 3 jugable; las tarjetas, comparativas y láminas incorporan Drone Bot, Robot Elice e IVE Robot. El texto visible declara: «Los robots de la Ciudad Bicharraca han sido imaginados y dibujados por Momo.»
+- **Compatibilidad**: Babilandia, La Jungla, ambos bosses, los tres poderes, HUD, controles, tienda, guardados antiguos y GitHub Pages mantienen sus contratos.
+
+Validación pendiente de cierre en esta iteración: pruebas automáticas actualizadas, build de producción, `git diff --check` y QA visual de los tres robots, las tres zonas y la pantalla de Boss Total.
+
 ## Fondo raster de La Jungla — 2026-10-12
 
 La Fase 2 incorpora como capa lejana el paisaje pixel art aprobado de selva, montañas, cascadas y templo:

@@ -1,19 +1,18 @@
 # Ciudad Bicharraca v1
 
-`public/assets/backgrounds/ciudad-bicharraca-v1.webp` es el fondo raster de producción del Mundo 3 mostrado como fondo y recorte interior en su pantalla de avance. La tarjeta del mapa conserva un icono procedural.
+`public/assets/backgrounds/ciudad-bicharraca-v1.webp` es el fondo raster oficial del Mundo 3 y la imagen dominante de la Fase 3 jugable. La tarjeta del mapa conserva un icono procedural.
 
 - Resolución: 1672 × 941, proporción 16:9.
 - Asset runtime: `background_city_v1`.
-- Referencias: la columna derecha de `art/approved/worlds_environment_reference_only.png` y el ejemplo inferior derecho de `art/approved/bosses_canonical.png`, solo para escenario, paleta y atmósfera.
-- Generación: herramienta integrada ImageGen, 8 de octubre de 2026.
-- Integración: fondo completo a escala *cover*, recorte central sin deformación dentro del avance y fallback procedural si el archivo no puede cargarse.
+- Fuente canónica: [city_background_v1.png](../approved/city_background_v1.png), entregada expresamente por el usuario como background de la Fase 3 el 12 de octubre de 2026.
+- Integración: fondo completo a escala *cover* y fallback procedural si el archivo no puede cargarse; [cityScenery.js](../../src/game/cityScenery.js) añade por encima tres capas transparentes y discretas de tráfico, vapor, luces y cables.
 - Compresión: WebP de alta calidad para conservar el pixel art con un peso apto para web.
-- Interacción: se muestra en una pantalla de avance estática; no representa todavía una fase jugable ni contiene colisión.
+- Interacción: ambienta Entrada, Fábricas y Fortaleza durante 7200 px. Las pasarelas, carteles, puertas y estructuras pintadas forman parte del escenario y no contienen colisión; suelo, plataformas, tuberías y peligros eléctricos jugables son entidades separadas y se dibujan por encima.
 
-## Prompt final
+## Tratamiento
 
-> Crea el fondo 16:9 de producción del Mundo 3, Ciudad Bicharraca. Usa únicamente la ciudad industrial canónica: fábricas, tuberías, chimeneas, grúas, maquinaria, humo, cielo violeta y rojo, resplandor naranja de hornos y acentos cian. Toma del ejemplo del boss solo la atmósfera de ciudad lejana y la intensidad del mundo final. Mantén pixel art moderno de 16 bits con grupos de píxeles nítidos, paleta limitada y contornos azul marino. Compón capas profundas de edificios industriales al atardecer; deja la zona superior tranquila para el HUD y el 40 % inferior con contraste controlado, sin salientes, pasarelas, puentes, suelo ni plataformas que parezcan colisionables. No añadas personajes, Babitos, bosses, enemigos, criaturas, monedas, manzanas, armas, ataques, portales, HUD, barras, texto, letras, señales legibles, logos, marcas de agua ni marco decorativo.
+No se ha regenerado ni reinterpretado el dibujo. El PNG aprobado se conserva completo y se exporta a WebP de alta calidad (`q94`, `sharp_yuv`) con sus 1672 × 941 px originales. La imagen incluye la fortaleza central, los letreros «FASE 3 · TERRITORIO DE LOS BICHARRACOS» y «ROBOT CITY», plataformas industriales, tráfico aéreo y reflejos rojos. Las capas procedurales anteriores dejaron de pintar edificios opacos para no ocultar estos elementos.
 
 Este archivo es material artístico de BABITOS y queda fuera de la licencia MIT del código, según el aviso de `LICENSE`.
 
-Contratos relacionados: [Art Bible](../../docs/ART_BIBLE.md), [mapa y avances](../../docs/INTERACTIONS.md#mapa-y-avances) y [registro de cambios](../../docs/CHANGELOG.md#fondos-de-fases-finales--2026-10-08).
+Contratos relacionados: [Art Bible](../../docs/ART_BIBLE.md), [Ciudad Bicharraca](../../docs/INTERACTIONS.md#ciudad-bicharraca) y [registro de cambios](../../docs/CHANGELOG.md#fase-3--ciudad-de-los-bicharracos--2026-10-12).

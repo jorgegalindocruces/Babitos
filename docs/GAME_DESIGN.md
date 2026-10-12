@@ -8,7 +8,7 @@ Plataformas 2D familiar y colorido. Los Bicharracos roban las Manzanas de Poder 
 
 Este documento define la visión completa. No todo el flujo está implementado todavía:
 
-| Contenido | Estado en 0.2 |
+| Contenido | Estado en 0.3 |
 |---|---|
 | Landing web y juego en diálogo | Implementado con carga diferida |
 | Título, Creador, selección de poder e Intro | Implementado |
@@ -17,14 +17,14 @@ Este documento define la visión completa. No todo el flujo está implementado t
 | Tienda y Mapa | Implementado |
 | La Jungla, seis secuencias con diez enemigos y checkpoints | Jugable (Fase 2) |
 | La Oscuridad | Jugable |
-| Ciudad Bicharraca | Pantalla de avance estática |
+| Ciudad Bicharraca, tres zonas, robots y checkpoints | Jugable (Fase 3) |
 | Boss Total y Final | Roadmap, sin gameplay |
 
 El comportamiento implementado se documenta en [INTERACTIONS.md](INTERACTIONS.md); su historial está en [CHANGELOG.md](CHANGELOG.md).
 
 ## Flujo actual
 
-Landing → `JUGAR` → diálogo → Título → Creador → Poder → Intro → Babilandia → Babito Corrupto → Tienda → Mapa → Jungla → La Oscuridad → Tienda → Mapa. La tienda ofrece `CONTINUAR AL MAPA` como salida principal. Desde el mapa se puede rejugar Babilandia, entrar en La Jungla en cuanto la Fase 1 está completa (y rejugarla después), visitar la tienda, volver al título o ver el avance de Ciudad.
+Landing → `JUGAR` → diálogo → Título → Creador → Poder → Intro → Babilandia → Babito Corrupto → Tienda → Mapa → Jungla → La Oscuridad → Tienda → Mapa → Ciudad Bicharraca → `PRÓXIMAMENTE: BOSS TOTAL` → Mapa o Título. Desde el mapa se pueden rejugar las fases desbloqueadas; Ciudad se abre al completar la Fase 2.
 
 ## Flujo objetivo
 
@@ -54,6 +54,9 @@ Los poderes no se compran. Babicoins equivalen a apariencia; Manzanas de Poder e
 - Garbanzo Loco: guerrero de La Jungla con lanza, tres plumas y escudo-vaina; patrulla, persigue y anticipa una estocada horizontal cuya dirección queda fijada; saltar por encima de él la esquiva.
 - Árbol Pocho: árbol camuflado con un gran ojo azul; despierta por proximidad, anticipa con los brazos alzados, golpea con la rama del lado correspondiente y deja una recuperación vulnerable.
 - Sapo Pota: sapo grande y resistente ligado al agua; emerge medio sumergido, anticipa una vomitera tóxica horizontal y vuelve a sumergirse.
+- Drone Bot: robot volador de la entrada de Ciudad; patrulla, detecta, carga y proyecta un rayo eléctrico vertical antes de recuperarse y volver al vuelo.
+- Robot Elice: robot exclusivamente terrestre de las fábricas; convierte sus hélices y brazos cuchilla en una sierra giratoria. Durante el giro es invulnerable y después queda expuesto.
+- IVE Robot: guardián terrestre de la fortaleza, de unos tres Babitos de alto, con corazón roto visible y brazos largos terminados en guadañas. Alterna tajo, agarre con retroceso y doble guadaña en los encuentros avanzados.
 
 Cada enemigo puede soltar 0, 1 o 2 monedas. En las dos fases, solo el ataque activo de cada enemigo causa daño y el portal se abre al superar todos los enemigos: seis en Babilandia y diez, agrupados en seis secuencias, en La Jungla. DA VUELTAS apunta su giro hacia el Babito; la lanza, las ramas y la vomitera también se anticipan para que cada peligro sea legible.
 
@@ -71,7 +74,7 @@ Señor Empanadilla y Señor Pingüino son aliados y tenderos. Nunca son enemigos
 
 1. Babilandia atacada — jugable: ciudad de Babitos, luminosa pero dañada. Funciona como tutorial en tres tramos: Mercado enseña a saltar y presenta a COME; Puente presenta a VUELA y premia el camino alto; Fuente y portal combina DA VUELTAS y COME alrededor de una plataforma refugio. El suelo base es continuo, de modo que el reto vertical procede de plataformas útiles, refugios y monedas, no de fosos.
 2. Jungla — jugable: ramas, lianas, cascadas, puentes de cuerda, ruinas y verticalidad, con progresión hacia la oscuridad. Sus seis secuencias presentan Garbanzo Loco, Árbol Pocho y Sapo Pota por separado, después combinan Garbanzo + Árbol y Sapo + Garbanzo y terminan con los tres antes del portal. Raíces introduce los fosos y la seta; Puentes presenta la vegetación hostil y la laguna; Ruinas en penumbra aumenta las ráfagas tóxicas, sube por setas a una ruta alta y oscurece la escena. Los fosos son siempre saltables y caer cuesta un corazón.
-3. Ciudad Bicharraca — avance/roadmap: industrial, máquinas, tuberías, trampas y fortaleza final.
+3. Ciudad Bicharraca — jugable: 7200 px de ciudad industrial divididos en Entrada, Fábricas y Fortaleza. Combina plataformas metálicas unidireccionales, tuberías, plataformas móviles, peligros eléctricos, cuatro checkpoints y 36 Babicoins. Presenta Drone Bot en vuelo, Robot Elice en el suelo y termina combinándolos con IVE Robot. Los once enemigos deben caer para abrir la salida; el cierre anuncia Boss Total, que sigue en roadmap.
 
 `worlds_environment_reference_only.png` define solo entorno, composición, paleta y atmósfera. Sus enemigos dibujados no son canónicos.
 
@@ -89,8 +92,8 @@ HUD: corazones, monedas, poder activo, encuentros y pausa; durante el boss añad
 
 - Daño: retroceso, breve invulnerabilidad y parpadeo.
 - Checkpoint: guarda posición y restaura la vida.
-- Caída no fatal fuera del mundo o en un foso de La Jungla: intenta restar un corazón y reaparece en el último checkpoint; la invulnerabilidad evita daño repetido inmediato.
-- Game Over en Babilandia o La Jungla: reintenta desde el checkpoint con vida completa.
+- Caída no fatal fuera del mundo, en un foso de La Jungla o bajo una pasarela de Ciudad: intenta restar un corazón y reaparece en el último checkpoint; la invulnerabilidad evita daño repetido inmediato.
+- Game Over en Babilandia, La Jungla o Ciudad: reintenta desde el checkpoint con vida completa.
 - Game Over contra cualquiera de los dos bosses: reinicia el encuentro completo.
 - Pausa: congela simulación y animaciones; permite continuar o volver al título.
 

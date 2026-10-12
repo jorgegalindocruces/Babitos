@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { BabitoAvatar } from '../game/BabitoAvatar.js';
+import { ENEMY_SHEET_ASSETS, getEnemyFrameName } from '../game/EnemyAnimations.js';
 import { resolveComingSoonRequest } from '../state/progressionFlow.js';
 import { TEXTURE_KEYS, createTextures } from '../game/createTextures.js';
 import { createButton } from '../ui/Button.js';
@@ -14,13 +15,13 @@ import {
 } from '../ui/sceneHelpers.js';
 import { createAmbientMotes, fadeIn, transitionToScene } from '../ui/effects.js';
 
-const CITY = Object.freeze({
+const BOSS_TOTAL = Object.freeze({
   theme: 'city',
-  title: 'CIUDAD BICHARRACA',
-  number: 'MUNDO 3',
-  tagline: 'TECNOLOGÍA, CONTAMINACIÓN Y CAOS',
-  description: 'Una ciudad de fábricas, láseres y máquinas aguarda tras el humo de neón.',
-  features: ['TUBERÍAS Y ENGRANAJES', 'LÁSERES', 'GRÚAS Y NEÓN'],
+  title: 'PRÓXIMAMENTE: BOSS TOTAL',
+  number: 'DESAFÍO FINAL',
+  tagline: 'LA ÚLTIMA BATALLA AÚN ESTÁ EN CONSTRUCCIÓN',
+  description: 'Has cruzado Ciudad Bicharraca y derrotado a sus robots. Tras esta puerta espera el Boss Total.',
+  features: ['FASE 3 COMPLETADA', 'FORTALEZA ALCANZADA', 'BOSS TOTAL PENDIENTE'],
   accent: 0xff6686,
   mote: 0x42e8ec,
 });
@@ -47,7 +48,7 @@ export class ComingSoonScene extends Phaser.Scene {
     }
 
     const snapshot = this.store.getState();
-    const world = CITY;
+    const world = BOSS_TOTAL;
 
     addPixelBackground(this, world.theme, {
       assetKey: BACKGROUND_ASSETS.cityV1.key,
@@ -59,7 +60,7 @@ export class ComingSoonScene extends Phaser.Scene {
       minAlpha: 0.14,
       maxAlpha: 0.52,
       depth: 2,
-      seed: 'coming-soon-city',
+      seed: 'coming-soon-boss-total',
     });
 
     createTitle(this, world.title, 480, 40, {
@@ -88,7 +89,7 @@ export class ComingSoonScene extends Phaser.Scene {
       radius: 14,
     });
 
-    this.createCityPreview(snapshot);
+    this.createBossTotalPreview(snapshot);
 
     createLabel(this, world.tagline, 666, 159, {
       fontSize: 12,
@@ -116,7 +117,7 @@ export class ComingSoonScene extends Phaser.Scene {
       });
     });
 
-    createBodyText(this, 'Las Fases 1 y 2 ya están disponibles.\n¡La aventura continúa muy pronto!', 666, 405, {
+    createBodyText(this, 'Las Fases 1, 2 y 3 ya están disponibles.\nPuedes volver al mapa o al menú principal.', 666, 405, {
       fontSize: 13,
       color: '#b8d5df',
       wordWrapWidth: 300,
@@ -124,9 +125,9 @@ export class ComingSoonScene extends Phaser.Scene {
     });
 
     createButton(this, {
-      x: 480,
+      x: 338,
       y: 498,
-      width: 270,
+      width: 250,
       height: 46,
       label: '‹ VOLVER AL MAPA',
       variant: 'primary',
@@ -137,11 +138,26 @@ export class ComingSoonScene extends Phaser.Scene {
       }),
     });
 
+    createButton(this, {
+      x: 622,
+      y: 498,
+      width: 250,
+      height: 46,
+      label: 'MENÚ PRINCIPAL',
+      variant: 'ghost',
+      fontSize: '13px',
+      accessibleLabel: 'Volver al menú principal',
+      autoFocus: false,
+      onPress: () => transitionToScene(this, 'TitleScene', {}, {
+        announcement: 'Volviendo al menú principal',
+      }),
+    });
+
     announce(`${world.title}, ${world.number}. Próximamente.`);
     fadeIn(this);
   }
 
-  createCityPreview(snapshot) {
+  createBossTotalPreview(snapshot) {
     const cityAsset = BACKGROUND_ASSETS.cityV1.key;
     if (this.textures.exists(cityAsset)) {
       const targetWidth = 316;
@@ -190,10 +206,14 @@ export class ComingSoonScene extends Phaser.Scene {
     const avatar = new BabitoAvatar(this, 264, 337, snapshot.appearance, snapshot.size)
       .setDepth(30);
     avatar.setFacing(1).setMotion('idle');
-    this.add.image(408, 337, TEXTURE_KEYS.enemyDaVueltas)
-      .setDisplaySize(54, 54)
-      .setAlpha(0.88)
-      .setDepth(29);
+    const iveAsset = ENEMY_SHEET_ASSETS.ive_robot;
+    if (this.textures.exists(iveAsset.key)) {
+      this.add.sprite(392, 322, iveAsset.key, getEnemyFrameName('ive_robot', 0, 0))
+        .setDisplaySize(116, 116)
+        .setOrigin(0.5, 0.72)
+        .setAlpha(0.9)
+        .setDepth(29);
+    }
   }
 }
 

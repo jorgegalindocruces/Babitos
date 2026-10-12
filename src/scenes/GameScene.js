@@ -12,6 +12,7 @@ import {
   getEnemyMeleeBounds,
   isEnemyMeleeAttackActive,
   isEnemyProjectile,
+  launchElectricBeam,
   launchToxicProjectile,
   rectanglesOverlap,
 } from '../game/EnemyAttackSystem.js';
@@ -19,6 +20,7 @@ import { enemyUsesPlatformCollision } from '../game/EnemyAnimations.js';
 import { updateBabitoQaMotionOverride } from '../game/BabitoAnimations.js';
 import { PlayerController } from '../game/PlayerController.js';
 import { createJungleScenery } from '../game/jungleScenery.js';
+import { createCityScenery } from '../game/cityScenery.js';
 import { shouldCollideWithTerrain } from '../game/platformCollision.js';
 import { isPowerProjectile, makeImpact } from '../game/PowerSystem.js';
 import {
@@ -160,6 +162,8 @@ export class GameScene extends Phaser.Scene {
     });
     this.createWorldDecoration({ showSkyline: !this.background.assetKey });
     this.createPlatforms();
+    this.createMovingPlatforms();
+    this.createCityHazards();
     this.createSprings();
     this.createCheckpoints();
 
@@ -183,7 +187,8 @@ export class GameScene extends Phaser.Scene {
       x: savedCheckpoint.x,
       y: savedCheckpoint.y - 20,
       save: this.save,
-      platforms: this.platforms,
+      platforms: this.terrainColliders,
+      platformList: this.platformCollection,
       projectiles: this.projectiles,
       onHealth: (health, maxHealth) => {
         this.updateHealthHud(health, maxHealth);
@@ -220,8 +225,8 @@ export class GameScene extends Phaser.Scene {
         // Put aquatic previews in the first real river gap instead of burying
         // their waterline animation in the starting ground strip.
         const qaX = qaEnemy.type === 'sapo_pota' ? 755 : 390;
-        let qaY = qaEnemy.type === 'vuela' ? 270 : qaEnemy.sprite.y;
-        if (!['vuela', 'sapo_pota'].includes(qaEnemy.type)) {
+        let qaY = ['vuela', 'drone_bot'].includes(qaEnemy.type) ? 270 : qaEnemy.sprite.y;
+        if (!['vuela', 'sapo_pota', 'drone_bot'].includes(qaEnemy.type)) {
           const support = findSupportingSurface(this.level.platforms, {
             x: qaX,
             width: qaEnemy.sprite.body.width,
@@ -280,11 +285,83 @@ export class GameScene extends Phaser.Scene {
       tile.setData({ isPlatform: true, kind: platform.kind });
       this.platforms.add(tile);
     }
+    this.terrainColliders = this.platforms;
+    this.platformCollection = this.platforms;
+  }
+
+  createMovingPlatforms() {
+    this.movingPlatforms = this.physics.add.group({ allowGravity: false, immovable: true });
+    this.movingPlatformSprites = [];
+    for (const definition of this.level.movingPlatforms ?? []) {
+      const texture = PLATFORM_STYLE_TEXTURES[definition.style] ?? this.levelConfig.tiles.platform;
+      const platform = this.add.tileSprite(
+        definition.x,
+        definition.y,
+        definition.width,
+        definition.height,
+        texture,
+      ).setDepth(5).setData({
+        isPlatform: true,
+        kind: 'platform',
+        movingPlatform: true,
+        originX: definition.x,
+        originY: definition.y,
+        axis: definition.axis === 'y' ? 'y' : 'x',
+        distance: Math.max(20, Number(definition.distance) || 120),
+        speed: Math.max(20, Number(definition.speed) || 60),
+      });
+      this.physics.add.existing(platform);
+      this.movingPlatforms.add(platform);
+      platform.body.setAllowGravity(false).setImmovable(true);
+      if (platform.getData('axis') === 'y') platform.body.setVelocityY(-platform.getData('speed'));
+      else platform.body.setVelocityX(platform.getData('speed'));
+      this.movingPlatformSprites.push(platform);
+    }
+    this.terrainColliders = this.movingPlatformSprites.length
+      ? [this.platforms, this.movingPlatforms]
+      : this.platforms;
+    this.platformCollection = {
+      getChildren: () => [
+        ...this.platforms.getChildren(),
+        ...this.movingPlatforms.getChildren(),
+      ],
+    };
+  }
+
+  createCityHazards() {
+    this.cityHazards = this.physics.add.staticGroup();
+    for (const definition of this.level.hazards ?? []) {
+      const hazard = this.add.tileSprite(
+        definition.x,
+        definition.y,
+        definition.width,
+        definition.height,
+        'hazard_electric',
+      ).setDepth(8).setData({ hazardType: definition.type, hazardId: definition.id });
+      this.cityHazards.add(hazard);
+      if (!prefersReducedMotion()) {
+        this.tweens.add({
+          targets: hazard,
+          alpha: { from: 1, to: 0.62 },
+          duration: 95,
+          yoyo: true,
+          repeat: -1,
+          delay: Math.round(definition.x) % 180,
+        });
+      }
+    }
   }
 
   createWorldDecoration({ showSkyline = true } = {}) {
     if (this.levelConfig.theme === 'jungle') {
       this.scenery = createJungleScenery(this, this.level);
+      for (const definition of this.level.tutorialSigns ?? []) {
+        this.createTutorialSign(definition);
+      }
+      return;
+    }
+    if (this.levelConfig.theme === 'city') {
+      this.scenery = createCityScenery(this, this.level);
       for (const definition of this.level.tutorialSigns ?? []) {
         this.createTutorialSign(definition);
       }
@@ -456,6 +533,7 @@ export class GameScene extends Phaser.Scene {
         {
           onMeleeAttack: (enemy, spec) => this.startEnemyMeleeAttack(enemy, spec),
           onToxicVolley: (enemy, spec) => this.launchEnemyToxicVolley(enemy, spec),
+          onElectricAttack: (enemy, spec) => this.launchEnemyElectricAttack(enemy, spec),
         },
       );
       this.enemyControllers.push(controller);
@@ -465,7 +543,7 @@ export class GameScene extends Phaser.Scene {
       if (enemyUsesPlatformCollision(controller.type)) {
         this.physics.add.collider(
           controller.sprite,
-          this.platforms,
+          this.terrainColliders,
           null,
           shouldCollideWithTerrain,
         );
@@ -511,6 +589,17 @@ export class GameScene extends Phaser.Scene {
       });
     }
     return shots;
+  }
+
+  launchEnemyElectricAttack(enemy, spec = {}) {
+    if (!enemy || enemy.dead || this.qaEnemyType) return null;
+    const beam = launchElectricBeam(this, this.enemyProjectiles, {
+      ...spec,
+      sourceId: enemy.id,
+    });
+    this.registry.get('audio')?.play('attack');
+    this.cameras.main.shake(110, 0.0025);
+    return beam;
   }
 
   updateEnemyMeleeAttacks() {
@@ -575,7 +664,7 @@ export class GameScene extends Phaser.Scene {
       .setDepth(8);
     this.portal.refreshBody();
     this.portal.body.setSize(54, 74).setOffset(5, 4);
-    this.portalLabel = createLabel(this, 'PORTAL SELLADO', x, y - 104, {
+    this.portalLabel = createLabel(this, this.levelConfig.portalLabel ?? 'PORTAL SELLADO', x, y - 104, {
       fontSize: '13px', color: 0xff779b, depth: 15, scrollFactor: 1,
     });
   }
@@ -583,11 +672,11 @@ export class GameScene extends Phaser.Scene {
   createPhysicsInteractions() {
     this.physics.add.collider(
       this.coins,
-      this.platforms,
+      this.terrainColliders,
       null,
       shouldCollideWithTerrain,
     );
-    this.physics.add.collider(this.projectiles, this.platforms, (first, second) => {
+    this.physics.add.collider(this.projectiles, this.terrainColliders, (first, second) => {
       const projectile = isPowerProjectile(first) ? first : (isPowerProjectile(second) ? second : null);
       if (!projectile?.active) return;
       makeImpact(this, projectile.x, projectile.y, 0xffcf3c);
@@ -598,7 +687,7 @@ export class GameScene extends Phaser.Scene {
       const terrain = projectile === first ? second : first;
       return this.levelConfig.walkwaysStopShots !== false || terrain?.getData?.('kind') === 'ground';
     });
-    this.physics.add.collider(this.enemyProjectiles, this.platforms, (first, second) => {
+    this.physics.add.collider(this.enemyProjectiles, this.terrainColliders, (first, second) => {
       const projectile = isEnemyProjectile(first) ? first : (isEnemyProjectile(second) ? second : null);
       if (!projectile?.active) return;
       makeImpact(this, projectile.x, projectile.y, 0x9ae84c);
@@ -606,6 +695,7 @@ export class GameScene extends Phaser.Scene {
     }, (first, second) => {
       const projectile = isEnemyProjectile(first) ? first : (isEnemyProjectile(second) ? second : null);
       const terrain = projectile === first ? second : first;
+      if (projectile?.getData?.('kind') === 'electric_beam') return false;
       // Vomit can rise through a one-way bridge from below, like the Babito;
       // solid ground and ruin pillars still destroy it on contact.
       return Boolean(projectile && terrain?.getData?.('kind') === 'ground');
@@ -641,6 +731,11 @@ export class GameScene extends Phaser.Scene {
       this.player.takeDamage(projectile.x, projectile.getData('damage') ?? 1);
       makeImpact(this, projectile.x, projectile.y, 0x9ae84c);
       projectile.destroy();
+    });
+    this.physics.add.overlap(this.player.body, this.cityHazards, (_playerBody, hazard) => {
+      if (!hazard?.active) return;
+      this.player.takeDamage(hazard.x, 1);
+      makeImpact(this, this.player.body.x, this.player.body.y, 0x71e5ff);
     });
     this.physics.add.overlap(this.player.body, this.coins, (_playerBody, coin) => this.collectCoin(coin));
     this.physics.add.overlap(
@@ -692,10 +787,11 @@ export class GameScene extends Phaser.Scene {
     }
     if (dropCount === 0) showToast(this, `${enemy.config.name} no soltó monedas esta vez.`, { duration: 900 });
     if (this.defeatedEnemies === this.level.enemies.length) {
-      this.portalLabel.setText('PORTAL ABIERTO').setColor('#8ff3a9');
+      this.portalLabel.setText(this.levelConfig.portalOpenLabel ?? 'PORTAL ABIERTO').setColor('#8ff3a9');
       this.portal.setTint(0xb4ffff);
       this.cameras.main.flash(260, 113, 229, 255);
-      showToast(this, '¡Todos los encuentros superados! El portal del boss está abierto.', {
+      showToast(this, this.levelConfig.portalSuccessToast
+        ?? '¡Todos los encuentros superados! El portal del boss está abierto.', {
         type: 'success', duration: 2600,
       });
     }
@@ -846,8 +942,12 @@ export class GameScene extends Phaser.Scene {
     this.transitioning = true;
     this.player.setEnabled(false);
     const { boss } = this.levelConfig;
-    this.store.setProgress({ scene: boss.progressScene, checkpoint: boss.checkpoint });
-    transitionToScene(this, boss.scene, {}, { announcement: boss.announcement });
+    this.store.setProgress({
+      scene: boss.progressScene,
+      checkpoint: boss.checkpoint,
+      ...(boss.progress ?? {}),
+    });
+    transitionToScene(this, boss.scene, boss.data ?? {}, { announcement: boss.announcement });
   }
 
   togglePause() {
@@ -1053,6 +1153,8 @@ export class GameScene extends Phaser.Scene {
 
     this.gameplayTime += frameDelta;
 
+    this.updateMovingPlatforms();
+
     this.player?.update(this.gameplayTime);
     if (this.qaMotion) {
       const qaOverride = updateBabitoQaMotionOverride({
@@ -1088,6 +1190,24 @@ export class GameScene extends Phaser.Scene {
     this.scenery?.update(this.cameras.main);
     if (this.player?.body.y > 575) this.handleFall();
     this.progressText?.setText(`ENEMIGOS  ${this.defeatedEnemies}/${this.level.enemies.length}`);
+  }
+
+  updateMovingPlatforms() {
+    for (const platform of this.movingPlatformSprites ?? []) {
+      const axis = platform.getData('axis');
+      const origin = platform.getData(axis === 'y' ? 'originY' : 'originX');
+      const distance = platform.getData('distance');
+      const speed = platform.getData('speed');
+      const position = axis === 'y' ? platform.y : platform.x;
+      const velocity = axis === 'y' ? platform.body.velocity.y : platform.body.velocity.x;
+      if (position >= origin + distance && velocity > 0) {
+        if (axis === 'y') platform.body.setVelocityY(-speed);
+        else platform.body.setVelocityX(-speed);
+      } else if (position <= origin - distance && velocity < 0) {
+        if (axis === 'y') platform.body.setVelocityY(speed);
+        else platform.body.setVelocityX(speed);
+      }
+    }
   }
 
   getGameplayTime() {

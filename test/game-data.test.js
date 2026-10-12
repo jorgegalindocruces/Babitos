@@ -86,7 +86,7 @@ test('the three initial powers preserve their canonical behavior', () => {
   assert.ok(powers.rock.damage > powers.fire.damage);
 });
 
-test('both playable phases expose their three canonical normal-enemy definitions', () => {
+test('all three playable phases expose their canonical normal-enemy definitions', () => {
   assert.deepEqual(Object.keys(gameData.enemies), [
     'come',
     'vuela',
@@ -94,6 +94,9 @@ test('both playable phases expose their three canonical normal-enemy definitions
     'garbanzo_loco',
     'arbol_pocho',
     'sapo_pota',
+    'drone_bot',
+    'robot_elice',
+    'ive_robot',
   ]);
   assert.deepEqual(gameData.enemies.come.states, ['PATROL', 'CHASE', 'WINDUP', 'BITE', 'RECOVER']);
   assert.deepEqual(gameData.enemies.vuela.states, ['AIR_PATROL', 'TARGET', 'WINDUP', 'DIVE', 'RETURN']);
@@ -128,6 +131,37 @@ test('both playable phases expose their three canonical normal-enemy definitions
     'SUBMERGE',
     'DEFEAT',
   ]);
+  assert.deepEqual(gameData.enemies.drone_bot.states, [
+    'IDLE',
+    'PATROL',
+    'DETECT',
+    'CHARGE',
+    'ELECTRIC_ATTACK',
+    'RECOVER',
+    'HURT',
+    'EXPLODE',
+  ]);
+  assert.deepEqual(gameData.enemies.robot_elice.states, [
+    'PATROL',
+    'DETECT',
+    'SPIN_WINDUP',
+    'SPIN_ATTACK',
+    'SPIN_RECOVER',
+    'VULNERABLE',
+    'HURT',
+    'DEFEAT',
+  ]);
+  assert.deepEqual(gameData.enemies.ive_robot.states, [
+    'IDLE',
+    'PATROL',
+    'DETECT',
+    'SCYTHE_WINDUP',
+    'SCYTHE_ATTACK',
+    'GRAB_ATTACK',
+    'RECOVER',
+    'HURT',
+    'DEFEAT',
+  ]);
   for (const enemy of Object.values(gameData.enemies)) {
     assert.deepEqual(enemy.coinDrop, [0, 1, 2]);
     assert.ok(enemy.health > 0, `${enemy.name} needs positive health`);
@@ -143,6 +177,12 @@ test('both playable phases expose their three canonical normal-enemy definitions
   assert.ok(gameData.enemies.arbol_pocho.punchReach > 0);
   assert.ok(gameData.enemies.arbol_pocho.punchWindupMs >= 250, 'the punch needs a readable anticipation');
   assert.ok(gameData.enemies.sapo_pota.projectileSpeed > 0);
+  assert.equal(gameData.enemies.drone_bot.relativeSize, '1.5x Babito');
+  assert.equal(gameData.enemies.robot_elice.relativeSize, '2x Babito');
+  assert.equal(gameData.enemies.ive_robot.relativeSize, '3x Babito');
+  assert.ok(gameData.enemies.drone_bot.chargeMs >= 500);
+  assert.ok(gameData.enemies.robot_elice.vulnerableMs >= 1000);
+  assert.ok(gameData.enemies.ive_robot.attackRange > 0);
 });
 
 test('Babito Corrupto has the required patterns and guaranteed shop reward', () => {

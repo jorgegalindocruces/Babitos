@@ -22,6 +22,7 @@ const DEFAULT_PROGRESS = Object.freeze({
   phase1Complete: false,
   boss2Defeated: false,
   phase2Complete: false,
+  phase3Complete: false,
   claimedRewards: Object.freeze([]),
 });
 
@@ -81,6 +82,7 @@ function sanitizeProgress(value) {
     phase1Complete: progress.phase1Complete === true,
     boss2Defeated: progress.boss2Defeated === true,
     phase2Complete: progress.phase2Complete === true,
+    phase3Complete: progress.phase3Complete === true,
     claimedRewards: [...new Set(
       rewards
         .filter((reward) => typeof reward === 'string')

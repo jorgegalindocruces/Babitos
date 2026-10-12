@@ -9,9 +9,11 @@ import {
 } from '../src/state/SaveStore.js';
 import {
   enterWorldMap,
+  isCityUnlocked,
   replayPhaseOne,
   resolveComingSoonRequest,
   startPhaseTwo,
+  startPhaseThree,
 } from '../src/state/progressionFlow.js';
 
 function createCompletedPhaseOneStore() {
@@ -72,7 +74,7 @@ test('completed Phase 1 remains replayable after moving from the shop through th
 });
 
 test('progression helpers require a store with setProgress()', () => {
-  for (const helper of [enterWorldMap, replayPhaseOne]) {
+  for (const helper of [enterWorldMap, replayPhaseOne, startPhaseTwo, startPhaseThree]) {
     assert.throws(
       () => helper(null),
       { name: 'TypeError', message: 'A progress store with setProgress() is required.' },
@@ -84,7 +86,7 @@ test('progression helpers require a store with setProgress()', () => {
   }
 });
 
-test('the retired Jungle preview redirects to playable Phase 2 and Coming Soon stays City-only', () => {
+test('retired phase previews redirect to gameplay and Coming Soon stays Boss-Total-only', () => {
   assert.deepEqual(resolveComingSoonRequest('jungle'), {
     kind: 'redirect',
     scene: 'GameScene',
@@ -96,25 +98,61 @@ test('the retired Jungle preview redirects to playable Phase 2 and Coming Soon s
     data: { level: 'jungla' },
   });
   assert.deepEqual(resolveComingSoonRequest('city'), {
-    kind: 'preview',
-    world: 'city',
+    kind: 'redirect',
+    scene: 'GameScene',
+    data: { level: 'city' },
   });
   assert.deepEqual(resolveComingSoonRequest(undefined), {
     kind: 'preview',
-    world: 'city',
+    world: 'boss-total',
   });
 });
 
-test('ComingSoonScene no longer advertises the playable Jungle as unreleased', async () => {
+test('ComingSoonScene advertises only Boss Total after the three playable phases', async () => {
   const [sceneSource, bootSource] = await Promise.all([
     readFile(new URL('../src/scenes/ComingSoonScene.js', import.meta.url), 'utf8'),
     readFile(new URL('../src/scenes/BootScene.js', import.meta.url), 'utf8'),
   ]);
 
   assert.match(sceneSource, /resolveComingSoonRequest\(data\.world\)/u);
-  assert.match(sceneSource, /Las Fases 1 y 2 ya están disponibles/u);
-  assert.doesNotMatch(sceneSource, /createJunglePreview|MUNDO 2|termina en la Fase 1/u);
-  assert.match(bootSource, /requestedWorld === 'jungle'.*requestedWorld === 'jungla'.*'city'/su);
+  assert.match(sceneSource, /Las Fases 1, 2 y 3 ya están disponibles/u);
+  assert.match(sceneSource, /PRÓXIMAMENTE: BOSS TOTAL/u);
+  assert.doesNotMatch(sceneSource, /createJunglePreview|MUNDO 2|MUNDO 3 · PRÓXIMAMENTE|termina en la Fase 1/u);
+  assert.match(bootSource, /requestedWorld[\s\S]*boss-total/u);
+});
+
+test('Phase 3 unlocks after Phase 2 and persists City checkpoints and completion', () => {
+  const storage = createMemoryStorage();
+  const store = new SaveStore({ storage });
+  store.setSelectedPower('lightning');
+  store.setProgress({
+    scene: 'map',
+    checkpoint: 'portal_oscuro',
+    boss1Defeated: true,
+    phase1Complete: true,
+    boss2Defeated: true,
+    phase2Complete: true,
+  });
+
+  assert.equal(isCityUnlocked(store.getState().progress), true);
+  const cityStart = startPhaseThree(store);
+  assert.equal(cityStart.scene, 'city');
+  assert.equal(cityStart.checkpoint, 'start');
+
+  store.setProgress({ scene: 'city', checkpoint: 'assembly_line' });
+  const resumed = new SaveStore({ storage });
+  assert.equal(resumed.getState().progress.scene, 'city');
+  assert.equal(resumed.getState().progress.checkpoint, 'assembly_line');
+
+  resumed.setProgress({ scene: 'boss-total', checkpoint: 'city_portal', phase3Complete: true });
+  const completed = new SaveStore({ storage });
+  assert.equal(completed.getState().progress.phase3Complete, true);
+  assert.equal(completed.getState().selectedPower, 'lightning');
+
+  const replay = startPhaseThree(completed);
+  assert.equal(replay.scene, 'city');
+  assert.equal(replay.checkpoint, 'start');
+  assert.equal(replay.phase3Complete, true);
 });
 
 test('Phase 2 persists through Jungle, boss reward, shop, map and replay', () => {

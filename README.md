@@ -2,7 +2,7 @@
 
 **Pequeños Babitos, grandes aventuras.**
 
-BABITOS es un plataformas 2D familiar hecho con JavaScript, Phaser 3 y Vite. Puedes crear un Babito por capas, elegir un poder, recorrer Babilandia para enfrentarte a COME, VUELA, DA VUELTAS y al Babito Corrupto, y después cruzar La Jungla contra Garbanzo Loco, Árbol Pocho y Sapo Pota hasta llegar a La Oscuridad. Las monedas del juego, llamadas Babicoins, sirven para comprar cosméticos en la tienda del Señor Empanadilla y el Señor Pingüino.
+BABITOS es un plataformas 2D familiar hecho con JavaScript, Phaser 3 y Vite. Puedes crear un Babito por capas, elegir un poder, recorrer Babilandia, cruzar La Jungla y abrirte paso por Ciudad Bicharraca contra Drone Bot, Robot Elice e IVE Robot. Babito Corrupto y La Oscuridad cierran las dos primeras fases; Boss Total queda anunciado como el próximo jefe. Las monedas del juego, llamadas Babicoins, sirven para comprar cosméticos en la tienda del Señor Empanadilla y el Señor Pingüino.
 
 El juego funciona completamente en el navegador, sin backend ni base de datos. La partida se guarda en `localStorage` bajo la clave versionada `babitos.save.v1`.
 
@@ -18,7 +18,7 @@ Documentación vigente:
 
 ## Landing page
 
-`index.html` es la portada del juego: historia, creador y poderes, mundos, personajes, once comparativas «Del papel al píxel», nueve láminas en la galería de arte conceptual y un cierre de créditos que reconoce a **Lola y Momo** como autores de la idea y los dibujos, y como directores creativos y ejecutivos de BABITOS. Garbanzo Loco, Árbol Pocho y Sapo Pota aparecen como personajes **Jugables · Fase 2**. Sus retratos siguen siendo derivados editoriales del arte aprobado; el runtime usa spritesheets independientes con ocho poses por personaje. El juego se abre en un diálogo al pulsar **JUGAR** (o con `https://babitos.es/#jugar`) y su motor solo se descarga en ese momento. Cerrar el diálogo congela la pantalla actual; si se cierra durante gameplay, al volver espera el panel de pausa.
+`index.html` es la portada del juego: historia, creador y poderes, mundos, personajes, catorce comparativas «Del papel al píxel», doce láminas en la galería de arte conceptual y un cierre de créditos que reconoce a **Lola y Momo** como autores de la idea y los dibujos, y como directores creativos y ejecutivos de BABITOS. Los enemigos de Jungla aparecen como **Jugables · Fase 2** y Drone Bot, Robot Elice e IVE Robot como **Jugables · Fase 3**. Sus retratos son derivados editoriales; el runtime usa spritesheets transparentes independientes. La landing acredita expresamente que los robots de Ciudad Bicharraca fueron imaginados y dibujados por Momo. El juego se abre en un diálogo al pulsar **JUGAR** (o con `https://babitos.es/#jugar`) y su motor solo se descarga en ese momento. Cerrar el diálogo congela la pantalla actual; si se cierra durante gameplay, al volver espera el panel de pausa.
 
 ## Recorrido jugable
 
@@ -33,7 +33,9 @@ Documentación vigente:
 9. Mapa con rejuego de Babilandia y acceso a La Jungla.
 10. La Jungla: fosos del río, puentes de cuerda, setas saltarinas, ruinas y seis secuencias de combate con diez enemigos propios en una luz que se apaga.
 11. Combate contra La Oscuridad: solo la luz de los farolillos la vuelve vulnerable.
-12. Tienda y Mapa de nuevo; Ciudad Bicharraca sigue siendo un avance estático.
+12. Tienda y Mapa de nuevo; acceso a Ciudad Bicharraca.
+13. Fase 3 en tres zonas: Entrada de la Ciudad, Fábricas y Fortaleza contra Drone Bot, Robot Elice e IVE Robot.
+14. Al superar la fortaleza aparece `PRÓXIMAMENTE: BOSS TOTAL`, con retorno al Mapa o al Título.
 
 Los tamaños pequeño, normal y grande son puramente visuales: usan el mismo *hitbox* y las mismas estadísticas.
 
@@ -60,7 +62,7 @@ La descripción exhaustiva, incluidas las reglas de foco, pausa, reintento y vul
 - Babilandia utiliza un nuevo fondo pixel art panorámico basado exclusivamente en la arquitectura, paleta y atmósfera de la lámina oficial. Si el asset no puede cargarse, el juego vuelve automáticamente al fondo procedural.
 - La Jungla utiliza el fondo panorámico pixel art aprobado, con selva, montañas, cascadas y templo. Se mueve suavemente con la cámara; agua, lianas, ruinas, luciérnagas y oscuridad siguen siendo capas dinámicas independientes, y el fallback procedural conserva la fase si el raster no carga.
 - La arena de Babito Corrupto tiene un fondo 16:9 propio: Babilandia en ruinas al atardecer, basado en el ejemplo canónico del boss y con una zona de juego limpia para conservar la lectura de ataques y plataformas.
-- Ciudad Bicharraca, el último mundo del mapa, muestra ya su paisaje industrial 16:9 como fondo y recorte interior de su pantalla de avance estática; la tarjeta del mapa mantiene un icono procedural.
+- Ciudad Bicharraca es una fase completa de 7200 px con el fondo industrial oficial 16:9 y tres capas transparentes de ambiente/parallax, plataformas metálicas fijas y móviles, peligros eléctricos, cuatro checkpoints, 36 Babicoins y once encuentros. Al final anuncia Boss Total sin simular ese combate.
 - La banda sonora reúne siete composiciones procedurales originales de 32 pasos para título, Babilandia, boss, tienda, Jungla, Oscuridad y cierre. Un secuenciador Web Audio con planificación anticipada combina melodía, arpegio, bajo y ritmo; `AVENTURA` es el arreglo inicial y `CALMA`/`ARCADE` ofrecen interpretaciones globales más suave o más rápida. Música y efectos para interfaz, salto, ataque, daño, monedas, checkpoints, boss y compras se sintetizan en el navegador, sin archivos de audio ni dependencias adicionales.
 - El Babito usa un atlas por capas con celdas fuente de 80 px y 54 poses repartidas en nueve estados: `idle`, caminar, correr, saltar, caer, aterrizar (`land`), atacar, recibir daño y KO. Su base sigue las [láminas de anatomía](art/production/babito-v5.md): el diseño lógico de 48 unidades se rasteriza a una rejilla real de 64 px, con cuerpo de gominola de 47 × 47 px, corona plana, ojos brillantes, sonrisa con lengua, mejillas, brazos redondeados y dos pies cortos, en azul `#48D9F5` con luz y sombra. En tamaño normal cada píxel fuente se muestra 1:1; pequeño y grande usan cajas de 54 y 106 px (las láminas: 32/48/64). Cada ciclo mueve silueta, pies y brazos sin perder la cara elegida; solo el daño (ojos «> <» con estrellas) y el KO (ojos en X) la sustituyen. KO, daño y ataque tienen prioridad sobre el movimiento; los *one-shots* comienzan de inmediato desde su primera pose cuando se disparan. Los seis enemigos normales cambian de animación según su estado: los tres de Babilandia conservan su comportamiento y los tres de La Jungla añaden lanza, golpes de ramas y proyectiles tóxicos. Babito Corrupto cambia de pose según el patrón; La Oscuridad ondula, viaja por sombra, telegrafía cada ataque, se ilumina al quedar expuesta y se disipa en luciérnagas.
 - El Babito ocupa cajas visuales de 54, 80 y 106 px en pequeño, normal y grande, manteniendo una única hitbox de 28 × 40 y la misma línea de apoyo. COME ancla sus pies al cuerpo físico para no hundirse en suelo o plataformas durante caminar, anticipar o morder.
@@ -199,12 +201,12 @@ Estado de producción verificado el 8 de octubre de 2026: GitHub Pages está `bu
 
 Las láminas de `art/approved/` son dirección artística, no *spritesheets* finales. El estado actual es:
 
-- Babilandia, La Jungla, la arena de Babito Corrupto y Ciudad Bicharraca tienen fondos raster con fallback procedural. La procedencia del nuevo paisaje de Fase 2 está en [jungla-v1.md](art/production/jungla-v1.md).
-- COME, VUELA, Garbanzo Loco, Árbol Pocho y Sapo Pota usan hojas raster de producción. Los tres enemigos de La Jungla tienen spritesheets transparentes de ocho poses, máquinas de estado propias y comportamiento jugable; su procedencia y la reparación v2 de los frames recortados están en [jungle-enemy-sheets-v2.md](art/production/jungle-enemy-sheets-v2.md).
+- Babilandia, La Jungla, la arena de Babito Corrupto y Ciudad Bicharraca tienen fondos raster con fallback procedural. La procedencia de los paisajes está en [jungla-v1.md](art/production/jungla-v1.md) y [ciudad-bicharraca-v1.md](art/production/ciudad-bicharraca-v1.md).
+- COME, VUELA, Garbanzo Loco, Árbol Pocho, Sapo Pota, Drone Bot, Robot Elice e IVE Robot usan hojas raster de producción. Los robots de la Fase 3 tienen hojas transparentes de ocho poses, máquinas de estado propias y comportamiento jugable; su procedencia y prompts están en [city-enemy-sheets-v1.md](art/production/city-enemy-sheets-v1.md).
 - Logo, Babito Corrupto, tenderos y Árbol de Poder tienen PNG raster; las poses del boss se componen en runtime.
 - El atlas base del Babito es arte procedural canónico de producción; sus capas cosméticas se generan por código con claves definitivas y heredan la misma geometría. La hoja de DA VUELTAS, la moneda, proyectiles, plataformas, props y HUD siguen siendo pixel art procedural.
 
-Los elementos todavía provisionales deben sustituirse gradualmente por sprites y animaciones finales sin cambiar sus IDs ni la lógica; el Babito base no forma parte de esa lista. La banda sonora procedural es la implementación musical vigente: siete composiciones originales con tres arreglos seleccionables, generadas íntegramente con Web Audio y sin archivos externos. La Jungla ya tiene fondo raster de producción, mientras sus losetas, setas, farolillos, decorado dinámico y el sprite de La Oscuridad siguen siendo procedurales. Ciudad Bicharraca es una pantalla de avance; su nivel y Boss Total pertenecen a iteraciones posteriores.
+Los elementos todavía provisionales deben sustituirse gradualmente por sprites y animaciones finales sin cambiar sus IDs ni la lógica; el Babito base y los ocho enemigos con hojas raster no forman parte de esa lista. La banda sonora procedural es la implementación musical vigente: siete composiciones originales con tres arreglos seleccionables, generadas íntegramente con Web Audio y sin archivos externos. La Jungla y Ciudad combinan fondos raster con decorado dinámico procedural. Boss Total y el final siguen perteneciendo a iteraciones posteriores.
 
 El estado exacto y la procedencia de los assets se describen en [ART_BIBLE.md](docs/ART_BIBLE.md) y `art/production/`.
 

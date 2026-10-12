@@ -108,4 +108,10 @@ test('gameplay scenes clear overlays left by a previous visit', async () => {
     sources.GameScene,
     /this\.enemySprites\.add\(controller\.sprite\);[\s\S]{0,120}controller\.configureBody\(\);/,
   );
+  // TileSprite receives an Arcade Body through `physics.add.existing`, but it
+  // does not gain Sprite's convenience methods. Reversing the platform must
+  // therefore target the body or the whole scene update loop throws.
+  assert.match(sources.GameScene, /platform\.body\.setVelocityX\(/);
+  assert.match(sources.GameScene, /platform\.body\.setVelocityY\(/);
+  assert.doesNotMatch(sources.GameScene, /platform\.setVelocity[XY]\(/);
 });

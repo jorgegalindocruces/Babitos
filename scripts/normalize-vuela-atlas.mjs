@@ -97,7 +97,7 @@ function pngChunk(type, data) {
   return chunk;
 }
 
-function encodeRgbaPng(path, width, height, pixels) {
+export function encodeRgbaPng(path, width, height, pixels) {
   const header = Buffer.alloc(13);
   header.writeUInt32BE(width, 0);
   header.writeUInt32BE(height, 4);

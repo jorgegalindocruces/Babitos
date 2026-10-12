@@ -8,6 +8,8 @@ const BACKGROUND_URLS = Object.freeze({
   city: new URL('../public/assets/backgrounds/ciudad-bicharraca-v1.webp', import.meta.url),
 });
 
+const CITY_SOURCE_URL = new URL('../art/approved/city_background_v1.png', import.meta.url);
+
 function readLossyWebpDimensions(buffer) {
   assert.equal(buffer.toString('ascii', 0, 4), 'RIFF');
   assert.equal(buffer.toString('ascii', 8, 12), 'WEBP');
@@ -28,4 +30,14 @@ test('the raster-backed stages ship with real 16:9 production backgrounds', asyn
     assert.deepEqual(dimensions, { width: 1672, height: 941 });
     assert.ok(Math.abs(dimensions.width / dimensions.height - 16 / 9) < 0.002);
   }
+});
+
+test('Ciudad ships from the approved official Phase 3 panorama', async () => {
+  const source = await readFile(CITY_SOURCE_URL);
+  assert.equal(source.toString('hex', 0, 8), '89504e470d0a1a0a');
+  assert.deepEqual(
+    { width: source.readUInt32BE(16), height: source.readUInt32BE(20) },
+    { width: 1672, height: 941 },
+  );
+  assert.ok(source.byteLength > 1_000_000, 'approved city source is unexpectedly small');
 });

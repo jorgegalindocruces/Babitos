@@ -22,15 +22,17 @@ Landing → JUGAR → diálogo → Boot → Título
   → Creador → Fuego/Rayo/Roca → Intro → Babilandia
   → COME/VUELA/DA VUELTAS → Babito Corrupto → Tienda → Mapa
   → La Jungla → La Oscuridad → Tienda → Mapa
+  → Ciudad Bicharraca → Drone Bot/Robot Elice/IVE Robot → PRÓXIMAMENTE: BOSS TOTAL
 ```
 
-`src/main.js` controla la portada y sus diálogos; importa `src/gameBoot.js` solo al abrir el juego. `gameBoot.js` crea Phaser y el audio, y suspende o reactiva el runtime al cerrar o reabrir el diálogo. Ciudad Bicharraca solo tiene un avance estático; `ComingSoonScene` es exclusivo de Ciudad y cualquier llamada heredada a su antigua preview de Jungla redirige a la Fase 2 jugable. Boss Total y el Final son roadmap, no gameplay actual.
+`src/main.js` controla la portada y sus diálogos; importa `src/gameBoot.js` solo al abrir el juego. `gameBoot.js` crea Phaser y el audio, y suspende o reactiva el runtime al cerrar o reabrir el diálogo. Ciudad Bicharraca es la Fase 3 jugable; `ComingSoonScene` queda reservado al anuncio de Boss Total y redirige aliases heredados de Jungla o Ciudad a su fase real. Boss Total y el Final son roadmap, no gameplay actual.
 
 ## Reglas no negociables
 
 - Señor Empanadilla y Señor Pingüino son aliados y tenderos.
 - Los bosses canónicos son Babito Corrupto, La Oscuridad y Boss Total; los dos primeros están implementados. La Oscuridad es intangible en la sombra y solo la luz la vuelve vulnerable.
 - COME es mayor que el Babito; VUELA es menor y aparece solo o en pareja; DA VUELTAS es la bola verde con pinchos y solo es vulnerable mareado.
+- Drone Bot es volador y usa un rayo vertical telegrafiado; Robot Elice e IVE Robot son estrictamente terrestres. Robot Elice solo es vulnerable tras girar e IVE conserva visible el corazón roto y sus guadañas.
 - No rediseñar personajes canónicos ni inventar sustitutos para los tres enemigos.
 - El [Babito v5](../art/production/babito-v5.md) sigue las láminas `art/approved/babito_anatomy_1.png`, `_2.png` y `_3.png`: diseño lógico de 48 unidades rasterizado a 64 px reales dentro de una celda fuente de 80 px, cuerpo de gominola de 47 × 47 px con corona plana y flancos casi verticales, ojos ovalados brillantes de 8 × 12 px, sonrisa abierta con lengua, mejillas `#FF91AD`, brazos en muñón redondeado, dos pies cortos separados, cuerpo `#48D9F5`, luz `#91F1FF`, sombra `#229CCB` y contorno `#182334`. La sombra solo puede ocupar el flanco derecho: nunca cruzar la barriga ni tocar los pies, y las raíces de los pies siguen abiertas para no crear cinturilla, calzoncillo o pantalón. Animar o equipar cosméticos no autoriza a sustituir la cara equipada salvo en daño y derrota, a alargar los brazos hasta parecer orejas, a tapar los ojos con sombreros ni a agrandar o encoger sus rasgos base.
 - Ojos y boca son capas separadas dentro de siete categorías.

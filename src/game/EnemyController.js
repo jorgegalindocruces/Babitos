@@ -35,6 +35,9 @@ const TEXTURES = {
   garbanzo_loco: 'enemy_come',
   arbol_pocho: 'enemy_come',
   sapo_pota: 'enemy_vuela',
+  drone_bot: 'enemy_vuela',
+  robot_elice: 'enemy_come',
+  ive_robot: 'enemy_come',
 };
 
 export const JUNGLE_ENEMY_TYPES = Object.freeze([
@@ -44,6 +47,14 @@ export const JUNGLE_ENEMY_TYPES = Object.freeze([
 ]);
 
 const JUNGLE_ENEMY_TYPE_SET = new Set(JUNGLE_ENEMY_TYPES);
+
+export const CITY_ENEMY_TYPES = Object.freeze([
+  'drone_bot',
+  'robot_elice',
+  'ive_robot',
+]);
+
+const EXPLICIT_HURT_TYPE_SET = new Set([...JUNGLE_ENEMY_TYPES, ...CITY_ENEMY_TYPES]);
 
 const DA_VUELTAS_ENGAGE_RANGE = 460;
 // Below the playable floor: a walker that somehow fell is sent home.
@@ -66,8 +77,16 @@ export const JUNGLE_VISUAL_SCALES = Object.freeze({
   sapo_pota: 148 / 256,
 });
 
+// One normal Babito renders at 80 px. These authored sizes preserve the
+// Phase 3 concept-sheet ratios: 1.5×, 2× and 3× respectively.
+export const CITY_VISUAL_SCALES = Object.freeze({
+  drone_bot: 120 / 443,
+  robot_elice: 160 / 443,
+  ive_robot: 240 / 443,
+});
+
 export function getEnemyVisualSize(type) {
-  const scale = JUNGLE_VISUAL_SCALES[type];
+  const scale = JUNGLE_VISUAL_SCALES[type] ?? CITY_VISUAL_SCALES[type];
   if (scale == null) return VISUAL_SIZES[type];
   const cell = getEnemyCellSize(type);
   return { width: cell.width * scale, height: cell.height * scale };
@@ -148,6 +167,9 @@ export class EnemyController {
     this.hurtReturnState = null;
     this.hurtResumeStartedAt = null;
     this.punchChargeStartedAt = null;
+    this.iveAttackIndex = 0;
+    this.pendingIveAttack = 'SCYTHE_ATTACK';
+    this.iveStrikeStep = 0;
 
     this.sprite = scene.physics.add.sprite(this.home.x, this.home.y, TEXTURES[this.type]);
     this.sprite.setDepth(9).setData('controller', this).setVisible(false);
@@ -225,6 +247,19 @@ export class EnemyController {
       this.sprite.setImmovable(true);
       setWorldBodySize(this.sprite, SAPO_BODY_SIZE.width, SAPO_BODY_SIZE.height);
     }
+    if (this.type === 'drone_bot') {
+      this.sprite.setDisplaySize(120, 120);
+      this.sprite.body.allowGravity = false;
+      setWorldBodySize(this.sprite, 78, 60);
+    }
+    if (this.type === 'robot_elice') {
+      this.sprite.setDisplaySize(160, 160);
+      setWorldBodySize(this.sprite, 92, 106);
+    }
+    if (this.type === 'ive_robot') {
+      this.sprite.setDisplaySize(240, 240);
+      setWorldBodySize(this.sprite, 94, 178);
+    }
     return this;
   }
 
@@ -261,6 +296,7 @@ export class EnemyController {
     this.state = next;
     this.stateStartedAt = this.now;
     this.attackEventSent = false;
+    if (next === 'SCYTHE_ATTACK') this.iveStrikeStep = 0;
     this.stateBadge?.setText(next);
     this.setVisualScale();
     this.applyStateTint();
@@ -280,6 +316,8 @@ export class EnemyController {
   get isHurt() { return !this.dead && this.now < this.hurtUntil; }
 
   get isJungleEnemy() { return JUNGLE_ENEMY_TYPE_SET.has(this.type); }
+
+  get usesExplicitHurtState() { return EXPLICIT_HURT_TYPE_SET.has(this.type); }
 
   tuning(name, fallback) {
     return getPositiveNumber(
@@ -396,7 +434,7 @@ export class EnemyController {
       this.syncVisual();
       return;
     }
-    if (this.isJungleEnemy && this.state === 'HURT') {
+    if (this.usesExplicitHurtState && this.state === 'HURT') {
       const resumeStartedAt = this.hurtResumeStartedAt;
       this.setState(this.hurtReturnState ?? 'RECOVER');
       // A hit that returns to the state it interrupted resumes its clock:
@@ -411,6 +449,9 @@ export class EnemyController {
     else if (this.type === 'garbanzo_loco') this.updateGarbanzoLoco();
     else if (this.type === 'arbol_pocho') this.updateArbolPocho();
     else if (this.type === 'sapo_pota') this.updateSapoPota();
+    else if (this.type === 'drone_bot') this.updateDroneBot();
+    else if (this.type === 'robot_elice') this.updateRobotElice();
+    else if (this.type === 'ive_robot') this.updateIveRobot();
     this.keepInsideWalkBounds();
     this.updateVisualAnimation();
     this.syncVisual();
@@ -426,7 +467,7 @@ export class EnemyController {
     const outward = (this.sprite.x <= minX && velocityX < 0) || (this.sprite.x >= maxX && velocityX > 0);
     if (!outward) return;
     this.sprite.setX(Phaser.Math.Clamp(this.sprite.x, minX, maxX));
-    const turnsAround = this.state === 'PATROL' || this.state === 'SPIN';
+    const turnsAround = ['PATROL', 'SPIN', 'SPIN_ATTACK'].includes(this.state);
     if (turnsAround) {
       this.direction = this.sprite.x <= minX ? 1 : -1;
       this.sprite.setVelocityX(Math.abs(velocityX) * this.direction);
@@ -722,6 +763,176 @@ export class EnemyController {
     }
   }
 
+  emitElectricAttack() {
+    if (this.attackEventSent || this.dead || this.qaPresentation) return false;
+    this.attackEventSent = true;
+    this.services.onElectricAttack?.(this, Object.freeze({
+      x: this.sprite.x,
+      fromY: this.sprite.y + 24,
+      toY: 480,
+      damage: this.tuning('damage', 1),
+      durationMs: Math.max(180, this.tuning('attackMs', 430)),
+    }));
+    return true;
+  }
+
+  updateDroneBot() {
+    const distance = this.player.x - this.sprite.x;
+    const absolute = Math.abs(distance);
+    const detectRange = this.tuning('detectRange', 430);
+
+    if (this.state === 'IDLE') {
+      this.sprite.setVelocity(0, Math.sin(this.now / 180) * 18);
+      if (this.elapsed >= 520) this.setState('PATROL');
+    } else if (this.state === 'PATROL') {
+      const targetX = this.home.x + Math.sin(this.now / 760 + this.home.x * 0.01) * 145;
+      const targetY = this.home.y + Math.sin(this.now / 470 + this.home.x * 0.02) * 36;
+      this.sprite.setVelocity(
+        Phaser.Math.Clamp((targetX - this.sprite.x) * 2.2, -this.config.speed, this.config.speed),
+        Phaser.Math.Clamp((targetY - this.sprite.y) * 2.1, -72, 72),
+      );
+      if (Math.abs(this.sprite.body.velocity.x) > 2) {
+        this.direction = this.sprite.body.velocity.x < 0 ? -1 : 1;
+      }
+      if (absolute <= detectRange && this.elapsed >= 620) this.setState('DETECT');
+    } else if (this.state === 'DETECT') {
+      this.direction = getDirection(distance, this.direction);
+      this.sprite.setVelocity(0, -18);
+      if (this.elapsed >= 360) this.setState('CHARGE');
+    } else if (this.state === 'CHARGE') {
+      this.sprite.setVelocity(0, 0);
+      this.setVisualScale(1.06, 0.94);
+      if (this.elapsed >= this.tuning('chargeMs', 720)) this.setState('ELECTRIC_ATTACK');
+    } else if (this.state === 'ELECTRIC_ATTACK') {
+      this.sprite.setVelocity(0, 0);
+      this.setVisualScale(1.08, 0.96);
+      this.emitElectricAttack();
+      if (this.elapsed >= this.tuning('attackMs', 430)) this.setState('RECOVER');
+    } else if (this.state === 'RECOVER') {
+      this.setVisualScale();
+      this.scene.physics.moveTo(this.sprite, this.home.x, this.home.y, this.config.speed * 0.78);
+      if (this.elapsed >= this.tuning('recoverMs', 920)) {
+        this.sprite.setVelocity(0, 0);
+        this.setState('PATROL');
+      }
+    }
+  }
+
+  updateRobotElice() {
+    const distance = this.player.x - this.sprite.x;
+    const absolute = Math.abs(distance);
+    const detectRange = this.tuning('detectRange', 390);
+
+    if (this.state === 'PATROL') {
+      this.direction = getEnemyWallDirection(
+        this.sprite.body.blocked,
+        getEnemyPatrolDirection(this.sprite.x, this.home.x, 190, this.direction),
+      );
+      this.sprite.setAngle(0).setAngularVelocity(0);
+      this.sprite.setVelocityX(this.direction * this.config.speed);
+      if (absolute <= detectRange && this.elapsed >= 650) this.setState('DETECT');
+    } else if (this.state === 'DETECT') {
+      this.direction = getDirection(distance, this.direction);
+      this.sprite.setVelocityX(0);
+      if (this.elapsed >= 340) this.setState('SPIN_WINDUP');
+    } else if (this.state === 'SPIN_WINDUP') {
+      this.sprite.setVelocityX(0).setAngularVelocity(this.direction * 170);
+      this.setVisualScale(1.08, 0.92);
+      if (this.elapsed >= this.tuning('windupMs', 620)) this.setState('SPIN_ATTACK');
+    } else if (this.state === 'SPIN_ATTACK') {
+      this.setVisualScale();
+      this.direction = getEnemyWallDirection(this.sprite.body.blocked, this.direction);
+      this.sprite
+        .setAngularVelocity(this.direction * 780)
+        .setVelocityX(this.direction * this.tuning('spinSpeed', 255));
+      if (this.elapsed >= this.tuning('spinMs', 1450)) this.setState('SPIN_RECOVER');
+    } else if (this.state === 'SPIN_RECOVER') {
+      this.sprite.setVelocityX(0).setAngularVelocity(0).setAngle(0);
+      this.setVisualScale(0.96, 1.04);
+      if (this.elapsed >= this.tuning('recoverMs', 420)) this.setState('VULNERABLE');
+    } else if (this.state === 'VULNERABLE') {
+      this.sprite.setVelocityX(0).setAngularVelocity(0).setAngle(Math.sin(this.now / 80) * 4);
+      this.setVisualScale(0.98, 1.02);
+      if (this.elapsed >= this.tuning('vulnerableMs', 1300)) {
+        this.sprite.setAngle(0);
+        this.setVisualScale();
+        this.setState('PATROL');
+      }
+    }
+  }
+
+  updateIveRobot() {
+    const distance = this.player.x - this.sprite.x;
+    const absolute = Math.abs(distance);
+    const detectRange = this.tuning('detectRange', 430);
+    const attackRange = this.tuning('attackRange', 150);
+    const reachable = this.canReachPlayer(attackRange);
+
+    if (this.state === 'IDLE') {
+      this.sprite.setVelocityX(0);
+      if (this.elapsed >= 520) this.setState('PATROL');
+    } else if (this.state === 'PATROL') {
+      this.direction = getEnemyWallDirection(
+        this.sprite.body.blocked,
+        getEnemyPatrolDirection(this.sprite.x, this.home.x, 170, this.direction),
+      );
+      this.sprite.setVelocityX(this.direction * this.config.speed);
+      if (absolute <= detectRange && reachable && this.elapsed >= 520) this.setState('DETECT');
+    } else if (this.state === 'DETECT') {
+      this.direction = getDirection(distance, this.direction);
+      this.sprite.setVelocityX(0);
+      this.pendingIveAttack = this.iveAttackIndex % 3 === 2 ? 'GRAB_ATTACK' : 'SCYTHE_ATTACK';
+      if (this.elapsed >= 360) this.setState('SCYTHE_WINDUP');
+    } else if (this.state === 'SCYTHE_WINDUP') {
+      this.sprite.setVelocityX(0);
+      this.setVisualScale(1.04, 0.96);
+      if (this.elapsed >= this.tuning('windupMs', 680)) this.setState(this.pendingIveAttack);
+    } else if (this.state === 'SCYTHE_ATTACK') {
+      const doubleStrike = this.definition.doubleScythe === true;
+      const strikeDirection = this.iveStrikeStep === 0 ? this.direction : -this.direction;
+      this.setVisualScale(1.06, 0.98);
+      this.emitMeleeAttack('scythe', {
+        direction: strikeDirection,
+        reach: 150,
+        height: 120,
+        offsetY: 10,
+        durationMs: 210,
+        damage: this.config.damage,
+      });
+      if (doubleStrike && this.iveStrikeStep === 0 && this.elapsed >= 370) {
+        this.iveStrikeStep = 1;
+        this.attackEventSent = false;
+      }
+      const duration = doubleStrike ? this.tuning('scytheMs', 760) : 520;
+      if (this.elapsed >= duration) {
+        this.iveAttackIndex += 1;
+        this.setState('RECOVER');
+      }
+    } else if (this.state === 'GRAB_ATTACK') {
+      this.sprite.setVelocityX(0);
+      this.setVisualScale(1.08, 0.98);
+      this.emitMeleeAttack('grab', {
+        direction: this.direction,
+        reach: 176,
+        height: 86,
+        offsetY: 24,
+        durationMs: 280,
+        damage: this.config.damage,
+      });
+      if (this.elapsed >= this.tuning('grabMs', 560)) {
+        this.iveAttackIndex += 1;
+        this.setState('RECOVER');
+      }
+    } else if (this.state === 'RECOVER') {
+      this.sprite.setVelocityX(-this.direction * 24);
+      this.setVisualScale(0.98, 1.02);
+      if (this.elapsed >= this.tuning('recoverMs', 1180)) {
+        this.setVisualScale();
+        this.setState(absolute <= detectRange && reachable ? 'DETECT' : 'PATROL');
+      }
+    }
+  }
+
   /**
    * Returns a living enemy to its spawn in a neutral state. Used when the
    * Babito respawns nearby, so a checkpoint never drops them into an attack.
@@ -732,6 +943,7 @@ export class EnemyController {
     this.hurtReturnState = null;
     this.hurtResumeStartedAt = null;
     this.punchChargeStartedAt = null;
+    this.iveStrikeStep = 0;
     this.attackEventSent = false;
     this.sprite.setPosition(this.home.x, this.home.y)
       .setVelocity(0, 0)
@@ -752,6 +964,7 @@ export class EnemyController {
     if (this.type === 'come') return this.state === 'BITE';
     if (this.type === 'vuela') return this.state === 'DIVE';
     if (this.type === 'da_vueltas') return this.state === 'SPIN';
+    if (this.type === 'robot_elice') return this.state === 'SPIN_ATTACK';
     // Phase 2 attacks use authored directional windows or projectiles. Body
     // overlap must never damage from the rear or canopy side of the pose.
     if (this.isJungleEnemy) return false;
@@ -765,6 +978,7 @@ export class EnemyController {
     if (this.type === 'sapo_pota') {
       return ['EMERGE', 'IDLE', 'ATTACK_WINDUP', 'TOXIC_VOMIT', 'RECOVER'].includes(this.state);
     }
+    if (this.type === 'robot_elice') return this.state !== 'SPIN_ATTACK';
     return true;
   }
 
@@ -785,7 +999,7 @@ export class EnemyController {
     const hurtDuration = getEnemyClipDurationMs(this.type, 'hurt');
     const recoveryState = getEnemyStateAfterHit(this.type, this.state);
     this.hurtUntil = this.now + hurtDuration;
-    if (this.isJungleEnemy) {
+    if (this.usesExplicitHurtState) {
       this.hurtReturnState = recoveryState;
       this.hurtResumeStartedAt = recoveryState === this.state ? this.stateStartedAt : null;
       this.setState('HURT');
@@ -800,6 +1014,8 @@ export class EnemyController {
     if (this.type === 'vuela') this.sprite.setVelocity(knockbackDirection * 54, -68);
     else if (this.type === 'come') this.sprite.setVelocity(knockbackDirection * 72, -90);
     else if (this.type === 'garbanzo_loco') this.sprite.setVelocity(knockbackDirection * 64, -78);
+    else if (this.type === 'drone_bot') this.sprite.setVelocity(knockbackDirection * 58, -64);
+    else if (this.type === 'robot_elice') this.sprite.setVelocity(knockbackDirection * 46, -52);
     else this.sprite.setVelocity(0, 0);
     this.visual?.setTintFill(0xffffff);
     this.scene.time.delayedCall(90, () => this.visual?.active && !this.dead && this.applyStateTint());
@@ -809,12 +1025,15 @@ export class EnemyController {
   defeat() {
     if (this.dead) return;
     const previousState = this.state;
-    if (this.config.states.includes('DEFEAT')) {
-      this.state = 'DEFEAT';
+    const defeatState = this.config.states.includes('DEFEAT')
+      ? 'DEFEAT'
+      : (this.config.states.includes('EXPLODE') ? 'EXPLODE' : null);
+    if (defeatState) {
+      this.state = defeatState;
       this.stateStartedAt = this.now;
       this.attackEventSent = true;
-      this.stateBadge?.setText('DEFEAT');
-      this.services.onStateChange?.(this, 'DEFEAT', previousState);
+      this.stateBadge?.setText(defeatState);
+      this.services.onStateChange?.(this, defeatState, previousState);
     }
     this.dead = true;
     this.sprite.body.enable = false;

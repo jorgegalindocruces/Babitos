@@ -30,6 +30,7 @@ const CONTEXT_DOCUMENTS = Object.freeze([
   'art/production/jungla-v1.md',
   'art/production/boss-arena-v1.md',
   'art/production/ciudad-bicharraca-v1.md',
+  'art/production/city-enemy-sheets-v1.md',
   'art/production/enemy-vuela-v4.md',
   'art/production/jungle-enemy-sheets-v1.md',
   'art/production/jungle-enemy-sheets-v2.md',
@@ -44,6 +45,7 @@ const ESSENTIAL_LINK_TARGETS = Object.freeze([
   'src/scenes/BossScene.js',
   'src/scenes/DarknessBossScene.js',
   'src/data/levels/jungla.json',
+  'src/data/levels/city.json',
   'src/game/EnemyBehavior.js',
   'src/game/EnemyPresentation.js',
   'src/game/BabitoAvatar.js',
@@ -51,6 +53,7 @@ const ESSENTIAL_LINK_TARGETS = Object.freeze([
   'src/game/createTextures.js',
   'src/game/bossPatternGeometry.js',
   'src/game/jungleScenery.js',
+  'src/game/cityScenery.js',
   'src/game/platformCollision.js',
   'src/ui/Button.js',
   'src/ui/textQuality.js',
@@ -64,6 +67,9 @@ const ESSENTIAL_LINK_TARGETS = Object.freeze([
   'public/assets/characters/enemy-garbanzo-loco-sheet-v2.png',
   'public/assets/characters/enemy-arbol-pocho-sheet-v2.png',
   'public/assets/characters/enemy-sapo-pota-sheet-v2.png',
+  'public/assets/enemies/city/drone-bot-sheet-v1.png',
+  'public/assets/enemies/city/robot-elice-sheet-v1.png',
+  'public/assets/enemies/city/ive-robot-sheet-v1.png',
   'public/assets/backgrounds/babilandia-v2.webp',
   'public/assets/backgrounds/jungla-v1.webp',
   'public/assets/backgrounds/boss-arena-v1.webp',
@@ -231,8 +237,12 @@ test('scope and critical gameplay invariants are explicit', async () => {
   assert.match(interactions, /Garbanzo Loco[\s\S]*`SPEAR_ATTACK`/u);
   assert.match(interactions, /Árbol Pocho[\s\S]*`PUNCH_LEFT`[\s\S]*`PUNCH_RIGHT`/u);
   assert.match(interactions, /Sapo Pota[\s\S]*`TOXIC_VOMIT`[\s\S]*2 y 3 proyectiles/u);
-  assert.match(gameDesign, /Ciudad Bicharraca \| Pantalla de avance estática/u);
+  assert.match(gameDesign, /Ciudad Bicharraca, tres zonas, robots y checkpoints \| Jugable \(Fase 3\)/u);
   assert.match(gameDesign, /Boss Total y Final \| Roadmap, sin gameplay/u);
+  assert.match(interactions, /Drone Bot[\s\S]*CHARGE[\s\S]*ELECTRIC_ATTACK/u);
+  assert.match(interactions, /Robot Elice[\s\S]*SPIN_ATTACK[\s\S]*VULNERABLE/u);
+  assert.match(interactions, /IVE Robot[\s\S]*SCYTHE_ATTACK[\s\S]*GRAB_ATTACK/u);
+  assert.match(interactions, /`PRÓXIMAMENTE: BOSS TOTAL`/u);
   assert.match(interactions, /Todos los fosos miden como mucho 160 px/u);
   assert.match(interactions, /un poder nunca destruye, oculta ni desactiva suelo o plataformas/u);
   assert.match(interactions, /El suelo base es completamente sólido/u);
@@ -251,7 +261,7 @@ test('scope and critical gameplay invariants are explicit', async () => {
   assert.match(acceptance, /raíces de los pies permanecen abiertas sin formar cinturilla/u);
   assert.match(masterPrompt, /La sombra solo puede ocupar el flanco derecho/u);
   assert.match(interactions, /`\?qa=TitleScene`[\s\S]*`DarknessBossScene`/u);
-  assert.match(interactions, /`&qaLevel=jungla`/u);
+  assert.match(interactions, /`&qaLevel=jungla\|city`/u);
   assert.match(interactions, /`&qaOneHit=1`[\s\S]*`DarknessBossScene`/u);
   assert.match(interactions, /se desplaza la tanda completa[\s\S]*sin comprimir/u);
   assert.match(acceptance, /Ningún poder destruye, oculta, desplaza ni desactiva el suelo o las plataformas/u);
@@ -265,8 +275,11 @@ test('scope and critical gameplay invariants are explicit', async () => {
   assert.match(interactions, /texturas Canvas de texto usan filtro linear[\s\S]*cada cambio/u);
   assert.match(implementation, /updateText\(\)[\s\S]*sprites y fondos siguen en nearest/u);
   assert.match(artBible, /texto visible parte de 12 px[\s\S]*texturas tipográficas usan linear/u);
-  assert.match(artBible, /Landing web \| 33 derivados optimizados/u);
-  assert.match(artBible, /Garbanzo Loco, Árbol Pocho y Sapo Pota[\s\S]*spritesheets raster de producción/u);
+  assert.match(artBible, /Landing web \| 42 derivados optimizados/u);
+  assert.match(
+    artBible,
+    /Garbanzo Loco, Árbol Pocho, Sapo Pota, Drone Bot, Robot Elice e IVE Robot[\s\S]*spritesheets raster de producción/u,
+  );
   assert.match(acceptance, /Lola y Momo[\s\S]*directores creativos y ejecutivos de BABITOS/u);
   assert.match(interactions, /`#creditos`[\s\S]*Lola y Momo[\s\S]*directores creativos y ejecutivos de BABITOS/u);
   assert.match(artBible, /La Oscuridad:[\s\S]*`SHIFT`[\s\S]*`EXPOSED`[\s\S]*`DISPELLED`/u);
@@ -276,7 +289,7 @@ test('scope and critical gameplay invariants are explicit', async () => {
   assert.match(masterPrompt, /Babito v5[\s\S]*cuerpo de gominola de 47 × 47 px[\s\S]*ojos ovalados brillantes/u);
 });
 
-test('visible shell and scene copy cannot regress to the pre-Phase-2 context', async () => {
+test('visible shell and scene copy reflects all playable phases', async () => {
   const [main, comingSoon, shop] = await Promise.all([
     readRepositoryFile('src/main.js'),
     readRepositoryFile('src/scenes/ComingSoonScene.js'),
@@ -285,8 +298,9 @@ test('visible shell and scene copy cannot regress to the pre-Phase-2 context', a
 
   assert.match(main, /import\.meta\.env\.DEV && params\.has\('qa'\)/u);
   assert.match(main, /if \(!playDialog\.open\)[\s\S]*controller\.setActive\(false\)/u);
-  assert.match(comingSoon, /Las Fases 1 y 2 ya están disponibles/u);
-  assert.doesNotMatch(comingSoon, /termina en la Fase 1|createJunglePreview/u);
+  assert.match(comingSoon, /Las Fases 1, 2 y 3 ya están disponibles/u);
+  assert.match(comingSoon, /PRÓXIMAMENTE: BOSS TOTAL/u);
+  assert.doesNotMatch(comingSoon, /termina en la Fase 1|createJunglePreview|MUNDO 3 · PRÓXIMAMENTE/u);
   assert.match(shop, /getShopBossRewardCopy\(snapshot\.progress, gameData\.bossData\)/u);
   assert.doesNotMatch(shop, /DERROTA AL BOSS: \+30 MONEDAS/u);
 });

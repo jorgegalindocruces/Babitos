@@ -472,7 +472,7 @@ a { color: var(--cyan); }
   background-size: 300% auto;
   background-position: 50% 31%;
 }
-.world-ciudad .world-art { background-image: url('/assets/backgrounds/ciudad-bicharraca-v1.webp'); filter: saturate(0.7); }
+.world-ciudad .world-art { background-image: url('/assets/backgrounds/ciudad-bicharraca-v1.webp'); }
 .world-body { padding: 18px 20px 22px; }
 .world-body h3 { margin: 4px 0 8px; font: 700 18px var(--pixel); }
 .world-body p { margin: 0; color: var(--muted); line-height: 1.5; }
@@ -508,6 +508,8 @@ a { color: var(--cyan); }
 }
 .character-era-jungle { margin-top: 34px; color: #a9e8ba; }
 .character-era-jungle span { border-color: #287b4d; color: #9af0ae; background: #0c3924; }
+.character-era-city { margin-top: 34px; color: #a8dfff; }
+.character-era-city span { border-color: #1f6f9b; color: #8ee9ff; background: #082d49; }
 .card { padding: 18px; text-align: center; }
 .card img { width: 150px; height: 150px; object-fit: contain; }
 .card h4 { margin: 8px 0 6px; color: var(--yellow); font: 700 15px var(--pixel); }
@@ -522,6 +524,18 @@ a { color: var(--cyan); }
   border: 2px solid #1b6050;
   border-radius: 13px;
   background: #032629;
+}
+.card-city {
+  border-color: #1f6f9b;
+  background: linear-gradient(180deg, #082d49, #08182e);
+}
+.card-city > img {
+  width: 180px;
+  height: 180px;
+  border: 2px solid #2585ad;
+  border-radius: 13px;
+  background: #031b2d;
+  image-rendering: pixelated;
 }
 .card .card-status {
   display: inline-block;
@@ -568,6 +582,20 @@ a { color: var(--cyan); }
   border-radius: 10px;
   background: #032629;
 }
+.paper-credit {
+  max-width: 780px;
+  margin: 18px auto 26px;
+  color: #8ee9ff;
+  font: 700 11px/1.7 var(--pixel);
+  text-align: center;
+}
+.paper-pair-city { border-color: #1f6f9b; }
+.paper-pair-city .paper-sprite {
+  border-color: #2585ad;
+  background: #031b2d;
+  image-rendering: pixelated;
+}
+.paper-pair-city figcaption small { color: #8ee9ff; }
 .paper-pair figcaption {
   margin-top: 12px;
   color: var(--cyan);
@@ -594,6 +622,7 @@ a { color: var(--cyan); }
   text-align: center;
 }
 .gallery-grid-jungle .art-frame { border-color: #287b4d; }
+.gallery-grid-city .art-frame { border-color: #1f6f9b; }
 
 /* Final call */
 .final-cta { text-align: center; }

@@ -1,6 +1,6 @@
 # Interacciones del juego
 
-Esta es la referencia canónica de las interacciones disponibles en BABITOS 0.2. Describe lo que se puede jugar hoy; el diseño futuro de los tres mundos se mantiene separado en [GAME_DESIGN.md](GAME_DESIGN.md). Los cambios observables de cada iteración se registran en [CHANGELOG.md](CHANGELOG.md).
+Esta es la referencia canónica de las interacciones disponibles en BABITOS 0.3. Describe lo que se puede jugar hoy; el diseño futuro de los tres mundos se mantiene separado en [GAME_DESIGN.md](GAME_DESIGN.md). Los cambios observables de cada iteración se registran en [CHANGELOG.md](CHANGELOG.md).
 
 ## Alcance actual
 
@@ -17,16 +17,16 @@ Boot
 Mapa
   ├─ Rejugar Babilandia
   ├─ La Jungla → La Oscuridad → Tienda → Mapa   (tras completar la Fase 1)
+  ├─ Ciudad Bicharraca → PRÓXIMAMENTE: BOSS TOTAL → Mapa o Título   (tras completar la Fase 2)
   ├─ Tienda
-  ├─ Avance estático de Ciudad Bicharraca → Mapa
   └─ Título
 ```
 
-Son jugables Babilandia con Babito Corrupto (Fase 1) y La Jungla con La Oscuridad (Fase 2). Ciudad Bicharraca tiene una pantalla de avance, no un nivel interactivo. Boss Total y el final pertenecen al roadmap.
+Son jugables Babilandia con Babito Corrupto (Fase 1), La Jungla con La Oscuridad (Fase 2) y Ciudad Bicharraca (Fase 3). Boss Total y el final pertenecen al roadmap.
 
 ## Landing page
 
-La portada de `babitos.es` presenta el juego antes de jugar: hero con el logo y un Babito que salta, la historia del Árbol de Poder en tres pasos, el creador y los tres poderes, los tres mundos con su estado (dos jugables y Ciudad próximamente), personajes (Bicharracos, jefes y aliados), once comparativas «Del papel al píxel», nueve láminas conceptuales y un cierre de créditos. Garbanzo Loco, Árbol Pocho y Sapo Pota enfrentan el boceto con un retrato derivado de su diseño pixel art aprobado y se identifican como **Jugable · Fase 2**. Esos retratos son editoriales; el juego carga sus spritesheets transparentes independientes.
+La portada de `babitos.es` presenta el juego antes de jugar: hero con el logo y un Babito que salta, la historia del Árbol de Poder en tres pasos, el creador y los tres poderes, los tres mundos jugables, personajes, catorce comparativas «Del papel al píxel», doce láminas conceptuales y un cierre de créditos. Garbanzo Loco, Árbol Pocho y Sapo Pota se identifican como **Jugable · Fase 2**; Drone Bot, Robot Elice e IVE Robot, como **Jugable · Fase 3**. La frase visible «Los robots de la Ciudad Bicharraca han sido imaginados y dibujados por Momo.» preserva la autoría. Los retratos son editoriales; el juego carga spritesheets transparentes independientes.
 
 - Todos los botones `JUGAR` abren un diálogo modal con el juego. La primera apertura carga el motor (`Cargando BABITOS…`); las siguientes son inmediatas. Si se cierra antes de terminar esa primera carga, el runtime se desactiva en cuanto queda listo y nunca avanza ni toma foco detrás de la portada.
 - `Esc` dentro del diálogo pausa el juego, como siempre; solo el botón `✕` cierra el diálogo. Cerrar congela la pantalla actual, suspende música y reloj y, si se hizo durante gameplay, al volver espera el panel `PAUSA`; en Título, Creador y otros menús reanuda esa misma pantalla.
@@ -34,7 +34,7 @@ La portada de `babitos.es` presenta el juego antes de jugar: hero con el logo y 
 - Con el diálogo cerrado, flechas, Espacio y `M` vuelven a comportarse como en cualquier página. Al cerrar, el foco vuelve al botón que lo abrió.
 - Un enlace a `https://babitos.es/#jugar` abre el juego directamente.
 - `#creditos` aparece después del último CTA y antes del pie técnico. Reconoce a Lola y Momo como autores de las ideas y los dibujos y como directores creativos y ejecutivos de BABITOS; su lámina completa se amplía en el mismo visor, mientras la atribución y los cargos permanecen también como texto HTML visible.
-- Las tarjetas de Bicharracos distinguen las dos familias jugables: COME, VUELA y DA VUELTAS permanecen en Babilandia; Garbanzo Loco, Árbol Pocho y Sapo Pota pertenecen a La Jungla. Las fichas y retratos son contenido editorial, pero esos tres personajes sí tienen sprites, animaciones y comportamiento propios en `GameScene(jungla)`.
+- Las tarjetas distinguen tres familias jugables: COME, VUELA y DA VUELTAS permanecen en Babilandia; Garbanzo Loco, Árbol Pocho y Sapo Pota pertenecen a La Jungla; Drone Bot, Robot Elice e IVE Robot, a Ciudad Bicharraca. Las fichas y retratos son contenido editorial, pero los seis personajes de Fases 2 y 3 tienen sprites, animaciones y comportamiento propios.
 
 ## Entradas globales
 
@@ -129,7 +129,7 @@ Los cinco carteles tutoriales también se definen allí sin coordenada vertical 
 - La cámara mira unos 110 px por delante en la dirección en que se mueve el Babito y desplaza ese margen suavemente al girar.
 - Saltar y aterrizar con fuerza levantan unas motas de polvo; acertar a un enemigo congela la acción 35 ms y derrotarlo, 70 ms, con una pequeña sacudida. La preferencia de movimiento reducido elimina las partículas.
 - El ataque sale en la dirección en que mira el Babito y respeta el cooldown del poder.
-- El suelo base es completamente sólido. Las plataformas elevadas son unidireccionales en Babilandia, La Jungla y las dos arenas de jefe: su cara inferior y sus laterales se atraviesan al ascender o al llegar desde abajo, y su cara superior sostiene al Babito, enemigos terrestres y monedas cuando descienden desde arriba. Pulsar `S`, `↓` o el pad `▼` estando de pie sobre una plataforma elevada deja caer al Babito a través de ella con un pequeño impulso hacia abajo; la plataforma se ignora solo hasta que los pies quedan claramente por debajo de su cara superior, y vuelve a sostenerlo si salta de nuevo encima. Sobre el suelo base no hace nada. La pulsación se encola como el salto, así que un toque muy breve no se pierde, y anula el *coyote time* de la plataforma abandonada. La primera vez que el Babito descansa sobre una plataforma en un nivel (pasado el aviso inicial y si aún no ha bajado nunca) aparece un aviso breve: «S/↓ para bajar de la plataforma» o «▼» en táctil. Las pausas de ambas fases y de ambos bosses lo recuerdan junto a «Mover».
+- El suelo base es completamente sólido. Las plataformas elevadas son unidireccionales en Babilandia, La Jungla, Ciudad y las dos arenas de jefe: su cara inferior y sus laterales se atraviesan al ascender o al llegar desde abajo, y su cara superior sostiene al Babito, enemigos terrestres y monedas cuando descienden desde arriba. Pulsar `S`, `↓` o el pad `▼` estando de pie sobre una plataforma elevada deja caer al Babito a través de ella con un pequeño impulso hacia abajo; la plataforma se ignora solo hasta que los pies quedan claramente por debajo de su cara superior, y vuelve a sostenerlo si salta de nuevo encima. Sobre el suelo base no hace nada. La pulsación se encola como el salto, así que un toque muy breve no se pierde, y anula el *coyote time* de la plataforma abandonada. La primera vez que el Babito descansa sobre una plataforma en un nivel (pasado el aviso inicial y si aún no ha bajado nunca) aparece un aviso breve: «S/↓ para bajar de la plataforma» o «▼» en táctil. Las pausas de las tres fases y de ambos bosses lo recuerdan junto a «Mover».
 - Los proyectiles desaparecen al tocar terreno. Invariante crítico: un poder nunca destruye, oculta ni desactiva suelo o plataformas; el fondo es decorativo y no tiene colisión.
 - El HUD muestra corazones, Babicoins, poder y teclas de ataque, encuentros derrotados y pausa.
 
@@ -188,6 +188,21 @@ La Fase 2 reutiliza la escena de nivel ([GameScene.js](../src/scenes/GameScene.j
 - Derrotar a los diez enemigos de las seis secuencias abre el portal hacia La Oscuridad. Hay 30 Babicoins colocadas con identificadores `jungla:coin:<id>`, independientes de las de Babilandia.
 - Ambientación: fondo raster panorámico de selva, montañas, cascadas y templo con paneo suave; sobre él permanecen el agua animada de cada foso, la cascada del recorrido, lianas que se mecen, ruinas, maleza y luciérnagas. Si el raster no carga, reaparece el fondo procedural `jungle`. La imagen nunca aporta colisión.
 
+### Ciudad Bicharraca
+
+La Fase 3 reutiliza [GameScene.js](../src/scenes/GameScene.js) con [city.json](../src/data/levels/city.json). Se desbloquea al completar la Fase 2, admite Fuego, Rayo o Roca y conserva movimiento, daño, plataformas unidireccionales, checkpoints, pausa, drops y persistencia de las fases anteriores.
+
+- El recorrido ocupa 7200 px y se divide visual y mecánicamente en **Entrada de la Ciudad** (0–1800), **Fábricas** (1800–4000) y **Fortaleza** (4000–7200). Hay cuatro checkpoints: `start`, `factory_gate`, `assembly_line` y `fortress_gate`.
+- El fondo raster industrial se desplaza con la cámara. [cityScenery.js](../src/game/cityScenery.js) añade siluetas lejanas, fábricas intermedias y estructuras cercanas con factores de parallax distintos; ninguna capa visual aporta colisión.
+- Plataformas de metal y tuberías conservan el contrato unidireccional. Tres plataformas móviles crean rutas verticales, y los peligros eléctricos restan un corazón sin destruir ni modificar terreno. Los huecos principales mantienen una ruta legible y checkpoints antes de las combinaciones difíciles.
+- Hay 36 Babicoins colocadas con identificadores `city:coin:<id>`. Cada una se cobra una vez; las ya obtenidas reaparecen translúcidas en una rejugada.
+- **Drone Bot**, de aproximadamente 1,5 Babitos de alto, vuela sin gravedad y recorre `IDLE → PATROL → DETECT → CHARGE → ELECTRIC_ATTACK → RECOVER`. Su carga cian avisa antes de crear un rayo vertical bajo su cuerpo. Solo el rayo activo daña; `HURT` interrumpe el peligro y `EXPLODE` cierra la derrota con una explosión eléctrica.
+- **Robot Elice**, de aproximadamente 2 Babitos de alto, permanece siempre en tierra y recorre `PATROL → DETECT → SPIN_WINDUP → SPIN_ATTACK → SPIN_RECOVER → VULNERABLE`. Durante `SPIN_ATTACK` hace daño y bloquea los disparos; después queda vulnerable. `HURT` y `DEFEAT` son reacciones independientes. Nunca se le asigna vuelo.
+- **IVE Robot**, de aproximadamente 3 Babitos de alto, permanece sobre suelo o plataforma y conserva visible el corazón roto del pecho. Recorre `IDLE → PATROL → DETECT` y elige entre `SCYTHE_WINDUP → SCYTHE_ATTACK`, `GRAB_ATTACK` y, en encuentros avanzados, doble guadaña. El agarre aplica retroceso fuerte; `RECOVER` abre la respuesta, y `HURT`/`DEFEAT` interrumpen el ataque.
+- La dificultad presenta primero Drone Bot, después Robot Elice en las fábricas, luego IVE Robot en la fortaleza y termina combinando los tres. Los once robots deben caer para abrir el portal.
+- Los tres poderes completan la fase: ningún enemigo exige un poder concreto, las ventanas vulnerables duran lo suficiente para sus distintos cooldowns y el rayo enemigo no se confunde con el proyectil del poder Rayo.
+- Al cruzar el portal se guarda `phase3Complete` y se abre [ComingSoonScene.js](../src/scenes/ComingSoonScene.js) con el título exacto `PRÓXIMAMENTE: BOSS TOTAL`. Esa pantalla no simula el boss y permite `VOLVER AL MAPA` o `VOLVER AL TÍTULO`.
+
 ### La Oscuridad
 
 El combate de la Fase 2 se implementa en [DarknessBossScene.js](../src/scenes/DarknessBossScene.js).
@@ -234,8 +249,9 @@ La interacción del combate se implementa en [BossScene.js](../src/scenes/BossSc
 
 - La tarjeta de `BABILANDIA` muestra una acción visible para jugar o rejugar la Fase 1. Al activarla guarda `babilandia`, reinicia solo el checkpoint a `start` y entra desde el principio; conserva poder, finalización, recompensas, monedas y colección.
 - La tarjeta de `LA JUNGLA` muestra `BLOQUEADA` hasta completar la Fase 1 (activarla solo avisa de cómo abrirla), después `FASE 2 DISPONIBLE` y, tras vencer a La Oscuridad, `FASE 2 COMPLETA` con el Árbol de Poder restaurado. Al jugarla guarda `jungla` con checkpoint `start` y conserva todo lo demás.
+- La tarjeta de `CIUDAD BICHARRACA` muestra `BLOQUEADA` hasta completar la Fase 2, después `FASE 3 DISPONIBLE` y, al superar la fortaleza, `FASE 3 COMPLETA`. Al jugarla guarda `city` con checkpoint `start` sin borrar colección ni recompensas.
 - `IR A LA TIENDA` vuelve al catálogo y `VOLVER AL TÍTULO` vuelve al inicio.
-- `CIUDAD BICHARRACA` abre una pantalla descriptiva marcada `PRÓXIMAMENTE` con su fondo raster; la única acción allí es `VOLVER AL MAPA`.
+- Boss Total abre una pantalla descriptiva marcada `PRÓXIMAMENTE: BOSS TOTAL`; ofrece volver al Mapa o al Título y no se presenta como combate jugable.
 
 ## Animación y feedback
 
@@ -247,6 +263,7 @@ La interacción del combate se implementa en [BossScene.js](../src/scenes/BossSc
 - COME tiene `idle`, `walk`, `windup`, `attack`, `hurt` y `defeat` sobre su spritesheet raster. `WINDUP` recorre la preparación y `BITE` empieza en la pose de mordisco sin reiniciar una fila ofensiva completa; todos los clips se anclan por los pies a la superficie física.
 - VUELA tiene `idle`, `fly`, `dive`, `attack`, `hurt` y `defeat` en un atlas raster de 36 poses; `dive`, `attack`, `hurt` y `defeat` no vuelven del último frame al primero. DA VUELTAS mantiene `idle`, `roll`, `windup`, `hurt` y `defeat` en su hoja procedural.
 - Garbanzo Loco anima patrulla/persecución, anticipación, estocada, recuperación, daño y derrota. Árbol Pocho diferencia árbol quieto, despertar, enfado, puñetazo izquierdo, puñetazo derecho, recuperación, daño y derrota. Sapo Pota diferencia ojos sumergidos, salida del agua, espera, anticipación, vomitera, recuperación, daño, inmersión y derrota. Cada uno usa una hoja transparente de 1024 × 512 con ocho celdas de 256 × 256; la máquina de estados elige clips semánticos y un impacto interrumpe la ventana peligrosa hacia su reacción `HURT`.
+- Drone Bot, Robot Elice e IVE Robot usan hojas transparentes 4 × 2 de 1772 × 886, con ocho celdas de 443 × 443. Cada celda conserva el personaje completo y un pivote estable; nunca se usa la lámina conceptual como sprite. Sus mappings cubren todos los estados descritos en Ciudad, incluidos carga/rayo/explosión, giro/ventana vulnerable y guadaña/agarre/corazón expuesto.
 - Babito Corrupto cambia de pose en intro, los tres patrones, `RECOVER` y su forma purificada. La Oscuridad es un sprite procedural fiel a su referencia canónica (masa negra de borde violeta, tentáculos y ojos rasgados) que ondula, se desvanece al viajar por la sombra y se ilumina con un anillo dorado al quedar expuesta.
 - Las capas del Babito se dibujan a su tamaño nativo y se amplían después sin suavizado, con píxeles totalmente opacos o transparentes: en Título y Creador se ve nítido, sin franjas ni bordes borrosos.
 - Pausar congela también los relojes de animación.
@@ -259,7 +276,7 @@ La interacción del combate se implementa en [BossScene.js](../src/scenes/BossSc
 - poder seleccionado y poderes desbloqueados;
 - Babicoins;
 - cosméticos desbloqueados y comprados;
-- pantalla, checkpoint, derrota de cada boss, fin de Fase 1 y de Fase 2 y recompensas ya reclamadas.
+- pantalla, checkpoint, derrota de cada boss, fin de Fase 1, Fase 2 y Fase 3 y recompensas ya reclamadas.
 
 El mute usa por separado la clave heredada `babitos.audio.v1`; el arreglo musical usa `babitos.music.v1`. Una preferencia musical ausente o inválida vuelve a `AVENTURA` sin alterar el mute. Si `localStorage` no está disponible, el juego sigue funcionando y conserva ambas decisiones durante la sesión actual.
 
@@ -285,19 +302,19 @@ El mute usa por separado la clave heredada `babitos.audio.v1`; el arreglo musica
 Solo con el servidor de desarrollo, `BootScene` admite rutas para revisar pantallas; la landing no las abre y `BootScene` no las procesa en producción:
 
 - `?qa=TitleScene`, `CreatorScene`, `PowerScene`, `IntroScene`, `GameScene`, `BossScene`, `DarknessBossScene`, `ShopScene`, `WorldMapScene` o `ComingSoonScene`;
-- `ComingSoonScene` muestra Ciudad por defecto; `&world=jungle|jungla` solo conserva compatibilidad con enlaces antiguos y redirige a la Fase 2 jugable;
+- `ComingSoonScene` muestra Boss Total; `&world=jungle|jungla` redirige a la Fase 2 y `&world=city|ciudad` redirige a la Fase 3 jugable;
 - `&qaCoins=90` para garantizar al menos ese saldo, hasta 999; no reduce monedas existentes;
 - `&qaComplete=1` para marcar la Fase 1 como completada;
-- `&qaLevel=jungla` en `GameScene` para cargar La Jungla; sin él se resuelve el nivel solicitado o guardado;
+- `&qaLevel=jungla|city` en `GameScene` para cargar La Jungla o Ciudad; sin él se resuelve el nivel solicitado o guardado;
 - `&qaCombat=1` en `GameScene` para empezar en el primer checkpoint, acercar al primer enemigo del nivel, dejarlo a un golpe y forzar drops de dos monedas;
-- `&qaCheckpoint=start|market_gate|fountain|boss_gate` para Babilandia o `start|lianas|ruinas|penumbra` para La Jungla; revisa una zona concreta sin persistir ese checkpoint ni cobrar sus monedas colocadas;
+- `&qaCheckpoint=start|market_gate|fountain|boss_gate` para Babilandia, `start|lianas|ruinas|penumbra` para La Jungla o `start|factory_gate|assembly_line|fortress_gate` para Ciudad; revisa una zona concreta sin persistir ese checkpoint ni cobrar sus monedas colocadas;
 - `&qaMotion=idle|walk|run|jump|fall|land|attack|hurt|dead` activa una presentación temporal del Babito. Sin `qaFrame`, el clip avanza con su cadencia real —los ciclos repiten y los *one-shots* conservan su pose final—; `&qaFrame=<n>` congela el frame local solicitado, limitado al último disponible. Cualquier input real de movimiento, bajada, salto o ataque, por teclado o pad táctil, libera el override y devuelve el control al selector automático. `&qaSize=small|normal|large` fija el tamaño visual; estas ayudas pueden actualizar la escena/checkpoint del guardado local de desarrollo;
-- `&qaEnemy=come|vuela|da_vueltas|garbanzo_loco|arbol_pocho|sapo_pota` para aislar una instancia, colocarla ante la cámara e inmovilizar su IA sin daño ni persistencia;
+- `&qaEnemy=come|vuela|da_vueltas|garbanzo_loco|arbol_pocho|sapo_pota|drone_bot|robot_elice|ive_robot` para aislar una instancia, colocarla ante la cámara e inmovilizar su IA sin daño ni persistencia;
 - `&qaEnemyState=<estado-o-clip>` para fijar un estado de IA (`DIVE`, `BITE`, `DIZZY`…) o un clip (`idle`, `hurt`, `defeat`); `&qaEnemyFrame=<n>` fija su frame local y limita valores altos al último disponible;
 - `&qaOneHit=1` en `BossScene` coloca a Babito Corrupto a un golpe y entra pronto en `RECOVER`; en `DarknessBossScene` coloca a La Oscuridad a un golpe y adelanta su primera exposición;
-- `&debugAI=1` en cualquiera de los dos niveles muestra la etiqueta del estado actual de cada enemigo.
+- `&debugAI=1` en cualquiera de los tres niveles muestra la etiqueta del estado actual de cada enemigo.
 
-Ejemplos: `http://localhost:5173/?qa=GameScene&qaLevel=jungla&qaCheckpoint=ruinas`, `http://localhost:5173/?qa=DarknessBossScene&qaOneHit=1` y `http://localhost:5173/?qa=GameScene&qaLevel=jungla&qaEnemy=sapo_pota&qaEnemyState=TOXIC_VOMIT&qaEnemyFrame=4&debugAI=1`.
+Ejemplos: `http://localhost:5173/?qa=GameScene&qaLevel=jungla&qaCheckpoint=ruinas`, `http://localhost:5173/?qa=DarknessBossScene&qaOneHit=1` y `http://localhost:5173/?qa=GameScene&qaLevel=city&qaEnemy=ive_robot&qaEnemyState=SCYTHE_ATTACK&qaEnemyFrame=4&debugAI=1`.
 
 ## Referencias de implementación
 

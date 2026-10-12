@@ -1,5 +1,12 @@
 export function isEnemyFootAnchored(type) {
-  return ['come', 'garbanzo_loco', 'arbol_pocho', 'sapo_pota'].includes(type);
+  return [
+    'come',
+    'garbanzo_loco',
+    'arbol_pocho',
+    'sapo_pota',
+    'robot_elice',
+    'ive_robot',
+  ].includes(type);
 }
 
 const AUTHORED_BASELINE_OFFSETS = Object.freeze({
@@ -7,6 +14,8 @@ const AUTHORED_BASELINE_OFFSETS = Object.freeze({
   garbanzo_loco: 6,
   arbol_pocho: 5,
   sapo_pota: 7,
+  robot_elice: 8,
+  ive_robot: 12,
 });
 
 /**

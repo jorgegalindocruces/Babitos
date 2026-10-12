@@ -182,13 +182,39 @@ test('the landing presents the approved Jungle enemies as playable Phase 2 chara
     'each Jungle enemy card must disclose that the character is playable in Phase 2',
   );
   assert.equal(
-    [...page.matchAll(/data-runtime-status="playable"/gu)].length,
+    [...page.matchAll(/Jugable · Fase 2/gu)].length,
     3,
     'the three Jungle enemy cards must be marked as playable runtime characters',
   );
-  assert.match(page, /Bicharracos de La Jungla ya [^.\n]*(?:jugable|jugables)/u);
+  assert.match(page, /Bicharracos de La Jungla[^.\n]*fases jugables/u);
   assert.doesNotMatch(page, /Diseño aprobado · En desarrollo/u);
   assert.doesNotMatch(page, /Bicharracos de La Jungla aún están en desarrollo/u);
+});
+
+test('the landing presents Momo’s City robots as playable Phase 3 characters', async () => {
+  const page = await readRepositoryFile('index.html');
+  const cityEnemies = [
+    ['drone-bot', 'Drone Bot'],
+    ['robot-elice', 'Robot Elice'],
+    ['ive-robot', 'IVE Robot'],
+  ];
+
+  for (const [slug, name] of cityEnemies) {
+    assert.match(page, new RegExp(`>${name}<`, 'u'), `${name} must have a character card`);
+    assert.match(page, new RegExp(`portrait-enemy-${slug}\\.webp`, 'u'));
+    assert.match(page, new RegExp(`drawing-enemy-${slug}-original\\.webp`, 'u'));
+    assert.match(
+      page,
+      new RegExp(`data-zoom="\\./assets/landing/concept-city-${slug}\\.webp"`, 'u'),
+      `${name} must expose its complete design board in the lightbox`,
+    );
+  }
+
+  assert.equal([...page.matchAll(/Jugable · Fase 3/gu)].length, 3);
+  assert.equal([...page.matchAll(/data-runtime-status="playable"/gu)].length, 6);
+  assert.match(page, /Los robots de la Ciudad Bicharraca han sido imaginados y dibujados por Momo\./u);
+  assert.match(page, /Fase 3 · Jugable/u);
+  assert.doesNotMatch(page, /Fase 3 · Próximamente/u);
 });
 
 test('every local image used by the landing resolves to a public asset', async () => {

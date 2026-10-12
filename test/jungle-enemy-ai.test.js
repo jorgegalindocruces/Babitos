@@ -83,9 +83,11 @@ function spawn(definition, player = { x: 0, y: 460 }) {
   const scene = createScene();
   const attacks = [];
   const volleys = [];
+  const electric = [];
   const enemy = new EnemyController(scene, definition, player, null, {
     onMeleeAttack: (_enemy, spec) => attacks.push(spec),
     onToxicVolley: (_enemy, spec) => volleys.push(spec),
+    onElectricAttack: (_enemy, spec) => electric.push(spec),
   });
   const step = (ms = 16) => {
     scene.clock += ms;
@@ -94,7 +96,7 @@ function spawn(definition, player = { x: 0, y: 460 }) {
   const runFor = (ms) => {
     for (let elapsed = 0; elapsed < ms; elapsed += 16) step();
   };
-  return { scene, enemy, player, attacks, volleys, step, runFor };
+  return { scene, enemy, player, attacks, volleys, electric, step, runFor };
 }
 
 test('rooted and aquatic bodies survive the Arcade Group defaults reset', () => {
@@ -216,4 +218,56 @@ test('Garbanzo never thrusts under a ledge or chases a Babito off his stretch', 
   pillar.player.x = 650;
   pillar.step();
   assert.equal(pillar.enemy.state, 'CHASE');
+});
+
+test('Drone Bot remains airborne and telegraphs one vertical electric attack', () => {
+  const { enemy, electric, runFor } = spawn(
+    { id: 'drone', type: 'drone_bot', x: 500, y: 250 },
+    { x: 620, y: 460 },
+  );
+  assert.equal(enemy.sprite.body.allowGravity, false);
+  runFor(2400);
+  assert.ok(['ELECTRIC_ATTACK', 'RECOVER'].includes(enemy.state));
+  assert.equal(electric.length, 1);
+  assert.equal(electric[0].x, enemy.sprite.x);
+  assert.ok(electric[0].fromY < electric[0].toY);
+  assert.equal(electric[0].toY, 480);
+});
+
+test('Robot Elice is terrestrial, dangerous and invulnerable only during its spin', () => {
+  const { enemy, runFor } = spawn(
+    { id: 'elice', type: 'robot_elice', x: 500, y: 400, walkBounds: { left: 300, right: 900 } },
+    { x: 620, y: 460 },
+  );
+  assert.equal(enemy.sprite.body.allowGravity, true);
+  for (let guard = 0; guard < 300 && enemy.state !== 'SPIN_ATTACK'; guard += 1) runFor(16);
+  assert.equal(enemy.state, 'SPIN_ATTACK');
+  assert.equal(enemy.canHurtPlayer(), true);
+  assert.equal(enemy.canTakeDamage(), false);
+  for (let guard = 0; guard < 200 && enemy.state !== 'VULNERABLE'; guard += 1) runFor(16);
+  assert.equal(enemy.state, 'VULNERABLE');
+  assert.equal(enemy.canHurtPlayer(), false);
+  assert.equal(enemy.canTakeDamage(), true);
+});
+
+test('IVE Robot remains grounded and the advanced encounter performs a double scythe', () => {
+  const { enemy, attacks, runFor } = spawn(
+    {
+      id: 'ive',
+      type: 'ive_robot',
+      x: 500,
+      y: 360,
+      doubleScythe: true,
+      walkBounds: { left: 280, right: 920 },
+    },
+    { x: 610, y: 460 },
+  );
+  assert.equal(enemy.sprite.body.allowGravity, true);
+  for (let guard = 0; guard < 400 && enemy.state !== 'SCYTHE_ATTACK'; guard += 1) runFor(16);
+  assert.equal(enemy.state, 'SCYTHE_ATTACK');
+  runFor(430);
+  assert.equal(attacks.length, 2);
+  assert.deepEqual(attacks.map(({ kind }) => kind), ['scythe', 'scythe']);
+  assert.equal(attacks[0].direction, -attacks[1].direction);
+  assert.equal(enemy.canHurtPlayer(), false, 'IVE deals damage through authored weapon windows');
 });

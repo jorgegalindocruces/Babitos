@@ -70,6 +70,16 @@ test('melee windows stop as soon as their authored attack state is interrupted',
   assert.equal(isEnemyMeleeAttackActive(branch), true);
   enemy.state = 'RECOVER';
   assert.equal(isEnemyMeleeAttackActive(branch), false);
+
+  enemy.state = 'SCYTHE_ATTACK';
+  const scythe = createEnemyMeleeAttack(enemy, { kind: 'scythe', reach: 164 });
+  assert.equal(isEnemyMeleeAttackActive(scythe), true);
+  enemy.state = 'GRAB_ATTACK';
+  assert.equal(isEnemyMeleeAttackActive(scythe), false);
+  const grab = createEnemyMeleeAttack(enemy, { kind: 'grab', reach: 176 });
+  assert.equal(isEnemyMeleeAttackActive(grab), true);
+  enemy.state = 'HURT';
+  assert.equal(isEnemyMeleeAttackActive(grab), false);
 });
 
 test('toxic vomit leaves the mouth before settling into a bounded horizontal lane', () => {

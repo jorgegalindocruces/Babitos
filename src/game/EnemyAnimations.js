@@ -47,6 +47,29 @@ export const ENEMY_SHEET_ASSETS = Object.freeze({
     xBounds: makeBounds([0, 400, 800, 1200, 1600]),
     yBounds: makeBounds([0, 256, 512]),
   }),
+  // Phase 3 production sheets are transparent 4 × 2 atlases. Every cell is
+  // exactly 443 px so runtime frames never include a neighbour or a label.
+  drone_bot: Object.freeze({
+    key: 'enemy_drone_bot_sheet_v1',
+    url: 'assets/enemies/city/drone-bot-sheet-v1.png',
+    revision: 'v1',
+    xBounds: makeBounds([0, 443, 886, 1329, 1772]),
+    yBounds: makeBounds([0, 443, 886]),
+  }),
+  robot_elice: Object.freeze({
+    key: 'enemy_robot_elice_sheet_v1',
+    url: 'assets/enemies/city/robot-elice-sheet-v1.png',
+    revision: 'v1',
+    xBounds: makeBounds([0, 443, 886, 1329, 1772]),
+    yBounds: makeBounds([0, 443, 886]),
+  }),
+  ive_robot: Object.freeze({
+    key: 'enemy_ive_robot_sheet_v1',
+    url: 'assets/enemies/city/ive-robot-sheet-v1.png',
+    revision: 'v1',
+    xBounds: makeBounds([0, 443, 886, 1329, 1772]),
+    yBounds: makeBounds([0, 443, 886]),
+  }),
 });
 
 export const ENEMY_ANIMATION_CLIPS = Object.freeze({
@@ -106,6 +129,37 @@ export const ENEMY_ANIMATION_CLIPS = Object.freeze({
     // registered separately so RECOVER remains a semantic animation state.
     recover: Object.freeze({ row: 0, columns: Object.freeze([2]), frameRate: 5, repeat: 0 }),
   }),
+  drone_bot: Object.freeze({
+    idle: Object.freeze({ row: 0, columns: Object.freeze([0]), frameRate: 5, repeat: -1 }),
+    patrol: Object.freeze({ row: 0, columns: Object.freeze([1, 2]), frameRate: 7, repeat: -1 }),
+    detect: Object.freeze({ row: 0, columns: Object.freeze([3]), frameRate: 6, repeat: 0 }),
+    charge: Object.freeze({ row: 1, columns: Object.freeze([0]), frameRate: 8, repeat: 0 }),
+    electric_attack: Object.freeze({ row: 1, columns: Object.freeze([1]), frameRate: 10, repeat: 0 }),
+    hurt: Object.freeze({ row: 1, columns: Object.freeze([2]), frameRate: 8, repeat: 0, durationMs: 360 }),
+    recover: Object.freeze({ row: 0, columns: Object.freeze([0]), frameRate: 5, repeat: 0 }),
+    defeat: Object.freeze({ row: 1, columns: Object.freeze([3]), frameRate: 8, repeat: 0, durationMs: 620 }),
+  }),
+  robot_elice: Object.freeze({
+    idle: Object.freeze({ row: 0, columns: Object.freeze([0]), frameRate: 5, repeat: -1 }),
+    patrol: Object.freeze({ row: 0, columns: Object.freeze([1, 2]), frameRate: 8, repeat: -1 }),
+    detect: Object.freeze({ row: 0, columns: Object.freeze([3]), frameRate: 7, repeat: 0 }),
+    spin_windup: Object.freeze({ row: 0, columns: Object.freeze([3]), frameRate: 8, repeat: 0 }),
+    spin_attack: Object.freeze({ row: 1, columns: Object.freeze([0]), frameRate: 14, repeat: -1 }),
+    spin_recover: Object.freeze({ row: 1, columns: Object.freeze([1]), frameRate: 7, repeat: 0 }),
+    hurt: Object.freeze({ row: 1, columns: Object.freeze([2]), frameRate: 8, repeat: 0, durationMs: 380 }),
+    defeat: Object.freeze({ row: 1, columns: Object.freeze([3]), frameRate: 8, repeat: 0, durationMs: 620 }),
+  }),
+  ive_robot: Object.freeze({
+    idle: Object.freeze({ row: 0, columns: Object.freeze([0]), frameRate: 5, repeat: -1 }),
+    patrol: Object.freeze({ row: 0, columns: Object.freeze([1, 2]), frameRate: 7, repeat: -1 }),
+    detect: Object.freeze({ row: 0, columns: Object.freeze([2]), frameRate: 6, repeat: 0 }),
+    scythe_windup: Object.freeze({ row: 0, columns: Object.freeze([3]), frameRate: 7, repeat: 0 }),
+    scythe_attack: Object.freeze({ row: 1, columns: Object.freeze([0]), frameRate: 12, repeat: 0 }),
+    grab_attack: Object.freeze({ row: 1, columns: Object.freeze([1]), frameRate: 12, repeat: 0 }),
+    recover: Object.freeze({ row: 0, columns: Object.freeze([0]), frameRate: 5, repeat: 0 }),
+    hurt: Object.freeze({ row: 1, columns: Object.freeze([2]), frameRate: 8, repeat: 0, durationMs: 420 }),
+    defeat: Object.freeze({ row: 1, columns: Object.freeze([3]), frameRate: 7, repeat: 0, durationMs: 680 }),
+  }),
 });
 
 export const ENEMY_STATE_CLIPS = Object.freeze({
@@ -161,6 +215,37 @@ export const ENEMY_STATE_CLIPS = Object.freeze({
     SUBMERGE: 'submerge',
     DEFEAT: 'defeat',
   }),
+  drone_bot: Object.freeze({
+    IDLE: 'idle',
+    PATROL: 'patrol',
+    DETECT: 'detect',
+    CHARGE: 'charge',
+    ELECTRIC_ATTACK: 'electric_attack',
+    RECOVER: 'recover',
+    HURT: 'hurt',
+    EXPLODE: 'defeat',
+  }),
+  robot_elice: Object.freeze({
+    PATROL: 'patrol',
+    DETECT: 'detect',
+    SPIN_WINDUP: 'spin_windup',
+    SPIN_ATTACK: 'spin_attack',
+    SPIN_RECOVER: 'spin_recover',
+    VULNERABLE: 'spin_recover',
+    HURT: 'hurt',
+    DEFEAT: 'defeat',
+  }),
+  ive_robot: Object.freeze({
+    IDLE: 'idle',
+    PATROL: 'patrol',
+    DETECT: 'detect',
+    SCYTHE_WINDUP: 'scythe_windup',
+    SCYTHE_ATTACK: 'scythe_attack',
+    GRAB_ATTACK: 'grab_attack',
+    RECOVER: 'recover',
+    HURT: 'hurt',
+    DEFEAT: 'defeat',
+  }),
 });
 
 const ENEMY_STATE_TINTS = Object.freeze({
@@ -186,6 +271,22 @@ const ENEMY_STATE_TINTS = Object.freeze({
   }),
   sapo_pota: Object.freeze({
     ATTACK_WINDUP: 0xffcf4a,
+    RECOVER: 0x9df0ff,
+  }),
+  drone_bot: Object.freeze({
+    DETECT: 0xffcf4a,
+    CHARGE: 0x5fe8ff,
+    RECOVER: 0x9df0ff,
+  }),
+  robot_elice: Object.freeze({
+    DETECT: 0xffcf4a,
+    SPIN_WINDUP: 0xff6b7f,
+    SPIN_ATTACK: 0xff315c,
+    VULNERABLE: 0x9df0ff,
+  }),
+  ive_robot: Object.freeze({
+    DETECT: 0xffcf4a,
+    SCYTHE_WINDUP: 0xff6b7f,
     RECOVER: 0x9df0ff,
   }),
 });
@@ -235,11 +336,18 @@ export function getEnemyStateAfterHit(type, state) {
   if (type === 'sapo_pota' && [
     'EMERGE', 'IDLE', 'ATTACK_WINDUP', 'TOXIC_VOMIT', 'HURT',
   ].includes(state)) return 'RECOVER';
+  if (type === 'drone_bot' && ['DETECT', 'CHARGE', 'ELECTRIC_ATTACK', 'HURT'].includes(state)) {
+    return 'RECOVER';
+  }
+  if (type === 'robot_elice') return 'VULNERABLE';
+  if (type === 'ive_robot' && [
+    'DETECT', 'SCYTHE_WINDUP', 'SCYTHE_ATTACK', 'GRAB_ATTACK', 'HURT',
+  ].includes(state)) return 'RECOVER';
   return state;
 }
 
 export function enemyUsesPlatformCollision(type) {
-  return !['vuela', 'arbol_pocho', 'sapo_pota'].includes(type);
+  return !['vuela', 'arbol_pocho', 'sapo_pota', 'drone_bot'].includes(type);
 }
 
 export function resolveEnemyQaPresentation(type, requestedState) {

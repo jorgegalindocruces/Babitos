@@ -32,7 +32,9 @@ const CONTINUE_DESTINATIONS = Object.freeze({
   jungla: Object.freeze({ scene: 'GameScene', label: 'JUNGLA' }),
   jungle: Object.freeze({ scene: 'GameScene', label: 'JUNGLA' }),
   boss2: Object.freeze({ scene: 'DarknessBossScene', label: 'LA OSCURIDAD' }),
-  city: Object.freeze({ scene: 'ComingSoonScene', label: 'CIUDAD' }),
+  city: Object.freeze({ scene: 'GameScene', label: 'CIUDAD BICHARRACA' }),
+  'boss-total': Object.freeze({ scene: 'ComingSoonScene', label: 'BOSS TOTAL' }),
+  boss_total: Object.freeze({ scene: 'ComingSoonScene', label: 'BOSS TOTAL' }),
 });
 
 function continueDestination(progress) {

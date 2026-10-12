@@ -261,6 +261,7 @@ export const TEXTURE_KEYS = Object.freeze({
   projectileLightning: 'projectile_lightning',
   projectileRock: 'projectile_rock',
   enemyToxicGlob: 'enemy_toxic_glob',
+  enemyElectricBeam: 'enemy_electric_beam',
   merchantEmpanadilla: 'merchant_empanadilla',
   merchantPinguino: 'merchant_pinguino',
   powerTreeSad: 'power_tree_sad',
@@ -271,6 +272,10 @@ export const TEXTURE_KEYS = Object.freeze({
   tileBranch: 'tile_branch',
   tileBridge: 'tile_bridge',
   tileRuin: 'tile_ruin',
+  tileCityGround: 'tile_city_ground',
+  tileCityPlatform: 'tile_city_platform',
+  tileCityPipe: 'tile_city_pipe',
+  hazardElectric: 'hazard_electric',
   springMushroom: 'spring_mushroom',
   bossDarkness: 'boss_darkness',
   lanternOff: 'lantern_off',
@@ -1187,6 +1192,15 @@ function drawEnemyToxicGlob(ctx) {
   rect(ctx, 4, 7, 4, 2, '#baff67');
 }
 
+function drawEnemyElectricBeam(ctx) {
+  rect(ctx, 9, 0, 7, 64, '#087bb5');
+  polygon(ctx, [[11, 0], [21, 13], [13, 24], [20, 36], [10, 49], [15, 64], [5, 51], [12, 36], [5, 23], [13, 12]], '#56dcff');
+  polygon(ctx, [[12, 2], [17, 13], [10, 24], [16, 36], [8, 49], [12, 62], [9, 51], [13, 36], [8, 23], [15, 12]], COLORS.white);
+  rect(ctx, 2, 13, 5, 3, '#71e5ff');
+  rect(ctx, 18, 27, 5, 3, '#71e5ff');
+  rect(ctx, 1, 45, 6, 3, '#71e5ff');
+}
+
 function drawEmpanadilla(ctx) {
   // Flexible pink arms behind the pastry body.
   pixelLine(ctx, 15, 38, 4, 29, COLORS.ink, 8);
@@ -1377,6 +1391,55 @@ function drawRuin(ctx) {
   rect(ctx, 3, 4, 3, 5, '#2f8f3c');
   rect(ctx, 23, 4, 2, 3, '#2f8f3c');
   rect(ctx, 4, 6, 6, 2, '#a7b8a4');
+}
+
+function drawCityGround(ctx) {
+  rect(ctx, 0, 0, 32, 32, '#07111e');
+  rect(ctx, 1, 5, 30, 27, '#202b3d');
+  rect(ctx, 0, 0, 32, 7, '#020814');
+  rect(ctx, 0, 1, 32, 3, '#627793');
+  rect(ctx, 0, 1, 32, 1, '#b9d8ef');
+  rect(ctx, 2, 9, 13, 9, '#29394d');
+  rect(ctx, 17, 9, 13, 9, '#172536');
+  rect(ctx, 2, 20, 8, 10, '#172536');
+  rect(ctx, 12, 20, 18, 10, '#29394d');
+  rect(ctx, 15, 6, 2, 26, '#07111e');
+  rect(ctx, 0, 18, 32, 2, '#07111e');
+  rect(ctx, 5, 11, 6, 2, '#42546b');
+  rect(ctx, 22, 23, 5, 2, '#42546b');
+  rect(ctx, 26, 3, 4, 2, '#ff4f6f');
+}
+
+function drawCityPlatform(ctx) {
+  rect(ctx, 0, 0, 32, 16, '#020814');
+  rect(ctx, 1, 3, 30, 12, '#303c51');
+  rect(ctx, 0, 1, 32, 3, '#8da4bd');
+  rect(ctx, 0, 1, 32, 1, '#d6e9f8');
+  for (let x = 2; x < 32; x += 12) {
+    polygon(ctx, [[x, 5], [x + 6, 5], [x + 1, 13], [x - 5, 13]], '#f2a62d');
+  }
+  rect(ctx, 0, 13, 32, 3, '#111b2b');
+}
+
+function drawCityPipe(ctx) {
+  rect(ctx, 0, 0, 32, 16, '#020814');
+  rect(ctx, 0, 3, 32, 10, '#485b72');
+  rect(ctx, 0, 4, 32, 3, '#a9bfd1');
+  rect(ctx, 0, 11, 32, 2, '#1a293a');
+  rect(ctx, 7, 2, 4, 12, '#0a1523');
+  rect(ctx, 8, 3, 2, 10, '#ff4f6f');
+  rect(ctx, 24, 2, 4, 12, '#0a1523');
+  rect(ctx, 25, 3, 2, 10, '#42e8ec');
+}
+
+function drawElectricHazard(ctx) {
+  rect(ctx, 0, 12, 32, 4, '#111b2b');
+  rect(ctx, 0, 14, 32, 2, '#ff4f6f');
+  polygon(ctx, [[0, 11], [6, 2], [8, 9], [15, 0], [14, 10], [22, 3], [20, 12]], '#087bb5');
+  polygon(ctx, [[2, 11], [6, 5], [8, 12], [13, 4], [12, 12], [20, 6], [19, 12]], '#71e5ff');
+  rect(ctx, 6, 5, 3, 3, COLORS.white);
+  rect(ctx, 20, 5, 3, 3, COLORS.white);
+  rect(ctx, 27, 8, 4, 3, '#71e5ff');
 }
 
 function drawSpringMushroom(ctx) {
@@ -1691,6 +1754,7 @@ function getTextureSpecs() {
     [TEXTURE_KEYS.projectileLightning, 32, 14, drawProjectileLightning],
     [TEXTURE_KEYS.projectileRock, 18, 18, drawProjectileRock],
     [TEXTURE_KEYS.enemyToxicGlob, 24, 16, drawEnemyToxicGlob],
+    [TEXTURE_KEYS.enemyElectricBeam, 24, 64, drawEnemyElectricBeam],
     [TEXTURE_KEYS.merchantEmpanadilla, 64, 72, drawEmpanadilla],
     [TEXTURE_KEYS.merchantPinguino, 64, 72, drawPinguino],
     [TEXTURE_KEYS.powerTreeSad, 96, 112, drawTreeSad],
@@ -1701,6 +1765,10 @@ function getTextureSpecs() {
     [TEXTURE_KEYS.tileBranch, 32, 16, drawBranch],
     [TEXTURE_KEYS.tileBridge, 32, 16, drawBridge],
     [TEXTURE_KEYS.tileRuin, 32, 32, drawRuin],
+    [TEXTURE_KEYS.tileCityGround, 32, 32, drawCityGround],
+    [TEXTURE_KEYS.tileCityPlatform, 32, 16, drawCityPlatform],
+    [TEXTURE_KEYS.tileCityPipe, 32, 16, drawCityPipe],
+    [TEXTURE_KEYS.hazardElectric, 32, 16, drawElectricHazard],
     [TEXTURE_KEYS.springMushroom, 48, 32, drawSpringMushroom],
     [TEXTURE_KEYS.bossDarkness, 96, 96, drawBossDarkness],
     [TEXTURE_KEYS.lanternOff, 28, 40, (ctx) => drawLantern(ctx, false)],

@@ -98,6 +98,63 @@ export function launchToxicProjectile(scene, group, {
   return projectile;
 }
 
+/**
+ * Creates Drone Bot's vertical electrical column. It is a short-lived enemy
+ * projectile rather than terrain, so powers can never remove a platform when
+ * they hit it and the column pauses with the scene clock.
+ */
+export function launchElectricBeam(scene, group, {
+  x,
+  fromY,
+  toY = 480,
+  damage = 1,
+  durationMs = 430,
+  sourceId = null,
+} = {}) {
+  const top = Math.min(finiteNumber(fromY, 180), finiteNumber(toY, 480));
+  const bottom = Math.max(finiteNumber(fromY, 180), finiteNumber(toY, 480));
+  const height = Math.max(48, bottom - top);
+  const projectile = scene.physics.add.image(
+    finiteNumber(x, 0),
+    top + height / 2,
+    'enemy_electric_beam',
+  );
+  group.add(projectile);
+  projectile
+    .setDepth(13)
+    .setDisplaySize(30, height)
+    .setDataEnabled()
+    .setData({
+      [ENEMY_PROJECTILE_FLAG]: true,
+      owner: 'enemy',
+      kind: 'electric_beam',
+      damage: Math.max(1, finiteNumber(damage, 1)),
+      sourceId,
+    })
+    .setCollideWorldBounds(false)
+    .setImmovable(true);
+  projectile.body.allowGravity = false;
+  projectile.body.setSize(18 / Math.max(0.001, projectile.scaleX), height / Math.max(0.001, projectile.scaleY), true);
+  projectile.body.updateFromGameObject();
+
+  const flash = scene.tweens.add({
+    targets: projectile,
+    alpha: { from: 1, to: 0.58 },
+    duration: 55,
+    yoyo: true,
+    repeat: -1,
+  });
+  const timer = scene.time.delayedCall(
+    Math.max(120, finiteNumber(durationMs, 430)),
+    () => projectile.active && projectile.destroy(),
+  );
+  projectile.once('destroy', () => {
+    flash?.stop?.();
+    if (timer && !timer.hasDispatched) timer.remove(false);
+  });
+  return projectile;
+}
+
 /** Creates a short-lived world-space melee window attached to its attacker. */
 export function createEnemyMeleeAttack(enemy, spec = {}, now = 0) {
   const durationMs = Math.max(40, finiteNumber(spec.durationMs, 180));
@@ -121,6 +178,8 @@ export function isEnemyMeleeAttackActive(attack) {
   if (!enemy || enemy.dead || !enemy.sprite?.active) return false;
   if (attack.kind === 'spear') return enemy.state === 'SPEAR_ATTACK';
   if (attack.kind === 'branch') return ['PUNCH_LEFT', 'PUNCH_RIGHT'].includes(enemy.state);
+  if (attack.kind === 'scythe') return enemy.state === 'SCYTHE_ATTACK';
+  if (attack.kind === 'grab') return enemy.state === 'GRAB_ATTACK';
   return true;
 }
 

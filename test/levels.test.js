@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import gameData from '../src/data/game-data.json' with { type: 'json' };
+import city from '../src/data/levels/city.json' with { type: 'json' };
 import jungla from '../src/data/levels/jungla.json' with { type: 'json' };
 import {
   getGroundSpans,
@@ -10,7 +11,12 @@ import {
   resolveLevelId,
 } from '../src/data/levels/index.js';
 import { SaveStore, createMemoryStorage } from '../src/state/SaveStore.js';
-import { isJungleUnlocked, startPhaseTwo } from '../src/state/progressionFlow.js';
+import {
+  isCityUnlocked,
+  isJungleUnlocked,
+  startPhaseThree,
+  startPhaseTwo,
+} from '../src/state/progressionFlow.js';
 
 // The authored contract keeps every unsupported hop at or below 160 px.
 const MAX_FAIR_PIT = 160;
@@ -23,10 +29,14 @@ test('saved progress scenes resume the matching level', () => {
   assert.equal(resolveLevelId('jungla'), 'jungla');
   assert.equal(resolveLevelId('jungle'), 'jungla');
   assert.equal(resolveLevelId('babilandia'), 'babilandia');
+  assert.equal(resolveLevelId('city'), 'city');
+  assert.equal(resolveLevelId('ciudad'), 'city');
   assert.equal(resolveLevelId(undefined), 'babilandia');
   assert.equal(getLevel('jungla').boss.scene, 'DarknessBossScene');
   assert.equal(getLevel('jungla').backgroundAsset, 'jungleV1');
   assert.equal(getLevel('babilandia').boss.scene, 'BossScene');
+  assert.equal(getLevel('city').boss.scene, 'ComingSoonScene');
+  assert.equal(getLevel('city').boss.progress.phase3Complete, true);
   const prefixes = Object.values(LEVELS).map((level) => level.coinRewardPrefix);
   assert.equal(new Set(prefixes).size, prefixes.length, 'coin rewards must not collide between levels');
 });
@@ -139,6 +149,53 @@ test('La Oscuridad is a light-vulnerable boss with a one-time reward', () => {
   assert.deepEqual(boss.patterns, ['SHADOW_GLIDE', 'SHADOW_RAIN', 'DARK_WAVE']);
   assert.ok(boss.exposedMs >= 2000 && boss.lanternLitMs > boss.exposedMs);
   assert.ok(boss.rewardCoins > gameData.bossData.babito_corrupto.rewardCoins);
+});
+
+test('Ciudad keeps its complete authored Phase 3 composition and safe route', () => {
+  assert.equal(city.worldWidth, 7200);
+  assert.deepEqual(city.zones.map(({ id }) => id), ['entrada', 'fabricas', 'fortaleza']);
+  assert.deepEqual(city.checkpoints.map(({ id }) => id), [
+    'start',
+    'factory_gate',
+    'assembly_line',
+    'fortress_gate',
+  ]);
+  assert.equal(city.enemies.length, 11);
+  assert.equal(city.coins.length, 36);
+  assert.equal(city.movingPlatforms.length, 3);
+  assert.equal(city.hazards.length, 5);
+  assert.equal(city.tutorialSigns.length, 7);
+  assert.deepEqual(city.bossPortal, { x: 7040, y: 480 });
+  assert.deepEqual(new Set(city.enemies.map(({ type }) => type)), new Set([
+    'drone_bot',
+    'robot_elice',
+    'ive_robot',
+  ]));
+  assert.equal(city.enemies.at(-1).doubleScythe, true);
+
+  const spans = getGroundSpans(city.platforms);
+  assert.equal(spans[0].left, 0);
+  assert.equal(spans.at(-1).right, city.worldWidth);
+  for (let index = 1; index < spans.length; index += 1) {
+    assert.ok(spans[index].left - spans[index - 1].right <= 160, 'every City gap must be jumpable');
+  }
+  for (const checkpoint of city.checkpoints) assert.ok(spanAt(spans, checkpoint.x), checkpoint.id);
+  for (const enemy of city.enemies.filter(({ type }) => type !== 'drone_bot')) {
+    assert.ok(spanAt(spans, enemy.x), `${enemy.id} must be grounded`);
+  }
+  assert.ok(spanAt(spans, city.bossPortal.x), 'City portal');
+});
+
+test('Ciudad unlocks after Phase 2 and starts at its first checkpoint', () => {
+  const store = new SaveStore({ storage: createMemoryStorage() });
+  assert.equal(isCityUnlocked(store.getState().progress), false);
+  store.setProgress({ boss2Defeated: true, phase2Complete: true, scene: 'map' });
+  assert.equal(isCityUnlocked(store.getState().progress), true);
+  const progress = startPhaseThree(store);
+  assert.equal(progress.scene, 'city');
+  assert.equal(progress.checkpoint, 'start');
+  assert.equal(progress.phase2Complete, true);
+  assert.equal(progress.phase3Complete, false);
 });
 
 test('La Jungla unlocks after Phase 1 and starts at its first checkpoint', () => {

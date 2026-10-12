@@ -51,10 +51,22 @@ function consumeGameplayJustDown(key, suppressed = false) {
 }
 
 export class PlayerController {
-  constructor(scene, { x, y, save, platforms, projectiles, onHealth, onGameOver }) {
+  constructor(scene, {
+    x,
+    y,
+    save,
+    platforms,
+    platformList = platforms,
+    projectiles,
+    onHealth,
+    onGameOver,
+  }) {
     this.scene = scene;
     this.save = save;
-    this.platforms = platforms;
+    // `platforms` is the Arcade collider target (it may be an array of static
+    // and moving groups); `platformList` is the flattened one-way lookup used
+    // by the drop-through control.
+    this.platforms = platformList;
     this.projectiles = projectiles;
     this.onHealth = onHealth;
     this.onGameOver = onGameOver;

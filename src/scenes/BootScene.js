@@ -33,7 +33,7 @@ function getDevQaLaunch() {
     coins: Number.isFinite(requestedCoins) ? Phaser.Math.Clamp(requestedCoins, 0, 999) : null,
     completePhaseOne: params.get('qaComplete') === '1',
     data: scene === 'ComingSoonScene'
-      ? { world: requestedWorld === 'jungle' || requestedWorld === 'jungla' ? requestedWorld : 'city' }
+      ? { world: requestedWorld || 'boss-total' }
       : {},
   };
 }
@@ -66,7 +66,7 @@ export class BootScene extends Phaser.Scene {
 
     // Tiny read-only-ish hook for automated smoke tests and community mods.
     globalThis.__BABITOS__ = {
-      version: '0.2.0',
+      version: '0.3.0',
       get scene() {
         return this.game?.scene?.getScenes(true)?.at(-1)?.scene?.key ?? null;
       },

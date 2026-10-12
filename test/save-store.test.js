@@ -30,6 +30,7 @@ test('creates and persists a complete default save without a DOM', () => {
     phase1Complete: false,
     boss2Defeated: false,
     phase2Complete: false,
+    phase3Complete: false,
     claimedRewards: [],
   });
 
@@ -253,6 +254,7 @@ test('restarts story progress without erasing the Babito collection or repeat-pr
     phase1Complete: false,
     boss2Defeated: false,
     phase2Complete: false,
+    phase3Complete: false,
     claimedRewards: ['boss-1-cleansed'],
   });
 });
